@@ -1,0 +1,15 @@
+# Ignore arquivos gerados pelo Visual Studio
+.vs/
+*.user
+*.suo
+
+# Ignore binários e builds
+bin/
+obj/
+
+# Ignore configurações locais
+*.log
+*.db
+*.sqlite
+*.env
+.env.*
