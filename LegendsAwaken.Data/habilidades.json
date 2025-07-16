@@ -1,1 +1,66 @@
-// Arquivo inicial
+[
+  {
+    "Id": "corrupcao_da_alma",
+    "Nome": "Corrupção da Alma",
+    "Tipo": "Ativa",
+    "Descricao": "Causa dano sombrio e reduz a defesa do inimigo.",
+    "NivelMaximo": 10,
+    "XPBaseMaximo": 100
+  },
+  {
+    "Id": "aura_sombria",
+    "Nome": "Aura Sombria",
+    "Tipo": "Passiva",
+    "Descricao": "+10% de dano mágico quando com HP abaixo de 50%.",
+    "NivelMaximo": 10,
+    "XPBaseMaximo": 50
+  },
+  {
+    "Id": "ataque_forte",
+    "Nome": "Ataque Forte",
+    "Tipo": "Ativa",
+    "Descricao": "Um ataque poderoso que causa dano aumentado.",
+    "NivelMaximo": 10,
+    "XPBaseMaximo": 100
+  },
+  {
+    "Id": "defesa_ferrea",
+    "Nome": "Defesa Férrea",
+    "Tipo": "Passiva",
+    "Descricao": "Reduz o dano recebido em 15%.",
+    "NivelMaximo": 10,
+    "XPBaseMaximo": 50
+  },
+  {
+    "Id": "tiro_preciso",
+    "Nome": "Tiro Preciso",
+    "Tipo": "Ativa",
+    "Descricao": "Dispara um tiro certeiro que ignora parte da defesa inimiga.",
+    "NivelMaximo": 10,
+    "XPBaseMaximo": 100
+  },
+  {
+    "Id": "movimentacao_rapida",
+    "Nome": "Movimentação Rápida",
+    "Tipo": "Passiva",
+    "Descricao": "Aumenta a velocidade e evasão do personagem.",
+    "NivelMaximo": 10,
+    "XPBaseMaximo": 50
+  },
+  {
+    "Id": "cura",
+    "Nome": "Cura",
+    "Tipo": "Ativa",
+    "Descricao": "Restaura vida de um aliado.",
+    "NivelMaximo": 10,
+    "XPBaseMaximo": 100
+  },
+  {
+    "Id": "golpe_divino",
+    "Nome": "Golpe Divino",
+    "Tipo": "Ativa",
+    "Descricao": "Causa dano sagrado extra contra inimigos do mal.",
+    "NivelMaximo": 10,
+    "XPBaseMaximo": 100
+  }
+]

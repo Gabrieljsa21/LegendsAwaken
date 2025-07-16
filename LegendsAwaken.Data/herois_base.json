@@ -1,1 +1,112 @@
-// Arquivo inicial
+[
+  {
+    "Id": "hero_001",
+    "Nome": "Thalindra Sombrassangue",
+    "Raridade": 3,
+    "Raça": "elfa_negra",
+    "Classe": "bruxa",
+    "Antecedente": "eremita",
+    "Nivel": 1,
+    "XP": 0,
+    "Atributos": {
+      "Forca": 8,
+      "Destreza": 14,
+      "Constituicao": 10,
+      "Inteligencia": 17,
+      "Sabedoria": 13,
+      "Carisma": 12
+    },
+    "Habilidades": {
+      "Ativas": [
+        {
+          "Id": "corrupcao_da_alma",
+          "Nivel": 1,
+          "XPAtual": 0,
+          "XPMaximo": 100
+        }
+      ],
+      "Passivas": [
+        {
+          "Id": "aura_sombria",
+          "Nivel": 1,
+          "XPAtual": 0,
+          "XPMaximo": 50
+        }
+      ]
+    },
+    "Status": {
+      "VidaAtual": 100,
+      "VidaMaxima": 100,
+      "ManaAtual": 50,
+      "ManaMaxima": 50
+    },
+    "Equipamentos": {
+      "Arma": null,
+      "Armadura": null,
+      "Acessorios": []
+    },
+    "Treinamento": {
+      "Tipo": null,
+      "Inicio": null,
+      "Fim": null,
+      "ResultadoEsperado": null
+    },
+    "Tags": [ "mago", "sombrio", "controlador" ],
+    "DataInvocacao": null
+  },
+  {
+    "Id": "hero_002",
+    "Nome": "Garruk, o Guerreiro",
+    "Raridade": 2,
+    "Raça": "humano",
+    "Classe": "guerreiro",
+    "Antecedente": "soldado",
+    "Nivel": 1,
+    "XP": 0,
+    "Atributos": {
+      "Forca": 16,
+      "Destreza": 12,
+      "Constituicao": 14,
+      "Inteligencia": 10,
+      "Sabedoria": 11,
+      "Carisma": 9
+    },
+    "Habilidades": {
+      "Ativas": [
+        {
+          "Id": "ataque_forte",
+          "Nivel": 1,
+          "XPAtual": 0,
+          "XPMaximo": 100
+        }
+      ],
+      "Passivas": [
+        {
+          "Id": "defesa_ferrea",
+          "Nivel": 1,
+          "XPAtual": 0,
+          "XPMaximo": 50
+        }
+      ]
+    },
+    "Status": {
+      "VidaAtual": 150,
+      "VidaMaxima": 150,
+      "ManaAtual": 30,
+      "ManaMaxima": 30
+    },
+    "Equipamentos": {
+      "Arma": null,
+      "Armadura": null,
+      "Acessorios": []
+    },
+    "Treinamento": {
+      "Tipo": null,
+      "Inicio": null,
+      "Fim": null,
+      "ResultadoEsperado": null
+    },
+    "Tags": [ "tanque", "fisico", "combate" ],
+    "DataInvocacao": null
+  }
+]

@@ -1,0 +1,26 @@
+# 📜 Changelog
+
+Todas as alterações significativas neste projeto serão documentadas neste arquivo.
+
+O formato segue o padrão [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/), e o versionamento segue [Semantic Versioning](https://semver.org/lang/pt-BR/).
+
+## [1.0.0] - 2025-07-16
+
+### 🔰 Fase 1 – Estruturação Inicial
+
+#### Adicionado
+- Definição de escopo e objetivos do projeto.
+- Estrutura modular baseada em Clean Architecture com influência de DDD.
+- Camadas organizadas: `Domain`, `Application`, `Infrastructure`, `Bot`, `Data`, `Tests`.
+- Configuração inicial de bot Discord com `Discord.Net`.
+- Projeto `LegendsAwaken.sln` criado no Visual Studio 2022.
+- Integração com SQLite via `Microsoft.EntityFrameworkCore.Sqlite`.
+- Repositório público criado no GitHub com README detalhado.
+- Estrutura de comandos básicos iniciada.
+- Suporte a variáveis de ambiente para configuração de token do Discord.
+- Base de dados com tabelas iniciais (`Heroi`, `Usuario`, etc.).
+- Estrutura de arquivos `.json` no projeto `LegendsAwaken.Data`.
+
+#### Corrigido
+- Ajustes em conflitos de DLL durante build (lock de arquivo).
+- Correções na configuração do bot no Discord Developer Portal (comandos slash visíveis).

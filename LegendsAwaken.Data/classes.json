@@ -1,1 +1,42 @@
-// Arquivo inicial
+[
+  {
+    "Id": "bruxa",
+    "Nome": "Bruxa",
+    "Descricao": "Mestres das artes arcanas e do oculto, especialistas em magias de controle e dano mágico.",
+    "HabilidadesBase": [
+      "CorrupcaoDaAlma",
+      "AuraSombria"
+    ],
+    "Tags": [ "Mago", "Sombrio", "Controlador" ]
+  },
+  {
+    "Id": "guerreiro",
+    "Nome": "Guerreiro",
+    "Descricao": "Combatentes versáteis e resistentes, especialistas em combate corpo a corpo e uso de armas diversas.",
+    "HabilidadesBase": [
+      "AtaqueForte",
+      "DefesaFerrea"
+    ],
+    "Tags": [ "Tanque", "Fisico", "Combate" ]
+  },
+  {
+    "Id": "arqueiro",
+    "Nome": "Arqueiro",
+    "Descricao": "Especialistas em ataques à distância com arco e flecha, alta destreza e mobilidade.",
+    "HabilidadesBase": [
+      "TiroPreciso",
+      "MovimentacaoRapida"
+    ],
+    "Tags": [ "Fisico", "Distancia", "Mobilidade" ]
+  },
+  {
+    "Id": "clerigo",
+    "Nome": "Clérigo",
+    "Descricao": "Protetores sagrados, capazes de curar aliados e causar dano divino aos inimigos.",
+    "HabilidadesBase": [
+      "Cura",
+      "GolpeDivino"
+    ],
+    "Tags": [ "Suporte", "Curandeiro", "Divino" ]
+  }
+]
