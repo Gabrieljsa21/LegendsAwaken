@@ -1,8 +1,13 @@
-using LegendsAwaken.Domain;
+using LegendsAwaken.Domain.Entities;
+using LegendsAwaken.Domain.Entities.Auxiliares;
+using LegendsAwaken.Domain.Entities.Banner;
+using LegendsAwaken.Domain.Enum;
+using LegendsAwaken.Domain.Factories;
 using LegendsAwaken.Domain.Interfaces;
-using LegendsAwaken.Infrastructure.Repositories;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace LegendsAwaken.Application.Services
@@ -14,25 +19,47 @@ namespace LegendsAwaken.Application.Services
         public HeroiService(IHeroiRepository heroiRepository)
         {
             _heroiRepository = heroiRepository;
+
         }
 
         /// <summary>
-        /// Cria um novo herói a partir de dados base.
+        /// Cria um novo herói usando a HeroiFactory e salva no repositório.
         /// </summary>
-        public async Task<Heroi> CriarHeroiAsync(Heroi heroi)
+        public async Task<Heroi> CriarHeroiAsync(
+            ulong usuarioId,
+            string nome,
+            Raridade raridade,
+            string raca,
+            string profissao,
+            string antecedente,
+            List<HeroiAfinidadeElemental> afinidade,
+            FuncaoTatica? funcao = null)
         {
-            heroi.Id = Guid.NewGuid();
+            // Cria o herói usando a factory
+            var heroi = HeroiFactory.CriarHeroi(
+                usuarioId,
+                nome,
+                raridade,
+                raca,
+                profissao,
+                antecedente,
+                afinidade,
+                funcao);
+
+            // Define datas de criação/alteração
             heroi.DataCriacao = DateTime.UtcNow;
             heroi.DataAlteracao = DateTime.UtcNow;
 
+            // Salva no repositório
             await _heroiRepository.AdicionarAsync(heroi);
+
             return heroi;
         }
 
         /// <summary>
         /// Obtém herói pelo ID.
         /// </summary>
-        public async Task<Heroi> ObterHeroiPorIdAsync(Guid heroiId)
+        public async Task<Heroi?> ObterHeroiPorIdAsync(Guid heroiId)
         {
             return await _heroiRepository.ObterPorIdAsync(heroiId);
         }
@@ -63,7 +90,9 @@ namespace LegendsAwaken.Application.Services
             if (heroi == null)
                 throw new Exception("Herói não encontrado.");
 
-            var habilidade = heroi.Habilidades.Ativas.Find(h => h.Nome == nomeHabilidade);
+            var habilidade = heroi.Habilidades
+                .FirstOrDefault(h => h.Nome.Equals(nomeHabilidade, StringComparison.OrdinalIgnoreCase));
+
             if (habilidade == null)
                 throw new Exception("Habilidade não encontrada.");
 
@@ -72,13 +101,25 @@ namespace LegendsAwaken.Application.Services
             {
                 habilidade.XPAtual -= habilidade.XPMaximo;
                 habilidade.Nivel++;
-                habilidade.XPMaximo += 50; // exemplo de aumento de XP máximo por nível
+                habilidade.XPMaximo += 50; // Exemplo de progressão
             }
 
             heroi.DataAlteracao = DateTime.UtcNow;
             await _heroiRepository.AtualizarAsync(heroi);
         }
 
-        // Outros métodos para evoluir atributos, desbloquear habilidades etc.
+        public string GerarNomeAleatorio(string username, int numero)
+        {
+            // Prefixos e sufixos simples para variedade
+            var prefixos = new[] { "Ar", "Bel", "Dor", "Eli", "Fen", "Gal", "Hor", "Ith", "Jor", "Kel" };
+            var sufixos = new[] { "ion", "ar", "eth", "mir", "dor", "an", "iel", "or", "us", "wyn" };
+
+            var random = new Random(Guid.NewGuid().GetHashCode());
+            var prefixo = prefixos[random.Next(prefixos.Length)];
+            var sufixo = sufixos[random.Next(sufixos.Length)];
+
+            return $"{prefixo}{sufixo}_{username}_{numero}";
+        }
+
     }
 }

@@ -38,5 +38,8 @@
 		<ProjectReference Include="..\LegendsAwaken.Domain\LegendsAwaken.Domain.csproj" />
 		<ProjectReference Include="..\LegendsAwaken.Infrastructure\LegendsAwaken.Infrastructure.csproj" />
 	</ItemGroup>
+	<ItemGroup>
+	  <Folder Include="Models\Banner\" />
+	</ItemGroup>
 
 </Project>

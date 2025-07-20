@@ -1,11 +1,12 @@
 using System;
 using System.Collections.Generic;
+using LegendsAwaken.Domain.Entities.Banner;
 
-namespace LegendsAwaken.Domain
+namespace LegendsAwaken.Domain.Entities
 {
     public class Usuario
     {
-        public ulong DiscordId { get; set; } // ID único do usuário no Discord
+        public required ulong Id { get; set; } // ID único do usuário no Discord
 
         public string Nome { get; set; } = string.Empty;
         public int NivelConta { get; set; } = 1;
@@ -22,5 +23,10 @@ namespace LegendsAwaken.Domain
         public int AndarMaisAlto { get; set; } = 0; // Registro do progresso na torre
         public DateTime DataCriacao { get; set; } = DateTime.UtcNow;
         public DateTime UltimoLogin { get; set; } = DateTime.UtcNow;
+        public List<BannerProgresso> ProgressoPorBanner { get; set; } = new();
+        public List<BannerHistorico> HistoricoBanners { get; set; } = new();
+
     }
+    
+
 }

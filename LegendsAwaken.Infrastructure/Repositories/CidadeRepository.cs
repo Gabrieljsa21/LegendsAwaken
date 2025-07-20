@@ -1,4 +1,4 @@
-using LegendsAwaken.Domain;
+using LegendsAwaken.Domain.Entities;
 using LegendsAwaken.Domain.Interfaces;
 using Microsoft.Data.Sqlite;
 using System;
@@ -118,8 +118,10 @@ namespace LegendsAwaken.Infrastructure.Repositories
             command.CommandText = @"SELECT COUNT(*) FROM Cidades WHERE Id = $id";
             command.Parameters.AddWithValue("$id", cidadeId.ToString());
 
-            var count = (long)await command.ExecuteScalarAsync();
+            var result = await command.ExecuteScalarAsync();
+            var count = Convert.ToInt64(result);
             return count > 0;
+
         }
 
 

@@ -29,6 +29,9 @@ namespace LegendsAwaken.Application.Services
 
             _connectionString = configuration.GetConnectionString("DefaultConnection")
                 ?? throw new ArgumentNullException("Connection string 'DefaultConnection' não encontrada.");
+
+            // Log para debug:
+            Console.WriteLine($"[DEBUG] Banco em uso (DbContext): {connection.ConnectionString}");
         }
 
         /// <summary>

@@ -1,5 +1,5 @@
 using LegendsAwaken.Application.DTOs;
-using LegendsAwaken.Domain;
+using LegendsAwaken.Domain.Entities;
 using LegendsAwaken.Domain.Interfaces;
 using LegendsAwaken.Infrastructure.Repositories;
 using System;
@@ -34,7 +34,7 @@ namespace LegendsAwaken.Application.Services
             return cidade;
         }
 
-        public async Task<Cidade> ObterCidadePorUsuarioAsync(ulong usuarioId)
+        public async Task<Cidade?> ObterCidadePorUsuarioAsync(ulong usuarioId)
         {
             return await _cidadeRepository.ObterPorProprietarioIdAsync(usuarioId);
         }

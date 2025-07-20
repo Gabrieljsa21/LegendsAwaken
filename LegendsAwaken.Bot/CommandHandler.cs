@@ -1,112 +1,155 @@
-using Discord;
+ï»¿using Discord;
+using Discord.Interactions;
 using Discord.WebSocket;
+using LegendsAwaken.Application.Services;
+using LegendsAwaken.Bot.Commands;
+using LegendsAwaken.Domain.Entities.Auxiliares;
+using LegendsAwaken.Domain.Enum;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
+using LegendsAwaken.Domain.Extensions;
 
 namespace LegendsAwaken.Bot
 {
     /// <summary>
-    /// Responsável por registrar e tratar comandos de barra (slash commands) no Discord.
+    /// ResponsÃ¡vel por registrar e tratar comandos de barra (slash commands) e componentes no Discord.
     /// </summary>
     public class CommandHandler
     {
         private readonly DiscordSocketClient _client;
         private readonly ILogger<CommandHandler> _logger;
         private readonly ulong _guildId;
+        private readonly HeroiService _heroiService;
+        private readonly GeracaoDeDadosService _geracaoDeDadosService;
+        private readonly BannerService _bannerService;
+        private readonly BannerHistoricoService _bannerHistoricoService;
+        private readonly UsuarioService _usuarioService;
+        private readonly GachaService _gachaService;
+        private readonly RacaService _racaService;
 
-        /// <summary>
-        /// Construtor da classe CommandHandler.
-        /// </summary>
-        /// <param name="client">Cliente do Discord usado para registrar comandos e escutar eventos.</param>
-        /// <param name="logger">Logger para registrar informações e erros.</param>
-        /// <param name="guildId">ID do servidor onde os comandos serão registrados.</param>
-        public CommandHandler(DiscordSocketClient client, ILogger<CommandHandler> logger, ulong guildId)
+        public CommandHandler(
+            DiscordSocketClient client,
+            ILogger<CommandHandler> logger,
+            ulong guildId,
+            HeroiService heroiService,
+            GeracaoDeDadosService geracaoDeDadosService,
+            BannerService bannerService,
+            BannerHistoricoService bannerHistoricoService,
+            UsuarioService usuarioService,
+            GachaService gachaService,
+            RacaService racaService)
         {
             _client = client;
             _logger = logger;
             _guildId = guildId;
+            _heroiService = heroiService;
+            _geracaoDeDadosService = geracaoDeDadosService;
+            _bannerService = bannerService;
+            _bannerHistoricoService = bannerHistoricoService;
+            _usuarioService = usuarioService;
+            _gachaService = gachaService;
+            _racaService = racaService;
         }
 
-        /// <summary>
-        /// Inicializa o handler conectando eventos do Discord.
-        /// </summary>
         public void Initialize()
         {
-            // Conecta os eventos que lidam com slash commands e com a inicialização do bot
             _client.SlashCommandExecuted += HandleSlashCommandAsync;
+            _client.ButtonExecuted += HandleButtonExecutedAsync;
+            _client.AutocompleteExecuted += HandleAutocompleteAsync;
             _client.Ready += OnReadyAsync;
+            _client.SelectMenuExecuted += HandleSelectMenuExecutedAsync;
+
         }
 
-        /// <summary>
-        /// Evento disparado quando o bot está pronto (conectado).
-        /// Registra os comandos de barra no servidor específico.
-        /// </summary>
         private async Task OnReadyAsync()
         {
-            _logger.LogInformation("Bot está pronto!");
-
+            _logger.LogInformation("Bot estÃ¡ pronto!");
             var guild = _client.GetGuild(_guildId);
+            if (guild == null) return;
 
-            if (guild != null)
+            var choices = _bannerService.ObterTodosBanners()
+                .Select(b => new ApplicationCommandOptionChoiceProperties
+                {
+                    Name = b.Nome,
+                    Value = b.Id
+                })
+                .ToList();
+
+            var commands = new[]
             {
-                var commands = new[]
-                {
-                    new SlashCommandBuilder().WithName("invocar").WithDescription("Invocar um herói do gacha"),
-                    new SlashCommandBuilder().WithName("treinar").WithDescription("Treinar um herói"),
-                    new SlashCommandBuilder().WithName("subir_andar").WithDescription("Subir um andar da torre"),
-                    new SlashCommandBuilder().WithName("ver_heroi").WithDescription("Ver detalhes de um herói")
-                    // Você pode adicionar mais comandos aqui conforme necessário
-                };
+                new SlashCommandBuilder()
+                    .WithName("banners")
+                    .WithDescription("Mostra todos os banners disponÃ­veis e seu pity"),
 
-                // Registra cada comando no servidor
-                foreach (var cmd in commands)
+                new SlashCommandBuilder()
+                    .WithName("invocar")
+                    .WithDescription("Invoca em um banner especÃ­fico")
+                    .AddOption(new SlashCommandOptionBuilder()
+                        .WithName("banner")
+                        .WithDescription("ID do banner")
+                        .WithRequired(true)
+                        .WithType(ApplicationCommandOptionType.String)
+                        .WithAutocomplete(true)),
+
+                new SlashCommandBuilder().WithName("treinar").WithDescription("Treinar um herÃ³i"),
+                new SlashCommandBuilder().WithName("subir_andar").WithDescription("Subir um andar da torre"),
+                new SlashCommandBuilder().WithName("ver_heroi").WithDescription("Ver detalhes de um herÃ³i")
+            };
+
+            foreach (var cmd in commands)
+            {
+                try
                 {
-                    try
-                    {
-                        await guild.CreateApplicationCommandAsync(cmd.Build());
-                        _logger.LogInformation($"Comando /{cmd.Name} registrado no servidor.");
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, $"Erro ao registrar comando /{cmd.Name}");
-                    }
+                    await guild.CreateApplicationCommandAsync(cmd.Build());
+                    _logger.LogInformation($"Comando /{cmd.Name} registrado no servidor.");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, $"Erro ao registrar comando /{cmd.Name}");
                 }
             }
         }
 
-        /// <summary>
-        /// Lida com comandos recebidos pelo usuário.
-        /// Encaminha para o handler correto com base no nome do comando.
-        /// </summary>
         private async Task HandleSlashCommandAsync(SocketSlashCommand command)
         {
             _logger.LogInformation($"Comando recebido: /{command.CommandName} de {command.User.Username}");
+            await _usuarioService.ObterOuCriarAsync(command.User);
 
             try
             {
                 switch (command.CommandName)
                 {
                     case "invocar":
-                        await HandleInvocarCommand(command);
+                        await new InvocarCommand(
+                            _heroiService,
+                            _bannerHistoricoService,
+                            _bannerService,
+                            _gachaService,
+                            _racaService)
+                        .ExecutarAsync(command);
+                        break;
+
+                    case "banners":
+                        await new BannerCommand(_bannerService, _bannerHistoricoService)
+                            .ExecutarAsync(command);
                         break;
 
                     case "treinar":
-                        await HandleTreinarCommand(command);
+                        await command.RespondAsync("Treinamento iniciado! (Implementar lÃ³gica)", ephemeral: true);
                         break;
 
                     case "subir_andar":
-                        await HandleSubirAndarCommand(command);
+                        await command.RespondAsync("Subindo andar! (Implementar lÃ³gica)", ephemeral: true);
                         break;
 
                     case "ver_heroi":
-                        await HandleVerHeroiCommand(command);
+                        await command.RespondAsync("Mostrando herÃ³i! (Implementar lÃ³gica)", ephemeral: true);
                         break;
 
-                    // Outros comandos podem ser adicionados aqui
-
                     default:
-                        await command.RespondAsync("Comando não reconhecido.", ephemeral: true);
+                        await command.RespondAsync("Comando nÃ£o reconhecido.", ephemeral: true);
                         break;
                 }
             }
@@ -117,40 +160,67 @@ namespace LegendsAwaken.Bot
             }
         }
 
-        /// <summary>
-        /// Lida com o comando /invocar.
-        /// </summary>
-        private Task HandleInvocarCommand(SocketSlashCommand command)
+        private async Task HandleAutocompleteAsync(SocketAutocompleteInteraction auto)
         {
-            // Aqui será implementada a lógica do gacha
-            return command.RespondAsync("Invocação iniciada! (Implementar lógica)", ephemeral: true);
+            if (auto.Data.CommandName != "invocar" || auto.Data.Options.First().Name != "banner")
+                return;
+
+            var query = auto.Data.Options.First().Value as string ?? string.Empty;
+            var suggestions = _bannerService.ObterTodosBanners()
+                .Select(b => b.Id)
+                .Where(id => id.StartsWith(query, StringComparison.OrdinalIgnoreCase))
+                .Select(id => new AutocompleteResult(id, id))
+                .Take(25);
+
+            await auto.RespondAsync(suggestions);
         }
 
-        /// <summary>
-        /// Lida com o comando /treinar.
-        /// </summary>
-        private Task HandleTreinarCommand(SocketSlashCommand command)
+        public async Task HandleButtonExecutedAsync(SocketMessageComponent comp)
         {
-            // Aqui será implementada a lógica de treino
-            return command.RespondAsync("Treinamento iniciado! (Implementar lógica)", ephemeral: true);
+            var parts = comp.Data.CustomId.Split('|');
+            if (parts.Length != 3 || parts[0] != "roll")
+                return;
+
+            int quantidade = int.Parse(parts[1]);
+            string bannerId = parts[2];
+
+            var invocar = new InvocarCommand(
+                _heroiService,
+                _bannerHistoricoService,
+                _bannerService,
+                _gachaService,
+                _racaService);
+
+            await invocar.ExecutarRollAsync(comp);
         }
 
-        /// <summary>
-        /// Lida com o comando /subir_andar.
-        /// </summary>
-        private Task HandleSubirAndarCommand(SocketSlashCommand command)
+        private async Task HandleSelectMenuExecutedAsync(SocketMessageComponent comp)
         {
-            // Aqui será implementada a lógica de subir na torre
-            return command.RespondAsync("Subindo andar! (Implementar lógica)", ephemeral: true);
+            if (comp.Data.CustomId != "select_banner_roll") return;
+
+            var selectedBannerId = comp.Data.Values.FirstOrDefault();
+            if (string.IsNullOrWhiteSpace(selectedBannerId))
+            {
+                await comp.RespondAsync("Nenhum banner selecionado.", ephemeral: true);
+                return;
+            }
+
+            var banner = _bannerService.ObterBannerPorId(selectedBannerId);
+            if (banner == null)
+            {
+                await comp.RespondAsync("Banner nÃ£o encontrado.", ephemeral: true);
+                return;
+            }
+
+            // âœ… Reutiliza o mesmo mÃ©todo jÃ¡ criado para exibir detalhes + botÃµes
+            await new InvocarCommand(
+                _heroiService,
+                _bannerHistoricoService,
+                _bannerService,
+                _gachaService,
+                _racaService)
+            .EnviarMenuInvocacao(comp, banner);
         }
 
-        /// <summary>
-        /// Lida com o comando /ver_heroi.
-        /// </summary>
-        private Task HandleVerHeroiCommand(SocketSlashCommand command)
-        {
-            // Aqui será implementada a lógica de exibição do herói
-            return command.RespondAsync("Mostrando herói! (Implementar lógica)", ephemeral: true);
-        }
     }
 }

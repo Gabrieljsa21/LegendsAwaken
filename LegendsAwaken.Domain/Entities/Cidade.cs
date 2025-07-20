@@ -1,14 +1,14 @@
 using System;
 using System.Collections.Generic;
 
-namespace LegendsAwaken.Domain
+namespace LegendsAwaken.Domain.Entities
 {
     public class Cidade
     {
         public Guid Id { get; set; }
         public ulong UsuarioId { get; set; } // ID do jogador (usuário do Discord)
 
-        public string Nome { get; set; }
+        public required string Nome { get; set; }
         public int Nivel { get; set; } = 1;
 
         public int Populacao { get; set; } = 0;
@@ -49,7 +49,7 @@ namespace LegendsAwaken.Domain
     public class Construcao
     {
         public Guid Id { get; set; } = Guid.NewGuid(); // Ex: "ferreiro", "fazenda"
-        public string Nome { get; set; }
+        public required string Nome { get; set; }
         public int Nivel { get; set; } = 1;
         public bool EstaAtiva { get; set; } = true;
     }
@@ -58,7 +58,7 @@ namespace LegendsAwaken.Domain
     {
         public Guid Id { get; set; } = Guid.NewGuid();
         public Guid HeroiId { get; set; }
-        public string Profissao { get; set; } // Ex: "ferreiro", "agricultor"
+        public required string Profissao { get; set; } // Ex: "ferreiro", "agricultor"
         public DateTime InicioTrabalho { get; set; }
         public DateTime? TerminoTrabalho { get; set; } // pode ser null se for contínuo
     }

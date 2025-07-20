@@ -1,4 +1,4 @@
-using LegendsAwaken.Domain;
+using LegendsAwaken.Domain.Entities;
 using LegendsAwaken.Domain.Enum;
 using LegendsAwaken.Domain.Interfaces;
 using Microsoft.Data.Sqlite;
@@ -41,15 +41,34 @@ namespace LegendsAwaken.Infrastructure.Repositories
 
         public async Task AdicionarAsync(Heroi heroi)
         {
-            await _dbContext.Herois.AddAsync(heroi);
-            await _dbContext.SaveChangesAsync();
+            try
+            {
+                await _dbContext.Herois.AddAsync(heroi);
+                await _dbContext.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Erro ao adicionar herói no banco de dados:");
+                Console.WriteLine(ex.ToString());
+                throw;
+            }
         }
 
         public async Task AtualizarAsync(Heroi heroi)
         {
-            _dbContext.Herois.Update(heroi);
-            await _dbContext.SaveChangesAsync();
+            try
+            {
+                _dbContext.Herois.Update(heroi);
+                await _dbContext.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Erro ao atualizar herói no banco de dados:");
+                Console.WriteLine(ex.ToString());
+                throw;
+            }
         }
+
 
     }
 }

@@ -1,12 +1,24 @@
-# 📜 Changelog
+# Changelog
 
 Todas as alterações significativas neste projeto serão documentadas neste arquivo.
 
 O formato segue o padrão [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/), e o versionamento segue [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.0.1] - 2025-07-20
+#### Adicionado
+-Sistema de invocação com rolagens simples e múltiplas (x1, x11).
+-Implementação da lógica de pity por banner com reinício imediato após obter herói 4★.
+-Comando /roll atualizado para aceitar seleção via dropdown de banners disponíveis.
+-Exibição de progresso do pity no embed do resultado de invocação.
+-Ícone ✨ adicionado ao lado do nome de heróis 4★ no resultado das rolagens.
+
+#### Corrigido
+-Reset do contador de pity agora ocorre corretamente após obtenção de herói 4★ (não ao fim da rolagem múltipla).
+-Corrigido erro de interação falha ao selecionar banner no menu suspenso.
+
 ## [1.0.0] - 2025-07-16
 
-### 🔰 Fase 1 – Estruturação Inicial
+### Fase 1 – Estruturação Inicial
 
 #### Adicionado
 - Definição de escopo e objetivos do projeto.

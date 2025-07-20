@@ -1,4 +1,4 @@
-using LegendsAwaken.Domain;
+using LegendsAwaken.Domain.Entities;
 using LegendsAwaken.Domain.Interfaces;
 using Microsoft.Data.Sqlite;
 using System;
@@ -54,7 +54,7 @@ namespace LegendsAwaken.Infrastructure.Repositories
             var existsCmd = connection.CreateCommand();
             existsCmd.CommandText = @"SELECT COUNT(*) FROM TorreAndares WHERE Numero = $numero";
             existsCmd.Parameters.AddWithValue("$numero", andar.Numero);
-            var exists = (long)await existsCmd.ExecuteScalarAsync() > 0;
+            var exists = Convert.ToInt64(await existsCmd.ExecuteScalarAsync()) > 0;
 
             SqliteCommand command;
             if (exists)
@@ -107,8 +107,7 @@ namespace LegendsAwaken.Infrastructure.Repositories
             command.CommandText = @"SELECT COUNT(*) FROM TorreAndares WHERE Numero = $numero";
             command.Parameters.AddWithValue("$numero", numeroAndar);
 
-            var count = (long)await command.ExecuteScalarAsync();
-            return count > 0;
+            return Convert.ToInt64(await command.ExecuteScalarAsync()) > 0;
         }
 
         public async Task<TorreAndar?> ObterAndarPorUsuarioAsync(Guid usuarioId)

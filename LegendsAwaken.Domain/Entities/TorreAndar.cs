@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace LegendsAwaken.Domain
+namespace LegendsAwaken.Domain.Entities
 {
     public class TorreAndar
     {
@@ -15,7 +15,7 @@ namespace LegendsAwaken.Domain
 
         public List<Inimigo> Inimigos { get; set; } = new();
 
-        public string RecompensaTipo { get; set; }
+        public string? RecompensaTipo { get; set; }
         public int RecompensaQuantidade { get; set; }
 
         public bool ObjetivoCumprido { get; set; }
@@ -50,10 +50,10 @@ namespace LegendsAwaken.Domain
     public class Inimigo
     {
         public Guid Id { get; set; }
-        public string Nome { get; set; }
+        public required string Nome { get; set; }
         public int Nivel { get; set; }
-        public string Tipo { get; set; } // Ex: "Morto-vivo", "Fera"
-        public Atributos Atributos { get; set; }
+        public required string Tipo { get; set; } // Ex: "Morto-vivo", "Fera"
+        public required Atributos Atributos { get; set; }
         public List<string> Habilidades { get; set; } = new();
     }
 

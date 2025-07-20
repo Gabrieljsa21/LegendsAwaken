@@ -1,4 +1,5 @@
 using LegendsAwaken.Domain;
+using LegendsAwaken.Domain.Entities;
 using LegendsAwaken.Domain.Interfaces;
 using LegendsAwaken.Infrastructure.Repositories;
 using System;

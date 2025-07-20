@@ -1,6 +1,9 @@
-using LegendsAwaken.Domain;
+using LegendsAwaken.Domain.Entities;
+using LegendsAwaken.Domain.Entities.Auxiliares;
+using LegendsAwaken.Domain.Entities.Banner;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Reflection.Emit;
 
 namespace LegendsAwaken.Infrastructure
@@ -25,6 +28,15 @@ namespace LegendsAwaken.Infrastructure
         public DbSet<TorreAndar> Andares => Set<TorreAndar>();
         public DbSet<Cidade> Cidades => Set<Cidade>();
         public DbSet<Usuario> Usuarios => Set<Usuario>();
+        public DbSet<Inimigo> Inimigo => Set<Inimigo>();
+        public DbSet<HeroiAfinidadeElemental> HeroisAfinidades => Set<HeroiAfinidadeElemental>();
+        public DbSet<HeroiVinculo> HeroisVinculos => Set<HeroiVinculo>();
+        public DbSet<HeroiTag> HeroisTags => Set<HeroiTag>();
+        public DbSet<BannerHistorico> BannerHistorico => Set<BannerHistorico>();
+        public DbSet<BannerProgresso> BannerProgressos { get; set; }
+
+
+
 
         /// <summary>
         /// Configura o mapeamento das entidades e seus relacionamentos no modelo do EF Core.
@@ -39,14 +51,6 @@ namespace LegendsAwaken.Infrastructure
 
             modelBuilder.Entity<Heroi>()
                 .OwnsOne(h => h.Status);
-
-            modelBuilder.Entity<Heroi>()
-                .OwnsOne(h => h.Habilidades, habilidades =>
-                {
-                    // Define listas internas de habilidades ativas e passivas como coleções embutidas.
-                    habilidades.OwnsMany(h => h.Ativas);
-                    habilidades.OwnsMany(h => h.Passivas);
-                });
 
             modelBuilder.Entity<Heroi>()
                 .OwnsOne(h => h.Equipamentos);
@@ -64,7 +68,39 @@ namespace LegendsAwaken.Infrastructure
 
             // Define a chave primária da entidade Usuario como o ID do Discord.
             modelBuilder.Entity<Usuario>()
-                .HasKey(u => u.DiscordId);
+                .HasKey(u => u.Id);
+
+            // HeroiAfinidadeElemental
+            modelBuilder.Entity<HeroiAfinidadeElemental>()
+                .HasKey(h => new { h.HeroiId, h.Elemento });
+
+            modelBuilder.Entity<HeroiAfinidadeElemental>()
+                .HasOne(h => h.Heroi)
+                .WithMany(h => h.AfinidadeElemental)
+                .HasForeignKey(h => h.HeroiId);
+
+            // HeroiTag
+            modelBuilder.Entity<HeroiTag>()
+                .HasKey(h => new { h.HeroiId, h.Tag });
+
+            modelBuilder.Entity<HeroiTag>()
+                .HasOne(h => h.Heroi)
+                .WithMany(h => h.Tags)
+                .HasForeignKey(h => h.HeroiId);
+
+
+            // HeroiVinculo
+            modelBuilder.Entity<HeroiVinculo>()
+                .HasKey(h => new { h.HeroiId, h.VinculadoId });
+
+            modelBuilder.Entity<HeroiVinculo>()
+                .HasOne(h => h.Heroi)
+                .WithMany(h => h.VinculosHeroicos)
+                .HasForeignKey(h => h.HeroiId);
+
+            modelBuilder.Entity<BannerProgresso>()
+                .HasKey(bp => new { bp.UsuarioId, bp.BannerId });
+
         }
     }
 }

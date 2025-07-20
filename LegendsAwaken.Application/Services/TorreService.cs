@@ -1,4 +1,4 @@
-using LegendsAwaken.Domain;
+using LegendsAwaken.Domain.Entities;
 using LegendsAwaken.Domain.Interfaces;
 using LegendsAwaken.Infrastructure.Repositories;
 using System;
@@ -20,7 +20,7 @@ namespace LegendsAwaken.Application.Services
         /// <summary>
         /// Obtém o andar atual da torre para um usuário.
         /// </summary>
-        public async Task<TorreAndar> ObterAndarAtualAsync(Guid usuarioId)
+        public async Task<TorreAndar?> ObterAndarAtualAsync(Guid usuarioId)
         {
             // Lógica para obter o andar atual do usuário.
             return await _torreRepository.ObterAndarPorUsuarioAsync(usuarioId);

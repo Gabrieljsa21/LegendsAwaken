@@ -1,4 +1,6 @@
-﻿namespace LegendsAwaken.Domain.Interfaces
+﻿using LegendsAwaken.Domain.Entities;
+
+namespace LegendsAwaken.Domain.Interfaces
 {
     public interface ITorreRepository
     {

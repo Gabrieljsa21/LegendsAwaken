@@ -3,6 +3,7 @@ using Discord.Interactions;
 using Discord.WebSocket;
 using LegendsAwaken.Application.Services;
 using LegendsAwaken.Bot;
+using LegendsAwaken.Bot.Commands;
 using LegendsAwaken.Domain.Interfaces;
 using LegendsAwaken.Infrastructure;
 using LegendsAwaken.Infrastructure.Repositories;
@@ -11,6 +12,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using System;
 using System.Reflection;
 using System.Threading.Tasks;
 
@@ -19,93 +21,123 @@ using System.Threading.Tasks;
 /// </summary>
 class Program
 {
-    private static DiscordSocketClient _cliente;         // Cliente do Discord usado para interações em tempo real
-    private static IServiceProvider _services;           // Container de injeção de dependência
-    private static string _token;                        // Token do bot, carregado do ambiente
+    private static DiscordSocketClient? _cliente;
+    private static IServiceProvider? _services;
+    private static string? _token;
 
-    // ID da Guild (servidor) onde os comandos de slash serão registrados
     private static readonly ulong GUILD_ID = 1388541192806989834;
 
-    /// <summary>
-    /// Ponto de entrada principal do programa.
-    /// </summary>
     public static Task Main(string[] args) => new Program().IniciarAsync();
 
-    /// <summary>
-    /// Inicializa o bot e seus serviços.
-    /// </summary>
     public async Task IniciarAsync()
     {
-        // Carrega configurações do arquivo appsettings.json e variáveis de ambiente
         var configuration = new ConfigurationBuilder()
             .SetBasePath(AppContext.BaseDirectory)
             .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
             .AddEnvironmentVariables()
             .Build();
 
-        // Recupera o token do bot do ambiente
         _token = Environment.GetEnvironmentVariable("LegendsAwakenToken");
-
         if (string.IsNullOrWhiteSpace(_token))
         {
             Console.WriteLine("❌ Token não encontrado.");
             return;
         }
 
-        // Configura o cliente do Discord
         var config = new DiscordSocketConfig
         {
-            GatewayIntents = GatewayIntents.AllUnprivileged | GatewayIntents.MessageContent
+            GatewayIntents = GatewayIntents.Guilds |
+                             GatewayIntents.GuildMessages |
+                             GatewayIntents.MessageContent
         };
-
         _cliente = new DiscordSocketClient(config);
-        _cliente.Log += LogAsync; // Redireciona logs para o console
+        _cliente.Log += LogAsync;
 
-        // Registra os serviços do sistema (injeção de dependência)
         var services = new ServiceCollection()
             .AddDbContext<LegendsAwakenDbContext>(options =>
                 options.UseSqlite(configuration.GetConnectionString("DefaultConnection")))
+
+            // Repositórios
             .AddScoped<ICidadeRepository, CidadeRepository>()
             .AddScoped<ITorreRepository, TorreRepository>()
+            .AddScoped<IHeroiRepository, HeroiRepository>()
+            .AddScoped<IBannerHistoricoRepository, BannerHistoricoRepository>()
+            .AddScoped<IUsuarioRepository, UsuarioRepository>()
+
+            // Serviços de aplicação
             .AddScoped<GeracaoDeDadosService>()
             .AddScoped<HeroiService>()
             .AddScoped<GachaService>()
             .AddScoped<TreinamentoService>()
             .AddScoped<TorreService>()
             .AddScoped<CidadeService>()
+            .AddScoped<BannerService>()
+            .AddScoped<BannerHistoricoService>()
+            .AddScoped<UsuarioService>()
+            .AddScoped<RacaService>()
+            .AddScoped<BannerCommand>()  // Comando para listar banners
+
             .AddSingleton(_cliente)
             .AddSingleton<IConfiguration>(configuration)
-            .AddLogging(builder => builder.AddConsole())
+
+            .AddLogging(builder =>
+            {
+                builder
+                    .AddConsole() // Exibe logs no console
+                    .SetMinimumLevel(LogLevel.Error); // Define o nível mínimo de log global
+
+                // Opções de LogLevel (do mais detalhado ao mais crítico):
+                // LogLevel.Trace       → Tudo, inclusive rastreamento interno detalhado (muito verboso)
+                // LogLevel.Debug       → Informações úteis para desenvolvimento e depuração
+                // LogLevel.Information → Eventos normais e informativos (fluxo geral da aplicação)
+                // LogLevel.Warning     → Algo inesperado, mas a aplicação continua normalmente
+                // LogLevel.Error       → Erros que afetam partes da aplicação
+                // LogLevel.Critical    → Erros graves que impedem o funcionamento da aplicação
+                // LogLevel.None        → Nenhum log será emitido
+            })
+
+
             .BuildServiceProvider();
 
         _services = services;
 
-        // Evento disparado quando o bot estiver pronto
-        _cliente.Ready += async () =>
-        {
-            Console.WriteLine($"✅ Bot conectado como {_cliente.CurrentUser}");
-        };
-
-        // Login e inicialização do bot
+        // Login e início do bot
         await _cliente.LoginAsync(TokenType.Bot, _token);
         await _cliente.StartAsync();
 
-        // Inicializa o manipulador de comandos do Discord
-        var handler = new CommandHandler(_cliente, services.GetRequiredService<ILogger<CommandHandler>>(), GUILD_ID);
+        // Inicializa o manipulador de comandos
+        var handler = new CommandHandler(
+            _cliente,
+            services.GetRequiredService<ILogger<CommandHandler>>(),
+            GUILD_ID,
+            services.GetRequiredService<HeroiService>(),
+            services.GetRequiredService<GeracaoDeDadosService>(),
+            services.GetRequiredService<BannerService>(),
+            services.GetRequiredService<BannerHistoricoService>(),
+            services.GetRequiredService<UsuarioService>(),
+            services.GetRequiredService<GachaService>(),
+            services.GetRequiredService<RacaService>()
+        );
+
+        // Eventos de botões para rolagem interativa
+        _cliente.ButtonExecuted += handler.HandleButtonExecutedAsync;
+
         handler.Initialize();
 
-        // Cria e popula o banco de dados
+        // Criação e população do banco de dados
         await CriarBancoEDadosBaseAsync();
 
-        // Mantém o bot rodando indefinidamente
         await Task.Delay(-1);
     }
 
-    /// <summary>
-    /// Cria as tabelas e popula o banco com os dados iniciais.
-    /// </summary>
     private async Task CriarBancoEDadosBaseAsync()
     {
+        if (_services == null)
+        {
+            Console.WriteLine("❌ Serviços não inicializados.");
+            return;
+        }
+
         try
         {
             using var scope = _services.CreateScope();
@@ -119,9 +151,6 @@ class Program
         }
     }
 
-    /// <summary>
-    /// Trata os logs do cliente Discord, exibindo no console.
-    /// </summary>
     private static Task LogAsync(LogMessage log)
     {
         Console.WriteLine($"[{log.Severity}] {log.Source}: {log.Message}");
