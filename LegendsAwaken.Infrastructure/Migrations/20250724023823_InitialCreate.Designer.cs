@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LegendsAwaken.Infrastructure.Migrations
 {
     [DbContext(typeof(LegendsAwakenDbContext))]
-    [Migration("20250717055352_InitialCreate")]
+    [Migration("20250724023823_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -31,6 +31,31 @@ namespace LegendsAwaken.Infrastructure.Migrations
                     b.HasKey("HeroiId", "Elemento");
 
                     b.ToTable("HeroisAfinidades");
+                });
+
+            modelBuilder.Entity("LegendsAwaken.Domain.Entities.Auxiliares.HeroiBonusAtributo", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Atributo")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("HeroiId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Origem")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Valor")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("HeroiId");
+
+                    b.ToTable("HeroiBonusAtributo");
                 });
 
             modelBuilder.Entity("LegendsAwaken.Domain.Entities.Auxiliares.HeroiTag", b =>
@@ -172,40 +197,47 @@ namespace LegendsAwaken.Infrastructure.Migrations
 
             modelBuilder.Entity("LegendsAwaken.Domain.Entities.Habilidade", b =>
                 {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
+                    b.Property<string>("Id")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Descricao")
                         .HasColumnType("TEXT");
 
-                    b.Property<bool>("EstaEmTreinamento")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<Guid?>("HeroiId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("Nivel")
-                        .HasColumnType("INTEGER");
-
                     b.Property<string>("Nome")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("Tipo")
+                    b.Property<int>("ProfissaoVinculada")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("XPAtual")
+                    b.Property<int>("Rank")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("XPMaximo")
+                    b.Property<int>("TipoHabilidade")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("HeroiId");
-
                     b.ToTable("Habilidades");
+                });
+
+            modelBuilder.Entity("LegendsAwaken.Domain.Entities.HabilidadeBonusAtributos", b =>
+                {
+                    b.Property<string>("HabilidadeId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Atributo")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("BonusTipo")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("BonusValor")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("HabilidadeId", "Atributo");
+
+                    b.ToTable("HabilidadeBonusAtributos");
                 });
 
             modelBuilder.Entity("LegendsAwaken.Domain.Entities.Heroi", b =>
@@ -254,12 +286,14 @@ namespace LegendsAwaken.Infrastructure.Migrations
                     b.Property<string>("Personalidade")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("Profissao")
-                        .HasColumnType("TEXT");
+                    b.Property<int>("PontosAtributosDisponiveis")
+                        .HasColumnType("INTEGER");
 
-                    b.Property<string>("Raca")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
+                    b.Property<int?>("Profissao")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Raca")
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("Raridade")
                         .HasColumnType("INTEGER");
@@ -276,6 +310,33 @@ namespace LegendsAwaken.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Herois");
+                });
+
+            modelBuilder.Entity("LegendsAwaken.Domain.Entities.HeroiHabilidade", b =>
+                {
+                    b.Property<Guid>("HeroiId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("HabilidadeId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("EstaEmTreinamento")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Nivel")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("XPAtual")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("XPMaximo")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("HeroiId", "HabilidadeId");
+
+                    b.HasIndex("HabilidadeId");
+
+                    b.ToTable("HeroiHabilidades");
                 });
 
             modelBuilder.Entity("LegendsAwaken.Domain.Entities.Inimigo", b =>
@@ -439,6 +500,17 @@ namespace LegendsAwaken.Infrastructure.Migrations
                     b.Navigation("Heroi");
                 });
 
+            modelBuilder.Entity("LegendsAwaken.Domain.Entities.Auxiliares.HeroiBonusAtributo", b =>
+                {
+                    b.HasOne("LegendsAwaken.Domain.Entities.Heroi", "Heroi")
+                        .WithMany("BonusAtributos")
+                        .HasForeignKey("HeroiId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Heroi");
+                });
+
             modelBuilder.Entity("LegendsAwaken.Domain.Entities.Auxiliares.HeroiTag", b =>
                 {
                     b.HasOne("LegendsAwaken.Domain.Entities.Heroi", "Heroi")
@@ -517,11 +589,15 @@ namespace LegendsAwaken.Infrastructure.Migrations
                         .HasForeignKey("CidadeId");
                 });
 
-            modelBuilder.Entity("LegendsAwaken.Domain.Entities.Habilidade", b =>
+            modelBuilder.Entity("LegendsAwaken.Domain.Entities.HabilidadeBonusAtributos", b =>
                 {
-                    b.HasOne("LegendsAwaken.Domain.Entities.Heroi", null)
-                        .WithMany("Habilidades")
-                        .HasForeignKey("HeroiId");
+                    b.HasOne("LegendsAwaken.Domain.Entities.Habilidade", "Habilidade")
+                        .WithMany("HabilidadeBonusAtributos")
+                        .HasForeignKey("HabilidadeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Habilidade");
                 });
 
             modelBuilder.Entity("LegendsAwaken.Domain.Entities.Heroi", b =>
@@ -552,18 +628,12 @@ namespace LegendsAwaken.Infrastructure.Migrations
                                 .HasForeignKey("HeroiId");
                         });
 
-                    b.OwnsOne("LegendsAwaken.Domain.Entities.Atributos", "Atributos", b1 =>
+                    b.OwnsOne("LegendsAwaken.Domain.Entities.AtributosBase", "AtributosBase", b1 =>
                         {
                             b1.Property<Guid>("HeroiId")
                                 .HasColumnType("TEXT");
 
-                            b1.Property<int>("Carisma")
-                                .HasColumnType("INTEGER");
-
-                            b1.Property<int>("Constituicao")
-                                .HasColumnType("INTEGER");
-
-                            b1.Property<int>("Destreza")
+                            b1.Property<int>("Agilidade")
                                 .HasColumnType("INTEGER");
 
                             b1.Property<int>("Forca")
@@ -572,7 +642,38 @@ namespace LegendsAwaken.Infrastructure.Migrations
                             b1.Property<int>("Inteligencia")
                                 .HasColumnType("INTEGER");
 
-                            b1.Property<int>("Sabedoria")
+                            b1.Property<int>("Percepcao")
+                                .HasColumnType("INTEGER");
+
+                            b1.Property<int>("Vitalidade")
+                                .HasColumnType("INTEGER");
+
+                            b1.HasKey("HeroiId");
+
+                            b1.ToTable("Herois");
+
+                            b1.WithOwner()
+                                .HasForeignKey("HeroiId");
+                        });
+
+                    b.OwnsOne("LegendsAwaken.Domain.Entities.AtributosBase", "AtributosDistribuidos", b1 =>
+                        {
+                            b1.Property<Guid>("HeroiId")
+                                .HasColumnType("TEXT");
+
+                            b1.Property<int>("Agilidade")
+                                .HasColumnType("INTEGER");
+
+                            b1.Property<int>("Forca")
+                                .HasColumnType("INTEGER");
+
+                            b1.Property<int>("Inteligencia")
+                                .HasColumnType("INTEGER");
+
+                            b1.Property<int>("Percepcao")
+                                .HasColumnType("INTEGER");
+
+                            b1.Property<int>("Vitalidade")
                                 .HasColumnType("INTEGER");
 
                             b1.HasKey("HeroiId");
@@ -635,7 +736,10 @@ namespace LegendsAwaken.Infrastructure.Migrations
                                 .HasForeignKey("HeroiId");
                         });
 
-                    b.Navigation("Atributos")
+                    b.Navigation("AtributosBase")
+                        .IsRequired();
+
+                    b.Navigation("AtributosDistribuidos")
                         .IsRequired();
 
                     b.Navigation("Equipamentos")
@@ -647,24 +751,37 @@ namespace LegendsAwaken.Infrastructure.Migrations
                     b.Navigation("Treinamento");
                 });
 
+            modelBuilder.Entity("LegendsAwaken.Domain.Entities.HeroiHabilidade", b =>
+                {
+                    b.HasOne("LegendsAwaken.Domain.Entities.Habilidade", "Habilidade")
+                        .WithMany()
+                        .HasForeignKey("HabilidadeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LegendsAwaken.Domain.Entities.Heroi", "Heroi")
+                        .WithMany("Habilidades")
+                        .HasForeignKey("HeroiId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Habilidade");
+
+                    b.Navigation("Heroi");
+                });
+
             modelBuilder.Entity("LegendsAwaken.Domain.Entities.Inimigo", b =>
                 {
                     b.HasOne("LegendsAwaken.Domain.Entities.TorreAndar", null)
                         .WithMany("Inimigos")
                         .HasForeignKey("TorreAndarId");
 
-                    b.OwnsOne("LegendsAwaken.Domain.Entities.Atributos", "Atributos", b1 =>
+                    b.OwnsOne("LegendsAwaken.Domain.Entities.AtributosBase", "Atributos", b1 =>
                         {
                             b1.Property<Guid>("InimigoId")
                                 .HasColumnType("TEXT");
 
-                            b1.Property<int>("Carisma")
-                                .HasColumnType("INTEGER");
-
-                            b1.Property<int>("Constituicao")
-                                .HasColumnType("INTEGER");
-
-                            b1.Property<int>("Destreza")
+                            b1.Property<int>("Agilidade")
                                 .HasColumnType("INTEGER");
 
                             b1.Property<int>("Forca")
@@ -673,7 +790,10 @@ namespace LegendsAwaken.Infrastructure.Migrations
                             b1.Property<int>("Inteligencia")
                                 .HasColumnType("INTEGER");
 
-                            b1.Property<int>("Sabedoria")
+                            b1.Property<int>("Percepcao")
+                                .HasColumnType("INTEGER");
+
+                            b1.Property<int>("Vitalidade")
                                 .HasColumnType("INTEGER");
 
                             b1.HasKey("InimigoId");
@@ -702,9 +822,16 @@ namespace LegendsAwaken.Infrastructure.Migrations
                     b.Navigation("Trabalhadores");
                 });
 
+            modelBuilder.Entity("LegendsAwaken.Domain.Entities.Habilidade", b =>
+                {
+                    b.Navigation("HabilidadeBonusAtributos");
+                });
+
             modelBuilder.Entity("LegendsAwaken.Domain.Entities.Heroi", b =>
                 {
                     b.Navigation("AfinidadeElemental");
+
+                    b.Navigation("BonusAtributos");
 
                     b.Navigation("Habilidades");
 

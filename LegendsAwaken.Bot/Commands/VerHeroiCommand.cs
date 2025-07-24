@@ -1,35 +1,88 @@
 using Discord;
 using Discord.WebSocket;
-using LegendsAwaken.Bot.Helpers;
+using LegendsAwaken.Application.Services;
+using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace LegendsAwaken.Bot.Commands
 {
     public class VerHeroiCommand
     {
-        private readonly DiscordSocketClient _client;
+        private readonly HeroiService _heroiService;
 
-        public VerHeroiCommand(DiscordSocketClient client)
+        public VerHeroiCommand(HeroiService heroiService)
         {
-            _client = client;
+            _heroiService = heroiService;
+        }
+        public async Task ExecutarAsync(SocketSlashCommand command, string nomeHeroi)
+        {
+            var userId = command.User.Id;
+
+            var herois = await _heroiService.ObterHeroisPorUsuarioAsync(userId);
+
+            if (herois == null || !herois.Any())
+            {
+                await command.RespondAsync("Você não possui heróis cadastrados.", ephemeral: true);
+                return;
+            }
+
+            // Busca o herói pelo nome (case insensitive)
+            var heroi = herois.FirstOrDefault(h => string.Equals(h.Nome, nomeHeroi, StringComparison.OrdinalIgnoreCase));
+            if (heroi == null)
+            {
+                await command.RespondAsync($"Nenhum herói encontrado com o nome '{nomeHeroi}'.", ephemeral: true);
+                return;
+            }
+
+            var embedBuilder = new EmbedBuilder()
+                .WithTitle($"Herói: {heroi.Nome}")
+                .WithDescription($"Nível: {heroi.Nivel} | Raridade: {heroi.Raridade}")
+                .AddField("Raça", heroi.Raca.ToString(), true)
+                .AddField("Profissão", heroi.Profissao?.ToString() ?? "Nenhuma", true)
+                .AddField("Atributos", MontarAtributos(heroi), false);
+
+            var habilidadesTexto = MontarHabilidades(heroi);
+            if (!string.IsNullOrEmpty(habilidadesTexto))
+            {
+                embedBuilder.AddField("Habilidades", habilidadesTexto, false);
+            }
+
+            embedBuilder.WithColor(Color.DarkBlue)
+                .WithFooter("Legends Awaken")
+                .WithCurrentTimestamp();
+
+            await command.RespondAsync(embed: embedBuilder.Build(), ephemeral: true);
         }
 
-        public async Task HandleAsync(SocketSlashCommand command)
+
+        private string MontarAtributos(Domain.Entities.Heroi heroi)
         {
-            // TODO:
-            // - Receber parâmetro (ex: heroiId ou nome)
-            // - Buscar o herói do jogador no banco de dados
-            // - Formatar as informações do herói (atributos, habilidades, equipamentos, status)
-            // - Criar embed usando EmbedHelper
-            // - Enviar embed na resposta
+            var totalAtributos = heroi.ObterAtributosTotais(new Domain.Entities.AtributosBase());
 
-            // Exemplo placeholder básico:
-            var embed = EmbedHelper.BuildBasicEmbed(
-                "Herói: Thalindra Sombrassangue",
-                "Raça: Elfa Negra\nClasse: Bruxa\nNível: 1\nAtributos:\nForça: 8\nDestreza: 14\nConstituição: 10\nInteligência: 17\nSabedoria: 13\nCarisma: 12",
-                Discord.Color.Purple);
+            var sb = new StringBuilder();
+            sb.AppendLine($"Força: {totalAtributos.Forca}");
+            sb.AppendLine($"Agilidade: {totalAtributos.Agilidade}");
+            sb.AppendLine($"Vitalidade: {totalAtributos.Vitalidade}");
+            sb.AppendLine($"Inteligência: {totalAtributos.Inteligencia}");
+            sb.AppendLine($"Percepção: {totalAtributos.Percepcao}");
+            sb.AppendLine($"Pontos Disponíveis: {heroi.PontosAtributosDisponiveis}");
 
-            await command.RespondAsync(embed: embed, ephemeral: true);
+            return sb.ToString();
+        }
+
+        private string MontarHabilidades(Domain.Entities.Heroi heroi)
+        {
+            if (heroi.Habilidades == null || !heroi.Habilidades.Any())
+                return "Nenhuma habilidade adquirida.";
+
+            var sb = new StringBuilder();
+            foreach (var habilidadeHeroi in heroi.Habilidades)
+            {
+                // Mostra o nome da habilidade + nível atual
+                sb.AppendLine($"{habilidadeHeroi.Habilidade.Nome} - Nível {habilidadeHeroi.Nivel}");
+            }
+            return sb.ToString();
         }
     }
 }

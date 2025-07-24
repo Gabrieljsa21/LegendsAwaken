@@ -18,7 +18,7 @@ namespace LegendsAwaken.Bot.Commands
             // TODO:
             // - Obter o herói selecionado pelo jogador
             // - Validar se o herói pode iniciar treinamento (não estar em outro treino)
-            // - Permitir escolher tipo de treino (atributo, habilidade, etc)
+            // - Permitir escolher tipo de treino (Atributo, habilidade, etc)
             // - Iniciar o treinamento e definir duração, resultados esperados
             // - Atualizar dados do herói no banco
             // - Responder com confirmação e detalhes do treinamento

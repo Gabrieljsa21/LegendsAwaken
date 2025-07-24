@@ -30,13 +30,23 @@ namespace LegendsAwaken.Infrastructure.Repositories
         {
             return await _dbContext.Herois
                 .AsNoTracking()
+                .Include(h => h.Habilidades)
+                    .ThenInclude(hh => hh.Habilidade)
+                        .ThenInclude(h => h.HabilidadeBonusAtributos) // incluir bônus de atributos
                 .Where(h => h.UsuarioId == usuarioId)
                 .ToListAsync();
+
         }
 
         public async Task<List<Heroi>> ObterTodosAsync()
         {
-            return await _dbContext.Herois.AsNoTracking().ToListAsync();
+            return await _dbContext.Herois
+                .AsNoTracking()
+                .Include(h => h.Habilidades)
+                    .ThenInclude(hh => hh.Habilidade)
+                        .ThenInclude(h => h.HabilidadeBonusAtributos) // incluir bônus de atributos
+                .ToListAsync();
+
         }
 
         public async Task AdicionarAsync(Heroi heroi)

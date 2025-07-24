@@ -25,6 +25,7 @@ namespace LegendsAwaken.Infrastructure
         // DbSets representam as tabelas no banco de dados.
         public DbSet<Heroi> Herois => Set<Heroi>();
         public DbSet<Habilidade> Habilidades => Set<Habilidade>();
+        public DbSet<HeroiHabilidade> HeroiHabilidades => Set<HeroiHabilidade>();
         public DbSet<TorreAndar> Andares => Set<TorreAndar>();
         public DbSet<Cidade> Cidades => Set<Cidade>();
         public DbSet<Usuario> Usuarios => Set<Usuario>();
@@ -37,7 +38,6 @@ namespace LegendsAwaken.Infrastructure
 
 
 
-
         /// <summary>
         /// Configura o mapeamento das entidades e seus relacionamentos no modelo do EF Core.
         /// </summary>
@@ -47,7 +47,7 @@ namespace LegendsAwaken.Infrastructure
 
             // Configura propriedades complexas de Heroi como tipos incorporados (OwnsOne).
             modelBuilder.Entity<Heroi>()
-                .OwnsOne(h => h.Atributos);
+                .OwnsOne(h => h.AtributosBase);
 
             modelBuilder.Entity<Heroi>()
                 .OwnsOne(h => h.Status);
@@ -101,6 +101,36 @@ namespace LegendsAwaken.Infrastructure
             modelBuilder.Entity<BannerProgresso>()
                 .HasKey(bp => new { bp.UsuarioId, bp.BannerId });
 
+            // HeroiHabilidade (chave composta + relacionamentos)
+            modelBuilder.Entity<HeroiHabilidade>()
+                .HasKey(hh => new { hh.HeroiId, hh.HabilidadeId });
+
+            modelBuilder.Entity<HeroiHabilidade>()
+                .HasOne(hh => hh.Heroi)
+                .WithMany(h => h.Habilidades)
+                .HasForeignKey(hh => hh.HeroiId);
+
+            modelBuilder.Entity<HeroiHabilidade>()
+                .HasOne(hh => hh.Habilidade)
+                .WithMany() 
+                .HasForeignKey(hh => hh.HabilidadeId);
+
+            // HabilidadeBonusAtributos (relacionamento com Habilidade)
+            modelBuilder.Entity<HabilidadeBonusAtributos>()
+                .HasKey(hba => new { hba.HabilidadeId, hba.Atributo });
+
+            modelBuilder.Entity<HabilidadeBonusAtributos>()
+                .HasOne(hba => hba.Habilidade)
+                .WithMany(h => h.HabilidadeBonusAtributos)
+                .HasForeignKey(hba => hba.HabilidadeId);
+
+            modelBuilder.Entity<Heroi>(builder =>
+            {
+                builder.OwnsOne(h => h.AtributosBase);
+                builder.OwnsOne(h => h.AtributosDistribuidos);
+                builder.OwnsOne(h => h.Status);
+                builder.OwnsOne(h => h.Equipamentos);
+            });
         }
     }
 }

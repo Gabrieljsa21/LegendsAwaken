@@ -1,6 +1,7 @@
 ﻿using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
+using LegendsAwaken.Application.Interfaces;
 using LegendsAwaken.Application.Services;
 using LegendsAwaken.Bot;
 using LegendsAwaken.Bot.Commands;
@@ -63,6 +64,8 @@ class Program
             .AddScoped<IHeroiRepository, HeroiRepository>()
             .AddScoped<IBannerHistoricoRepository, BannerHistoricoRepository>()
             .AddScoped<IUsuarioRepository, UsuarioRepository>()
+            .AddScoped<IHabilidadeRepository, HabilidadeRepository>()
+            .AddScoped<IAtributoBonusService, AtributoBonusService>()
 
             // Serviços de aplicação
             .AddScoped<GeracaoDeDadosService>()
@@ -75,7 +78,9 @@ class Program
             .AddScoped<BannerHistoricoService>()
             .AddScoped<UsuarioService>()
             .AddScoped<RacaService>()
-            .AddScoped<BannerCommand>()  // Comando para listar banners
+            .AddScoped<BannerCommand>()  
+            .AddScoped<HabilidadeService>()
+            .AddScoped<AtributoBonusService>()
 
             .AddSingleton(_cliente)
             .AddSingleton<IConfiguration>(configuration)
@@ -116,7 +121,9 @@ class Program
             services.GetRequiredService<BannerHistoricoService>(),
             services.GetRequiredService<UsuarioService>(),
             services.GetRequiredService<GachaService>(),
-            services.GetRequiredService<RacaService>()
+            services.GetRequiredService<RacaService>(),
+            services.GetRequiredService<AtributoBonusService>()
+
         );
 
         // Eventos de botões para rolagem interativa

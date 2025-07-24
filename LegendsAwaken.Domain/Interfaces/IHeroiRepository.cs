@@ -9,7 +9,7 @@ namespace LegendsAwaken.Domain.Interfaces
 {
     public interface IHeroiRepository
     {
-        Task<Heroi?> ObterPorIdAsync(Guid heroiId);
+        Task<Heroi> ObterPorIdAsync(Guid heroiId);
         Task<List<Heroi>> ObterPorUsuarioIdAsync(ulong usuarioId);
         Task<List<Heroi>> ObterTodosAsync();
         Task AdicionarAsync(Heroi heroi);

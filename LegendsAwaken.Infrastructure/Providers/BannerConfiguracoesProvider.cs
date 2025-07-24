@@ -6,17 +6,7 @@ using System.Linq;
 namespace LegendsAwaken.Infrastructure.Providers
 {
     public static class BannerConfiguracoesProvider
-    {
-        private static readonly List<Raca> TodasRacas = new()
-        {
-            Raca.Humano,
-            Raca.Bestial,
-            Raca.Anao,
-            Raca.Elfo,
-            Raca.Draconato,
-            Raca.Fada
-        };
-
+    {        
         public static BannerConfiguracao BannerPadrao => new BannerConfiguracao
         {
             Id = "banner_padrao",

@@ -4,6 +4,13 @@ Todas as alterações significativas neste projeto serão documentadas neste arq
 
 O formato segue o padrão [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/), e o versionamento segue [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.0.2] - 2025-07-24
+#### Adicionado
+-Comando /ver_heroi aprimorado para aceitar nome do herói como parâmetro com autocomplete.
+-Exibição detalhada das habilidades do herói, incluindo nomes e níveis, no embed do comando /ver_heroi.
+-Cálculo dos bônus de atributos agora inclui corretamente os bônus das habilidades multiplicados pelo nível de cada habilidade.
+-Criação e cadastro das habilidades iniciais do jogo para uso pelos heróis.
+
 ## [1.0.1] - 2025-07-20
 #### Adicionado
 -Sistema de invocação com rolagens simples e múltiplas (x1, x11).

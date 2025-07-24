@@ -65,9 +65,9 @@ namespace LegendsAwaken.Application.Services
             return Raridade.Estrela1; // fallback
         }
 
-        public string SortearRaca(Raridade raridade, List<string> todasRacas)
+        public Raca SortearRaca(Raridade raridade, List<Raca> todasRacas)
         {
-            const string humanoId = "Humano";
+            const Raca humanoId = Raca.Humano;
 
             // Filtra outras raças que não são humanas
             var outrasRacas = todasRacas.Where(r => r != humanoId).ToList();

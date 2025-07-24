@@ -18,10 +18,10 @@ namespace LegendsAwaken.Domain.Factories
             ulong usuarioId,
             string nome,
             Raridade raridade,
-            string raca,
-            string classe,
+            Raca raca,
             string antecedente,
             List<HeroiAfinidadeElemental> afinidade,
+            List<HeroiHabilidade> habilidades,
             FuncaoTatica? funcao = null
         )
         {
@@ -32,12 +32,11 @@ namespace LegendsAwaken.Domain.Factories
                 UsuarioId = usuarioId,
                 Nome = nome,
                 Raridade = raridade,
-                Raca = raca.ToString().ToLower(),
-                Profissao = classe,
+                Raca = raca,
                 Antecedente = antecedente,
                 Nivel = 1,
                 XP = 0,
-                Atributos = GerarAtributosIniciais(raridade),
+                AtributosBase = GerarAtributosIniciais(raridade, raca),
                 Status = new StatusCombate
                 {
                     VidaMaxima = 100,
@@ -45,7 +44,7 @@ namespace LegendsAwaken.Domain.Factories
                     ManaMaxima = 50,
                     ManaAtual = 50
                 },
-                Habilidades = new List<Habilidade>(),
+                Habilidades = habilidades,
                 Equipamentos = new Equipamentos(),
                 Tags = new List<HeroiTag>(),
                 AfinidadeElemental = afinidade,
@@ -62,18 +61,93 @@ namespace LegendsAwaken.Domain.Factories
             return heroi;
         }
 
-        private static Atributos GerarAtributosIniciais(Raridade raridade)
+        private static AtributosBase GerarAtributosIniciais(Raridade raridade, Raca raca)
         {
-            return raridade switch
+            int totalPontos = raridade switch
             {
-                Raridade.Estrela1 => new Atributos { Forca = 5, Destreza = 5, Inteligencia = 5, Constituicao = 5, Sabedoria = 5, Carisma = 5 },
-                Raridade.Estrela2 => new Atributos { Forca = 7, Destreza = 7, Inteligencia = 7, Constituicao = 7, Sabedoria = 7, Carisma = 7 },
-                Raridade.Estrela3 => new Atributos { Forca = 10, Destreza = 10, Inteligencia = 10, Constituicao = 10, Sabedoria = 10, Carisma = 10 },
-                Raridade.Estrela4 => new Atributos { Forca = 13, Destreza = 13, Inteligencia = 13, Constituicao = 13, Sabedoria = 13, Carisma = 13 },
-                Raridade.Estrela5 => new Atributos { Forca = 16, Destreza = 16, Inteligencia = 16, Constituicao = 16, Sabedoria = 16, Carisma = 16 },
-                _ => new Atributos()
+                Raridade.Estrela1 => 20,
+                Raridade.Estrela2 => 40,
+                Raridade.Estrela3 => 60,
+                Raridade.Estrela4 => 80,
+                Raridade.Estrela5 => 100,
+                _ => 20
             };
+
+            int numAtributos = 5;
+            int pontosRestantes = totalPontos - numAtributos;
+
+            var random = new Random();
+            int[] distribuicao = new int[numAtributos];
+
+            // Inicializa cada Atributo com 1 ponto
+            for (int i = 0; i < numAtributos; i++)
+                distribuicao[i] = 1;
+
+            // Distribui os pontos restantes aleatoriamente
+            for (int i = 0; i < pontosRestantes; i++)
+            {
+                int index = random.Next(numAtributos);
+                distribuicao[index]++;
+            }
+
+            var atributos = new AtributosBase
+            {
+                Forca = distribuicao[0],
+                Agilidade = distribuicao[1],
+                Vitalidade = distribuicao[2],
+                Inteligencia = distribuicao[3],
+                Percepcao = distribuicao[4]
+            };
+
+            // Aplica bônus racial (exceto humano)
+            if (raca != Raca.Humano)
+            {
+                int bonus = raridade switch
+                {
+                    Raridade.Estrela1 => 10,
+                    Raridade.Estrela2 => 20,
+                    Raridade.Estrela3 => 30,
+                    Raridade.Estrela4 => 40,
+                    Raridade.Estrela5 => 50,
+                    _ => 0
+                };
+
+                // Monta dicionário para identificar maior Atributo
+                var atributosDict = new Dictionary<string, int>
+        {
+            { nameof(atributos.Forca), atributos.Forca },
+            { nameof(atributos.Agilidade), atributos.Agilidade },
+            { nameof(atributos.Vitalidade), atributos.Vitalidade },
+            { nameof(atributos.Inteligencia), atributos.Inteligencia },
+            { nameof(atributos.Percepcao), atributos.Percepcao }
+        };
+
+                var maiorAtributo = atributosDict.Aggregate((l, r) => l.Value >= r.Value ? l : r).Key;
+
+                switch (maiorAtributo)
+                {
+                    case nameof(AtributosBase.Forca):
+                        atributos.Forca += bonus;
+                        break;
+                    case nameof(AtributosBase.Agilidade):
+                        atributos.Agilidade += bonus;
+                        break;
+                    case nameof(AtributosBase.Vitalidade):
+                        atributos.Vitalidade += bonus;
+                        break;
+                    case nameof(AtributosBase.Inteligencia):
+                        atributos.Inteligencia += bonus;
+                        break;
+                    case nameof(AtributosBase.Percepcao):
+                        atributos.Percepcao += bonus;
+                        break;
+                }
+            }
+
+            return atributos;
         }
+
+
 
         private static Raca SortearRaca(Raridade raridade, Dictionary<Raridade, List<RacaChance>> racaPorRaridade)
         {

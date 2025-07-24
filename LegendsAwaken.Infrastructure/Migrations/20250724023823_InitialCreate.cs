@@ -55,6 +55,22 @@ namespace LegendsAwaken.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Habilidades",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "TEXT", nullable: false),
+                    Nome = table.Column<string>(type: "TEXT", nullable: false),
+                    Descricao = table.Column<string>(type: "TEXT", nullable: true),
+                    Rank = table.Column<int>(type: "INTEGER", nullable: false),
+                    TipoHabilidade = table.Column<int>(type: "INTEGER", nullable: false),
+                    ProfissaoVinculada = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Habilidades", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Herois",
                 columns: table => new
                 {
@@ -62,17 +78,22 @@ namespace LegendsAwaken.Infrastructure.Migrations
                     UsuarioId = table.Column<ulong>(type: "INTEGER", nullable: false),
                     Nome = table.Column<string>(type: "TEXT", nullable: false),
                     Raridade = table.Column<int>(type: "INTEGER", nullable: false),
-                    Raca = table.Column<string>(type: "TEXT", nullable: false),
-                    Profissao = table.Column<string>(type: "TEXT", nullable: true),
+                    Raca = table.Column<int>(type: "INTEGER", nullable: false),
+                    Profissao = table.Column<int>(type: "INTEGER", nullable: true),
                     Antecedente = table.Column<string>(type: "TEXT", nullable: true),
                     Nivel = table.Column<int>(type: "INTEGER", nullable: false),
                     XP = table.Column<int>(type: "INTEGER", nullable: false),
-                    Atributos_Forca = table.Column<int>(type: "INTEGER", nullable: false),
-                    Atributos_Destreza = table.Column<int>(type: "INTEGER", nullable: false),
-                    Atributos_Constituicao = table.Column<int>(type: "INTEGER", nullable: false),
-                    Atributos_Inteligencia = table.Column<int>(type: "INTEGER", nullable: false),
-                    Atributos_Sabedoria = table.Column<int>(type: "INTEGER", nullable: false),
-                    Atributos_Carisma = table.Column<int>(type: "INTEGER", nullable: false),
+                    AtributosBase_Forca = table.Column<int>(type: "INTEGER", nullable: false),
+                    AtributosBase_Agilidade = table.Column<int>(type: "INTEGER", nullable: false),
+                    AtributosBase_Vitalidade = table.Column<int>(type: "INTEGER", nullable: false),
+                    AtributosBase_Inteligencia = table.Column<int>(type: "INTEGER", nullable: false),
+                    AtributosBase_Percepcao = table.Column<int>(type: "INTEGER", nullable: false),
+                    AtributosDistribuidos_Forca = table.Column<int>(type: "INTEGER", nullable: false),
+                    AtributosDistribuidos_Agilidade = table.Column<int>(type: "INTEGER", nullable: false),
+                    AtributosDistribuidos_Vitalidade = table.Column<int>(type: "INTEGER", nullable: false),
+                    AtributosDistribuidos_Inteligencia = table.Column<int>(type: "INTEGER", nullable: false),
+                    AtributosDistribuidos_Percepcao = table.Column<int>(type: "INTEGER", nullable: false),
+                    PontosAtributosDisponiveis = table.Column<int>(type: "INTEGER", nullable: false),
                     Status_VidaAtual = table.Column<int>(type: "INTEGER", nullable: false),
                     Status_VidaMaxima = table.Column<int>(type: "INTEGER", nullable: false),
                     Status_ManaAtual = table.Column<int>(type: "INTEGER", nullable: false),
@@ -135,11 +156,10 @@ namespace LegendsAwaken.Infrastructure.Migrations
                     Nivel = table.Column<int>(type: "INTEGER", nullable: false),
                     Tipo = table.Column<string>(type: "TEXT", nullable: false),
                     Atributos_Forca = table.Column<int>(type: "INTEGER", nullable: false),
-                    Atributos_Destreza = table.Column<int>(type: "INTEGER", nullable: false),
-                    Atributos_Constituicao = table.Column<int>(type: "INTEGER", nullable: false),
+                    Atributos_Agilidade = table.Column<int>(type: "INTEGER", nullable: false),
+                    Atributos_Vitalidade = table.Column<int>(type: "INTEGER", nullable: false),
                     Atributos_Inteligencia = table.Column<int>(type: "INTEGER", nullable: false),
-                    Atributos_Sabedoria = table.Column<int>(type: "INTEGER", nullable: false),
-                    Atributos_Carisma = table.Column<int>(type: "INTEGER", nullable: false),
+                    Atributos_Percepcao = table.Column<int>(type: "INTEGER", nullable: false),
                     Habilidades = table.Column<string>(type: "TEXT", nullable: false),
                     TorreAndarId = table.Column<Guid>(type: "TEXT", nullable: true)
                 },
@@ -195,27 +215,72 @@ namespace LegendsAwaken.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Habilidades",
+                name: "HabilidadeBonusAtributos",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
-                    Nome = table.Column<string>(type: "TEXT", nullable: false),
-                    Descricao = table.Column<string>(type: "TEXT", nullable: true),
-                    Tipo = table.Column<int>(type: "INTEGER", nullable: false),
-                    Nivel = table.Column<int>(type: "INTEGER", nullable: false),
-                    XPAtual = table.Column<int>(type: "INTEGER", nullable: false),
-                    XPMaximo = table.Column<int>(type: "INTEGER", nullable: false),
-                    EstaEmTreinamento = table.Column<bool>(type: "INTEGER", nullable: false),
-                    HeroiId = table.Column<Guid>(type: "TEXT", nullable: true)
+                    HabilidadeId = table.Column<string>(type: "TEXT", nullable: false),
+                    Atributo = table.Column<int>(type: "INTEGER", nullable: false),
+                    BonusTipo = table.Column<int>(type: "INTEGER", nullable: false),
+                    BonusValor = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Habilidades", x => x.Id);
+                    table.PrimaryKey("PK_HabilidadeBonusAtributos", x => new { x.HabilidadeId, x.Atributo });
                     table.ForeignKey(
-                        name: "FK_Habilidades_Herois_HeroiId",
+                        name: "FK_HabilidadeBonusAtributos_Habilidades_HabilidadeId",
+                        column: x => x.HabilidadeId,
+                        principalTable: "Habilidades",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "HeroiBonusAtributo",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    HeroiId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    Atributo = table.Column<int>(type: "INTEGER", nullable: false),
+                    Valor = table.Column<int>(type: "INTEGER", nullable: false),
+                    Origem = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_HeroiBonusAtributo", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_HeroiBonusAtributo_Herois_HeroiId",
                         column: x => x.HeroiId,
                         principalTable: "Herois",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "HeroiHabilidades",
+                columns: table => new
+                {
+                    HeroiId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    HabilidadeId = table.Column<string>(type: "TEXT", nullable: false),
+                    EstaEmTreinamento = table.Column<bool>(type: "INTEGER", nullable: false),
+                    Nivel = table.Column<int>(type: "INTEGER", nullable: false),
+                    XPAtual = table.Column<int>(type: "INTEGER", nullable: false),
+                    XPMaximo = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_HeroiHabilidades", x => new { x.HeroiId, x.HabilidadeId });
+                    table.ForeignKey(
+                        name: "FK_HeroiHabilidades_Habilidades_HabilidadeId",
+                        column: x => x.HabilidadeId,
+                        principalTable: "Habilidades",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_HeroiHabilidades_Herois_HeroiId",
+                        column: x => x.HeroiId,
+                        principalTable: "Herois",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -326,9 +391,14 @@ namespace LegendsAwaken.Infrastructure.Migrations
                 column: "CidadeId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Habilidades_HeroiId",
-                table: "Habilidades",
+                name: "IX_HeroiBonusAtributo_HeroiId",
+                table: "HeroiBonusAtributo",
                 column: "HeroiId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_HeroiHabilidades_HabilidadeId",
+                table: "HeroiHabilidades",
+                column: "HabilidadeId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Inimigo_TorreAndarId",
@@ -354,7 +424,13 @@ namespace LegendsAwaken.Infrastructure.Migrations
                 name: "Construcao");
 
             migrationBuilder.DropTable(
-                name: "Habilidades");
+                name: "HabilidadeBonusAtributos");
+
+            migrationBuilder.DropTable(
+                name: "HeroiBonusAtributo");
+
+            migrationBuilder.DropTable(
+                name: "HeroiHabilidades");
 
             migrationBuilder.DropTable(
                 name: "HeroisAfinidades");
@@ -373,6 +449,9 @@ namespace LegendsAwaken.Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "Usuarios");
+
+            migrationBuilder.DropTable(
+                name: "Habilidades");
 
             migrationBuilder.DropTable(
                 name: "Herois");

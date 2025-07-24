@@ -9,11 +9,11 @@ namespace LegendsAwaken.Application.Services
 {
     public class RacaService
     {
-        public Task<List<string>> ObterTodasIdsAsync()
+        public Task<List<Raca>> ObterTodasIdsAsync()
         {
             var racas = Enum.GetValues(typeof(Raca))
                 .Cast<Raca>()
-                .Select(r => r.ToString())
+                .Select(r => r)
                 .ToList();
 
             return Task.FromResult(racas);

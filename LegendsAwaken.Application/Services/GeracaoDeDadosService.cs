@@ -1,4 +1,5 @@
-﻿using LegendsAwaken.Infrastructure;
+﻿using LegendsAwaken.Domain.Entities;
+using LegendsAwaken.Infrastructure;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -7,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using LegendsAwaken.Infrastructure.SeedData;
 
 namespace LegendsAwaken.Application.Services
 {
@@ -51,15 +53,12 @@ namespace LegendsAwaken.Application.Services
         /// </summary>
         public async Task PopularDadosBaseAsync()
         {
-            using var connection = new SqliteConnection(_connectionString);
-            await connection.OpenAsync();
-            using var transaction = connection.BeginTransaction();
-
-            //await IdiomaDatabaseHelper.PopularAsync(connection, transaction);
-
-            transaction.Commit();
-            Console.WriteLine("Commit feito!");
+            if (!_db.Habilidades.Any())
+            {
+                HabilidadesSeed.PopularHabilidades(_db);
+            }
         }
+
 
         /// <summary>
         /// Lista todas as tabelas presentes no banco de dados atual.
@@ -79,5 +78,6 @@ namespace LegendsAwaken.Application.Services
                 Console.WriteLine(reader.GetString(0));
             }
         }
+
     }
 }

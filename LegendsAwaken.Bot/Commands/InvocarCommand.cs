@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.WebSocket;
+using LegendsAwaken.Application.Helpers;
 using LegendsAwaken.Application.Services;
 using LegendsAwaken.Bot.Models.Banner;
 using LegendsAwaken.Domain.Entities.Auxiliares;
@@ -8,6 +9,7 @@ using LegendsAwaken.Domain.Extensions;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using static LegendsAwaken.Application.Services.HeroiService;
 
 namespace LegendsAwaken.Bot.Commands
 {
@@ -75,44 +77,27 @@ namespace LegendsAwaken.Bot.Commands
         public async Task EnviarMenuInvocacao(SocketSlashCommand command, BannerConfiguracao banner)
         {
             int usado = await _histService.ObterContadorAsync(command.User.Id, banner.Id);
+            var embed = GerarEmbedInvocacao(banner, usado);
+            var componentes = GerarComponentesMenu(banner.Id);
 
-            var embedBuilder = new EmbedBuilder()
-                .WithTitle($"✨ {banner.Nome}")
-                .WithDescription("🎯 Chances de invocação por raridade e raça")
-                .AddField("🎲 Rolls feitos", $"{usado} / {banner.PityMaximo}", inline: false);
-
-            foreach (var raridade in Enum.GetValues<Raridade>())
-            {
-                if (banner.RaridadeChances.TryGetValue(raridade, out var chanceRaridade))
-                {
-                    string textoRacas = "";
-                    if (banner.RacaPorRaridade.TryGetValue(raridade, out var racas))
-                    {
-                        textoRacas = string.Join("\n", racas.Select(r => $"• {r.Key}: {r.Value}%"));
-                    }
-                    else
-                    {
-                        textoRacas = "Nenhuma raça listada.";
-                    }
-
-                    embedBuilder.AddField(
-                        $"{raridade} — {chanceRaridade}%",
-                        textoRacas,
-                        inline: true);
-                }
-            }
-
-            var comp = new ComponentBuilder()
-                .WithButton("1️⃣ Roll x1", $"roll|1|{banner.Id}", ButtonStyle.Primary)
-                .WithButton("🔟➕1 Roll x11", $"roll|11|{banner.Id}", ButtonStyle.Success);
-
-            await command.RespondAsync(embed: embedBuilder.Build(), components: comp.Build(), ephemeral: true);
+            await command.RespondAsync(embed: embed, components: componentes, ephemeral: true);
         }
 
         public async Task EnviarMenuInvocacao(SocketMessageComponent comp, BannerConfiguracao banner)
         {
             int usado = await _histService.ObterContadorAsync(comp.User.Id, banner.Id);
+            var embed = GerarEmbedInvocacao(banner, usado);
+            var componentes = GerarComponentesMenu(banner.Id);
 
+            await comp.UpdateAsync(msg =>
+            {
+                msg.Embed = embed;
+                msg.Components = componentes;
+            });
+        }
+
+        private Embed GerarEmbedInvocacao(BannerConfiguracao banner, int usado)
+        {
             var embedBuilder = new EmbedBuilder()
                 .WithTitle($"✨ {banner.Nome}")
                 .WithDescription("🎯 Chances de invocação por raridade e raça")
@@ -122,15 +107,9 @@ namespace LegendsAwaken.Bot.Commands
             {
                 if (banner.RaridadeChances.TryGetValue(raridade, out var chanceRaridade))
                 {
-                    string textoRacas = "";
-                    if (banner.RacaPorRaridade.TryGetValue(raridade, out var racas))
-                    {
-                        textoRacas = string.Join("\n", racas.Select(r => $"• {r.Key}: {r.Value}%"));
-                    }
-                    else
-                    {
-                        textoRacas = "Nenhuma raça listada.";
-                    }
+                    string textoRacas = banner.RacaPorRaridade.TryGetValue(raridade, out var racas)
+                        ? string.Join("\n", racas.Select(r => $"• {r.Key}: {r.Value}%"))
+                        : "Nenhuma raça listada.";
 
                     embedBuilder.AddField(
                         $"{raridade.ToStars()} — {chanceRaridade}%",
@@ -139,15 +118,15 @@ namespace LegendsAwaken.Bot.Commands
                 }
             }
 
-            var compBuilder = new ComponentBuilder()
-                .WithButton("1️⃣ Roll x1", $"roll|1|{banner.Id}", ButtonStyle.Primary)
-                .WithButton("🔟➕1 Roll x11", $"roll|11|{banner.Id}", ButtonStyle.Success);
+            return embedBuilder.Build();
+        }
 
-            await comp.UpdateAsync(msg =>
-            {
-                msg.Embed = embedBuilder.Build();
-                msg.Components = compBuilder.Build();
-            });
+        private MessageComponent GerarComponentesMenu(string bannerId)
+        {
+            return new ComponentBuilder()
+                .WithButton("1️⃣ Roll x1", $"roll|1|{bannerId}", ButtonStyle.Primary)
+                .WithButton("🔟➕1 Roll x11", $"roll|11|{bannerId}", ButtonStyle.Success)
+                .Build();
         }
 
 
@@ -173,25 +152,27 @@ namespace LegendsAwaken.Bot.Commands
                 return;
             }
 
-            
+
             await compEvt.DeferAsync();
-            var todasRacas = await _racaService.ObterTodasIdsAsync();
-            var resultados = new List<(string raca, Raridade raridade, string nomeHeroi)>();
+            List<Raca> todasRacas = await _racaService.ObterTodasIdsAsync();
+            var resultados = new List<(Raca raca, Raridade raridade, string nomeHeroi)>();
 
             int rollsAntes = await _histService.ObterContadorAsync(compEvt.User.Id, bannerId);
             int rollsAtual = rollsAntes;
 
             for (int i = 0; i < quantidade; i++)
             {
-                var raridade = _gachaService.SortearRaridade(banner, rollsAtual);
-                var raca = _gachaService.SortearRaca(raridade, todasRacas);
+                Raridade raridade = _gachaService.SortearRaridade(banner, rollsAtual);
+                Raca raca = _gachaService.SortearRaca(raridade, todasRacas);
+
+                var generator = new NomeGenerator();
+                var nomeGerado = generator.GerarNome(raca);
 
                 var heroi = await _heroiService.CriarHeroiAsync(
                     usuarioId: compEvt.User.Id,
-                    nome: _heroiService.GerarNomeAleatorio(compEvt.User.Username, i + 1),
+                    nome: nomeGerado,
                     raridade: raridade,
                     raca: raca,
-                    profissao: "Guerreiro", // TODO
                     antecedente: "Soldado", // TODO
                     afinidade: new List<HeroiAfinidadeElemental>()
                 );
@@ -206,8 +187,6 @@ namespace LegendsAwaken.Bot.Commands
                     await _histService.IncrementarInvocacaoAsync(compEvt.User.Id, bannerId);
                     rollsAtual++;
                 }
-
-
 
                 resultados.Add((raca, raridade, heroi.Nome));
             }

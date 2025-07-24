@@ -44,11 +44,6 @@ namespace LegendsAwaken.Domain.Enum
         Armadilha,       // Lide com efeitos aleatórios e perigosos
         EventoEspecial   // Andares com efeitos únicos ou eventos narrativos
     }
-    public enum TipoHabilidade
-    {
-        Ativa,    // Usada diretamente em combate
-        Passiva   // Sempre ativa, sem custo ou ativação manual
-    }
 
     public enum Raca
     {
@@ -59,5 +54,67 @@ namespace LegendsAwaken.Domain.Enum
         Draconato,
         Fada
     }
+
+    public enum Profissao
+    {
+        Guerreiro,
+        Arqueiro,
+        Mago,
+        Ladino,
+        Paladino,
+        Clerigo,
+
+        Agricultor,
+        Pescador,
+        Caçador,
+        Lenhador,
+        Mineiro,
+        Cozinheiro,
+
+        Ferreiro,
+        Alfaiate,
+        Joalheiro,
+        Alquimista,
+        Construtor,
+        //Engenheiro,
+
+        //Curandeiro,
+        //Professor,
+        //Instrutor,
+        //Artista,
+        Pesquisador,
+
+        //Mercador,
+        //Diplomata,
+        //Espiao,
+        //Contrabandista
+    }
+
+    public enum Atributo
+    {
+        Forca,
+        Agilidade,
+        Vitalidade,
+        Inteligencia,
+        Percepcao
+    }
+
+    public enum TipoHabilidade
+    {
+        Combate,
+        Craft,
+        Coleta
+    }
+
+    public enum OrigemBonusAtributo
+    {
+        Profissao,
+        Antecedente,
+        Equipamento,
+        Talento,
+        LevelUp,
+        Outro
+    }
+
 
 }

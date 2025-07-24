@@ -1,3 +1,4 @@
+using LegendsAwaken.Application.Interfaces;
 using LegendsAwaken.Domain.Entities;
 using LegendsAwaken.Domain.Entities.Auxiliares;
 using LegendsAwaken.Domain.Entities.Banner;
@@ -15,11 +16,14 @@ namespace LegendsAwaken.Application.Services
     public class HeroiService
     {
         private readonly IHeroiRepository _heroiRepository;
+        private readonly HabilidadeService _habilidadeService;
+        private readonly IAtributoBonusService _atributoBonusProvider;
 
-        public HeroiService(IHeroiRepository heroiRepository)
+        public HeroiService(IHeroiRepository heroiRepository, HabilidadeService habilidadeService, IAtributoBonusService atributoBonusProvider)
         {
             _heroiRepository = heroiRepository;
-
+            _habilidadeService = habilidadeService;
+            _atributoBonusProvider = atributoBonusProvider;
         }
 
         /// <summary>
@@ -29,21 +33,23 @@ namespace LegendsAwaken.Application.Services
             ulong usuarioId,
             string nome,
             Raridade raridade,
-            string raca,
-            string profissao,
+            Raca raca,
             string antecedente,
             List<HeroiAfinidadeElemental> afinidade,
             FuncaoTatica? funcao = null)
         {
+
+            var habilidades = await GerarHabilidadesIniciaisAsync(raridade, _habilidadeService);
+
             // Cria o herói usando a factory
             var heroi = HeroiFactory.CriarHeroi(
                 usuarioId,
                 nome,
                 raridade,
                 raca,
-                profissao,
                 antecedente,
                 afinidade,
+                habilidades,
                 funcao);
 
             // Define datas de criação/alteração
@@ -55,6 +61,49 @@ namespace LegendsAwaken.Application.Services
 
             return heroi;
         }
+
+        public async Task<AtributosBase> ObterAtributosFinaisAsync(Guid heroiId)
+        {
+            var heroi = await _heroiRepository.ObterPorIdAsync(heroiId);
+            var bonus = _atributoBonusProvider.ObterBonus(heroi.Habilidades);
+            return heroi.ObterAtributosTotais(bonus);
+        }
+
+        public static async Task<List<HeroiHabilidade>> GerarHabilidadesIniciaisAsync(Raridade raridade, HabilidadeService habilidadeService)
+        {
+            var habilidades = new List<HeroiHabilidade>();
+            var todasHabilidades = (await habilidadeService.ObterTodasAsync())
+                .Where(h => h.Rank <= (int)raridade)    //Heroi aprende apenas habilidades de acordo com a raridade
+                .ToList();
+
+            var random = new Random();
+            int quantidade = raridade switch
+            {
+                Raridade.Estrela1 => 1,
+                Raridade.Estrela2 => 2,
+                Raridade.Estrela3 => 3,
+                Raridade.Estrela4 => 4,
+                Raridade.Estrela5 => 5,
+                _ => 1
+            };
+
+            for (int i = 0; i < quantidade && todasHabilidades.Any(); i++)
+            {
+                var habilidadeEscolhida = todasHabilidades[random.Next(todasHabilidades.Count)];
+                habilidades.Add(new HeroiHabilidade
+                {
+                    HabilidadeId = habilidadeEscolhida.Id,
+                    Habilidade = habilidadeEscolhida,
+                    Nivel = 1,
+                    XPAtual = 0,
+                    XPMaximo = 100
+                });
+                todasHabilidades.Remove(habilidadeEscolhida);
+            }
+
+            return habilidades;
+        }
+
 
         /// <summary>
         /// Obtém herói pelo ID.
@@ -90,8 +139,7 @@ namespace LegendsAwaken.Application.Services
             if (heroi == null)
                 throw new Exception("Herói não encontrado.");
 
-            var habilidade = heroi.Habilidades
-                .FirstOrDefault(h => h.Nome.Equals(nomeHabilidade, StringComparison.OrdinalIgnoreCase));
+            var habilidade = heroi.Habilidades.FirstOrDefault(h => h.Habilidade.Nome.Equals(nomeHabilidade, StringComparison.OrdinalIgnoreCase));
 
             if (habilidade == null)
                 throw new Exception("Habilidade não encontrada.");
@@ -106,19 +154,6 @@ namespace LegendsAwaken.Application.Services
 
             heroi.DataAlteracao = DateTime.UtcNow;
             await _heroiRepository.AtualizarAsync(heroi);
-        }
-
-        public string GerarNomeAleatorio(string username, int numero)
-        {
-            // Prefixos e sufixos simples para variedade
-            var prefixos = new[] { "Ar", "Bel", "Dor", "Eli", "Fen", "Gal", "Hor", "Ith", "Jor", "Kel" };
-            var sufixos = new[] { "ion", "ar", "eth", "mir", "dor", "an", "iel", "or", "us", "wyn" };
-
-            var random = new Random(Guid.NewGuid().GetHashCode());
-            var prefixo = prefixos[random.Next(prefixos.Length)];
-            var sufixo = sufixos[random.Next(sufixos.Length)];
-
-            return $"{prefixo}{sufixo}_{username}_{numero}";
         }
 
     }

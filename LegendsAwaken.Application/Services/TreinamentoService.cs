@@ -20,7 +20,7 @@ namespace LegendsAwaken.Application.Services
         /// Inicia um treinamento para um herói.
         /// </summary>
         /// <param name="heroiId">ID do herói a ser treinado.</param>
-        /// <param name="tipoTreinamento">Tipo de treinamento (ex: atributo, habilidade, desbloqueio).</param>
+        /// <param name="tipoTreinamento">Atributo de treinamento (ex: Atributo, habilidade, desbloqueio).</param>
         /// <param name="duracao">Duração em minutos do treinamento.</param>
         /// <param name="resultadoEsperado">Descrição do resultado esperado.</param>
         public async Task IniciarTreinamentoAsync(Guid heroiId, string tipoTreinamento, TimeSpan duracao, string resultadoEsperado)
@@ -60,7 +60,7 @@ namespace LegendsAwaken.Application.Services
             switch (heroi.Treinamento.Tipo)
             {
                 case "Atributo":
-                    // Lógica para aumentar atributo
+                    // Lógica para aumentar Atributo
                     break;
                 case "Habilidade":
                     // Lógica para evoluir habilidade

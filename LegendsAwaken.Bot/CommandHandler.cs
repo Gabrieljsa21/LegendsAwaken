@@ -1,15 +1,16 @@
 ﻿using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
+using LegendsAwaken.Application.Interfaces;
 using LegendsAwaken.Application.Services;
 using LegendsAwaken.Bot.Commands;
 using LegendsAwaken.Domain.Entities.Auxiliares;
 using LegendsAwaken.Domain.Enum;
+using LegendsAwaken.Domain.Extensions;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using LegendsAwaken.Domain.Extensions;
 
 namespace LegendsAwaken.Bot
 {
@@ -28,6 +29,7 @@ namespace LegendsAwaken.Bot
         private readonly UsuarioService _usuarioService;
         private readonly GachaService _gachaService;
         private readonly RacaService _racaService;
+        private readonly AtributoBonusService _atributoBonusService;
 
         public CommandHandler(
             DiscordSocketClient client,
@@ -39,7 +41,8 @@ namespace LegendsAwaken.Bot
             BannerHistoricoService bannerHistoricoService,
             UsuarioService usuarioService,
             GachaService gachaService,
-            RacaService racaService)
+            RacaService racaService,
+            AtributoBonusService atributoBonusService)
         {
             _client = client;
             _logger = logger;
@@ -51,6 +54,7 @@ namespace LegendsAwaken.Bot
             _usuarioService = usuarioService;
             _gachaService = gachaService;
             _racaService = racaService;
+            _atributoBonusService = atributoBonusService;
         }
 
         public void Initialize()
@@ -95,7 +99,16 @@ namespace LegendsAwaken.Bot
 
                 new SlashCommandBuilder().WithName("treinar").WithDescription("Treinar um herói"),
                 new SlashCommandBuilder().WithName("subir_andar").WithDescription("Subir um andar da torre"),
-                new SlashCommandBuilder().WithName("ver_heroi").WithDescription("Ver detalhes de um herói")
+                new SlashCommandBuilder()
+                    .WithName("ver_heroi")
+                    .WithDescription("Ver detalhes de um herói")
+                    .AddOption(new SlashCommandOptionBuilder()
+                        .WithName("nome")
+                        .WithDescription("Nome do herói")
+                        .WithRequired(true)
+                        .WithType(ApplicationCommandOptionType.String)
+                        .WithAutocomplete(true))
+
             };
 
             foreach (var cmd in commands)
@@ -145,8 +158,12 @@ namespace LegendsAwaken.Bot
                         break;
 
                     case "ver_heroi":
-                        await command.RespondAsync("Mostrando herói! (Implementar lógica)", ephemeral: true);
+                        var nomeHeroi = (string)command.Data.Options.FirstOrDefault(o => o.Name == "nome")?.Value;
+                        var verHeroiCmd = new VerHeroiCommand(_heroiService);
+                        await verHeroiCmd.ExecutarAsync(command, nomeHeroi);
                         break;
+
+
 
                     default:
                         await command.RespondAsync("Comando não reconhecido.", ephemeral: true);
@@ -162,18 +179,35 @@ namespace LegendsAwaken.Bot
 
         private async Task HandleAutocompleteAsync(SocketAutocompleteInteraction auto)
         {
-            if (auto.Data.CommandName != "invocar" || auto.Data.Options.First().Name != "banner")
-                return;
+            if (auto.Data.CommandName == "invocar" && auto.Data.Options.First().Name == "banner")
+            {
+                var query = auto.Data.Options.First().Value as string ?? string.Empty;
+                var suggestions = _bannerService.ObterTodosBanners()
+                    .Select(b => b.Id)
+                    .Where(id => id.StartsWith(query, StringComparison.OrdinalIgnoreCase))
+                    .Select(id => new AutocompleteResult(id, id))
+                    .Take(25);
 
-            var query = auto.Data.Options.First().Value as string ?? string.Empty;
-            var suggestions = _bannerService.ObterTodosBanners()
-                .Select(b => b.Id)
-                .Where(id => id.StartsWith(query, StringComparison.OrdinalIgnoreCase))
-                .Select(id => new AutocompleteResult(id, id))
-                .Take(25);
+                await auto.RespondAsync(suggestions);
+            }
+            else if (auto.Data.CommandName == "ver_heroi" && auto.Data.Options.First().Name == "nome")
+            {
+                var userId = auto.User.Id;
 
-            await auto.RespondAsync(suggestions);
+                var query = auto.Data.Options.First().Value as string ?? string.Empty;
+
+                // Buscar heróis do usuário que começam com o texto digitado
+                var herois = await _heroiService.ObterHeroisPorUsuarioAsync(userId);
+
+                var sugestões = herois
+                    .Where(h => h.Nome.StartsWith(query, StringComparison.OrdinalIgnoreCase))
+                    .Select(h => new AutocompleteResult(h.Nome, h.Nome))
+                    .Take(25);
+
+                await auto.RespondAsync(sugestões);
+            }
         }
+
 
         public async Task HandleButtonExecutedAsync(SocketMessageComponent comp)
         {

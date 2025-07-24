@@ -53,17 +53,9 @@ namespace LegendsAwaken.Domain.Entities
         public required string Nome { get; set; }
         public int Nivel { get; set; }
         public required string Tipo { get; set; } // Ex: "Morto-vivo", "Fera"
-        public required Atributos Atributos { get; set; }
+        public required AtributosBase Atributos { get; set; }
         public List<string> Habilidades { get; set; } = new();
     }
 
-    public class Atributos
-    {
-        public int Forca { get; set; }
-        public int Destreza { get; set; }
-        public int Constituicao { get; set; }
-        public int Inteligencia { get; set; }
-        public int Sabedoria { get; set; }
-        public int Carisma { get; set; }
-    }
+
 }
