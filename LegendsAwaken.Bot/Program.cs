@@ -66,6 +66,7 @@ class Program
             .AddScoped<IUsuarioRepository, UsuarioRepository>()
             .AddScoped<IHabilidadeRepository, HabilidadeRepository>()
             .AddScoped<IAtributoBonusService, AtributoBonusService>()
+            .AddScoped<IPartyRepository, PartyRepository>()
 
             // Serviços de aplicação
             .AddScoped<GeracaoDeDadosService>()
@@ -81,6 +82,8 @@ class Program
             .AddScoped<BannerCommand>()  
             .AddScoped<HabilidadeService>()
             .AddScoped<AtributoBonusService>()
+            .AddScoped<CombatService>()
+            .AddScoped<PartyService>()
 
             .AddSingleton(_cliente)
             .AddSingleton<IConfiguration>(configuration)
@@ -122,7 +125,9 @@ class Program
             services.GetRequiredService<UsuarioService>(),
             services.GetRequiredService<GachaService>(),
             services.GetRequiredService<RacaService>(),
-            services.GetRequiredService<AtributoBonusService>()
+            services.GetRequiredService<AtributoBonusService>(),
+            services.GetRequiredService<CombatService>(),
+            services.GetRequiredService<PartyService>()
 
         );
 
@@ -130,6 +135,7 @@ class Program
         _cliente.ButtonExecuted += handler.HandleButtonExecutedAsync;
 
         handler.Initialize();
+        await handler.SetupCommandsAsync();
 
         // Criação e população do banco de dados
         await CriarBancoEDadosBaseAsync();

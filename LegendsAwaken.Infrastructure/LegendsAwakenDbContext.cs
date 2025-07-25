@@ -35,6 +35,9 @@ namespace LegendsAwaken.Infrastructure
         public DbSet<HeroiTag> HeroisTags => Set<HeroiTag>();
         public DbSet<BannerHistorico> BannerHistorico => Set<BannerHistorico>();
         public DbSet<BannerProgresso> BannerProgressos { get; set; }
+        public DbSet<Party> Parties => Set<Party>();
+        public DbSet<PartyHero> PartyHeroes => Set<PartyHero>();
+
 
 
 
@@ -131,6 +134,23 @@ namespace LegendsAwaken.Infrastructure
                 builder.OwnsOne(h => h.Status);
                 builder.OwnsOne(h => h.Equipamentos);
             });
+
+            // Party e PartyHero
+            modelBuilder.Entity<Party>()
+                .HasKey(p => p.Id);
+
+            modelBuilder.Entity<Party>()
+                .HasMany(p => p.Membros)
+                .WithOne(ph => ph.Party)
+                .HasForeignKey(ph => ph.PartyId);
+
+            modelBuilder.Entity<PartyHero>()
+                .HasKey(ph => new { ph.PartyId, ph.HeroiId });
+
+            modelBuilder.Entity<PartyHero>()
+                .HasOne(ph => ph.Heroi)
+                .WithMany()
+                .HasForeignKey(ph => ph.HeroiId);
         }
     }
 }

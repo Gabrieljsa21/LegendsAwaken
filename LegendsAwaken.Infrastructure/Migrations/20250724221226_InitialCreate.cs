@@ -124,6 +124,19 @@ namespace LegendsAwaken.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Parties",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    UsuarioId = table.Column<ulong>(type: "INTEGER", nullable: false),
+                    Nome = table.Column<string>(type: "TEXT", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Parties", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Usuarios",
                 columns: table => new
                 {
@@ -338,6 +351,30 @@ namespace LegendsAwaken.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "PartyHeroes",
+                columns: table => new
+                {
+                    PartyId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    HeroiId = table.Column<Guid>(type: "TEXT", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PartyHeroes", x => new { x.PartyId, x.HeroiId });
+                    table.ForeignKey(
+                        name: "FK_PartyHeroes_Herois_HeroiId",
+                        column: x => x.HeroiId,
+                        principalTable: "Herois",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_PartyHeroes_Parties_PartyId",
+                        column: x => x.PartyId,
+                        principalTable: "Parties",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "BannerHistorico",
                 columns: table => new
                 {
@@ -406,6 +443,11 @@ namespace LegendsAwaken.Infrastructure.Migrations
                 column: "TorreAndarId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_PartyHeroes_HeroiId",
+                table: "PartyHeroes",
+                column: "HeroiId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_PersonagemTrabalhador_CidadeId",
                 table: "PersonagemTrabalhador",
                 column: "CidadeId");
@@ -445,6 +487,9 @@ namespace LegendsAwaken.Infrastructure.Migrations
                 name: "Inimigo");
 
             migrationBuilder.DropTable(
+                name: "PartyHeroes");
+
+            migrationBuilder.DropTable(
                 name: "PersonagemTrabalhador");
 
             migrationBuilder.DropTable(
@@ -454,10 +499,13 @@ namespace LegendsAwaken.Infrastructure.Migrations
                 name: "Habilidades");
 
             migrationBuilder.DropTable(
+                name: "Andares");
+
+            migrationBuilder.DropTable(
                 name: "Herois");
 
             migrationBuilder.DropTable(
-                name: "Andares");
+                name: "Parties");
 
             migrationBuilder.DropTable(
                 name: "Cidades");

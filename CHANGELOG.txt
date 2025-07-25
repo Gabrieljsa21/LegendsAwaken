@@ -4,6 +4,13 @@ Todas as alterações significativas neste projeto serão documentadas neste arq
 
 O formato segue o padrão [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/), e o versionamento segue [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+
+## [1.0.3] - 2025-07-24
+#### Adicionado
+- Sistema de grupos implementado: agora é possível montar um grupo com até 5 heróis utilizando o comando `/grupo`.
+- Comando `/listar_herois` aprimorado com sistema de paginação: exibe até 25 heróis por página com botões ⏮️ Anterior e ⏭️ Próximo para facilitar a navegação.
+
+
 ## [1.0.2] - 2025-07-24
 #### Adicionado
 -Comando /ver_heroi aprimorado para aceitar nome do herói como parâmetro com autocomplete.

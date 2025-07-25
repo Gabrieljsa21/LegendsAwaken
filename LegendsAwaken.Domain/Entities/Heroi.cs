@@ -26,7 +26,7 @@ namespace LegendsAwaken.Domain.Entities
 
         public List<HeroiBonusAtributo> BonusAtributos { get; set; } = new(); // Profissão, antecedentes, talentos etc.
 
-        // Combate e progressão
+        // CombatEncounter e progressão
         public StatusCombate Status { get; set; } = new();
         public List<HeroiHabilidade> Habilidades { get; set; } = new();
         public Equipamentos Equipamentos { get; set; } = new();

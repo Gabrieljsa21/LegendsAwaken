@@ -20,7 +20,7 @@ namespace LegendsAwaken.Domain.Entities
         public required string Nome { get; set; }   // Nome da habilidade
         public string? Descricao { get; set; }      // Descrição da habilidade
         public int Rank { get; set; }               // raridade
-        public TipoHabilidade TipoHabilidade { get; set; }  // Atributo da habilidade (Combate, Coleta, Craft)
+        public TipoHabilidade TipoHabilidade { get; set; }  // Atributo da habilidade (CombatEncounter, Coleta, Craft)
         public Profissao ProfissaoVinculada { get; set; }   // Profissão que pode masterizar essa habilidade
         public List<HabilidadeBonusAtributos> HabilidadeBonusAtributos { get; set; } //Atributo incrementado
     }
@@ -35,7 +35,7 @@ namespace LegendsAwaken.Domain.Entities
     }
     public enum BonusTipo
     {
-        // Combate
+        // CombatEncounter
         Atributo,   // Aumenta atributos como Força, Destreza, etc.
 
         // Coleta / Craft

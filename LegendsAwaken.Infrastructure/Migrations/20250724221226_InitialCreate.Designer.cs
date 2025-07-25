@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LegendsAwaken.Infrastructure.Migrations
 {
     [DbContext(typeof(LegendsAwakenDbContext))]
-    [Migration("20250724023823_InitialCreate")]
+    [Migration("20250724221226_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -368,6 +368,39 @@ namespace LegendsAwaken.Infrastructure.Migrations
                     b.HasIndex("TorreAndarId");
 
                     b.ToTable("Inimigo");
+                });
+
+            modelBuilder.Entity("LegendsAwaken.Domain.Entities.Party", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Nome")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<ulong>("UsuarioId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Parties");
+                });
+
+            modelBuilder.Entity("LegendsAwaken.Domain.Entities.PartyHero", b =>
+                {
+                    b.Property<Guid>("PartyId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("HeroiId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("PartyId", "HeroiId");
+
+                    b.HasIndex("HeroiId");
+
+                    b.ToTable("PartyHeroes");
                 });
 
             modelBuilder.Entity("LegendsAwaken.Domain.Entities.PersonagemTrabalhador", b =>
@@ -808,6 +841,25 @@ namespace LegendsAwaken.Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("LegendsAwaken.Domain.Entities.PartyHero", b =>
+                {
+                    b.HasOne("LegendsAwaken.Domain.Entities.Heroi", "Heroi")
+                        .WithMany()
+                        .HasForeignKey("HeroiId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LegendsAwaken.Domain.Entities.Party", "Party")
+                        .WithMany("Membros")
+                        .HasForeignKey("PartyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Heroi");
+
+                    b.Navigation("Party");
+                });
+
             modelBuilder.Entity("LegendsAwaken.Domain.Entities.PersonagemTrabalhador", b =>
                 {
                     b.HasOne("LegendsAwaken.Domain.Entities.Cidade", null)
@@ -838,6 +890,11 @@ namespace LegendsAwaken.Infrastructure.Migrations
                     b.Navigation("Tags");
 
                     b.Navigation("VinculosHeroicos");
+                });
+
+            modelBuilder.Entity("LegendsAwaken.Domain.Entities.Party", b =>
+                {
+                    b.Navigation("Membros");
                 });
 
             modelBuilder.Entity("LegendsAwaken.Domain.Entities.TorreAndar", b =>

@@ -1,12 +1,13 @@
-﻿using LegendsAwaken.Domain;
+﻿using LegendsAwaken.Bot.Models.Banner;
+using LegendsAwaken.Domain;
 using LegendsAwaken.Domain.Entities;
 using LegendsAwaken.Domain.Entities.Auxiliares;
+using LegendsAwaken.Domain.Entities.Banner;
 using LegendsAwaken.Domain.Enum;
-using LegendsAwaken.Bot.Models.Banner;
+using LegendsAwaken.Domain.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using LegendsAwaken.Domain.Entities.Banner;
 
 namespace LegendsAwaken.Domain.Factories
 {
@@ -37,13 +38,6 @@ namespace LegendsAwaken.Domain.Factories
                 Nivel = 1,
                 XP = 0,
                 AtributosBase = GerarAtributosIniciais(raridade, raca),
-                Status = new StatusCombate
-                {
-                    VidaMaxima = 100,
-                    VidaAtual = 100,
-                    ManaMaxima = 50,
-                    ManaAtual = 50
-                },
                 Habilidades = habilidades,
                 Equipamentos = new Equipamentos(),
                 Tags = new List<HeroiTag>(),
@@ -57,6 +51,8 @@ namespace LegendsAwaken.Domain.Factories
                 Historia = null,
                 Personalidade = "Neutro"
             };
+
+            heroi.Status = heroi.AtributosBase.FromAtributos();
 
             return heroi;
         }
