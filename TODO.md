@@ -1,130 +1,131 @@
-\# ✅ TODO - Legends Awaken
+# Legends Awaken — TODO
 
-
-
-Este arquivo contém as tarefas principais a serem realizadas durante o desenvolvimento do bot \*\*Legends Awaken\*\*.
-
-
+Tarefas granulares organizadas por área. Acompanhe o progresso macro no `ROADMAP.md`.
 
 ---
 
+## Pré-produção (Fase 1) ⬅ atual
 
-
-\## 🔰 Fase 1 – Estruturação Inicial
-
-\- \[x] Definir objetivos e escopo do projeto
-
-\- \[x] Escolher ferramentas: C#, Discord.Net, SQLite, VS 2022
-
-\- \[x] Criar repositório no GitHub
-
-\- \[x] Gerar README inicial
-
-\- \[x] Escolher nome do projeto: `Legends Awaken`
-
-\- \[x] Criar estrutura básica do projeto (.sln, pastas e camadas)
-
-
+- [ ] Fechar escopo do v1.0 — definir o que entra e o que fica para depois
+- [ ] Definir pool inicial de personagens fixos (5★ e 4★): nome, raça, profissão, lore curto
+- [ ] Gerar arte IA para cada personagem fixo e subir as URLs
+- [ ] Documentar receitas básicas de crafting no GDD (picareta, espada, poção, etc.)
+- [ ] Documentar cadeia de dependência dos itens básicos no GDD
 
 ---
 
+## Gacha
 
-
-\## 🧠 Fase 2 – Modelagem de Dados
-
-\- \[ ] Definir classe `Heroi` com atributos, raridade, habilidades etc.
-
-\- \[ ] Criar classe `Habilidade` (ativa/passiva, XP, efeitos)
-
-\- \[ ] Modelar `Grupo`, `AndarTorre`, `Usuario`
-
-\- \[ ] Modelar sistema de `Cidade` com profissões
-
-\- \[ ] Criar classes auxiliares: `Equipamento`, `Treinamento`, `Tags`, etc.
-
-
+- [x] Sistema de invocação (x1 e x11)
+- [x] Soft-pity com curva cúbica por banner
+- [x] Banners configuráveis
+- [x] Geração procedural de heróis
+- [x] Dropdown de seleção de banner
+- [ ] Campo `ImageUrl` na entidade `Heroi`
+- [ ] Campo `Lore` na entidade `Heroi` (para personagens fixos)
+- [ ] Cadastrar pool de personagens fixos 5★/4★ no seed
+- [ ] Exibir arte no embed do pull quando disponível
+- [ ] Banner de Profissão (rate-up por profissão)
 
 ---
 
+## Heróis
 
-
-\## ⚙️ Fase 3 – Banco de Dados
-
-\- \[ ] Configurar Entity Framework Core com SQLite
-
-\- \[ ] Criar `DbContext` e aplicar primeira migração
-
-\- \[ ] Criar tabelas básicas: Heroi, Habilidade, TorreAndar, Cidade, Usuario
-
-\- \[ ] Popular o banco com heróis e dados iniciais via arquivos JSON
-
-
+- [x] Atributos base (Força, Agilidade, Vitalidade, Inteligência, Percepção)
+- [x] Raças com bônus passivos
+- [x] Profissões
+- [x] Sistema de habilidades com XP e níveis
+- [x] `/ver_heroi` com autocomplete
+- [x] `/listar_herois` com paginação e filtro
+- [ ] Equipar herói com item craftado (`/heroi equipar`)
+- [ ] Exibir equipamentos no `/ver_heroi`
 
 ---
 
+## Torre
 
-
-\## 🧪 Fase 4 – Comandos do Bot
-
-\- \[ ] Comando `/invocar` – sistema gacha
-
-\- \[ ] Comando `/ver\_heroi` – visualizar dados do herói
-
-\- \[ ] Comando `/treinar` – iniciar treinamento
-
-\- \[ ] Comando `/subir\_andar` – enfrentar andar da torre
-
-\- \[ ] Comando `/cidade` – ver ou gerenciar cidade
-
-\- \[ ] Comando `/ajuda` – lista de comandos disponíveis
-
-
+- [x] Torre infinita com andares por usuário
+- [x] Tipos de andar (Subjugação, Fuga, Escolta, Defesa, Armadilha, Evento)
+- [x] Bosses em andares 5 / 10 / 25
+- [x] Combate automático por turnos
+- [x] Party de até 5 heróis (`/grupo`)
+- [ ] Drops de materiais de crafting em andares de boss
+- [ ] Fragmentos de personagens fixos como drop raro
+- [ ] `/treinar` funcional via Arena (XP acelerado)
+- [ ] IA tática no combate (atacar menor HP / maior ameaça)
 
 ---
 
+## Cidade — Base
 
-
-\## ⚔️ Fase 5 – Lógica de Combate e Torre
-
-\- \[ ] Criar sistema de combate automático simples (turnos, dano, efeito)
-
-\- \[ ] Implementar objetivos dos andares: subjugação, fuga, escolta etc.
-
-\- \[ ] Lógica de bosses: fácil (5 andares), médio (10), difícil (25)
-
-\- \[ ] Sistema de grupos e entrada em andares
-
-
+- [x] Entidade `Cidade` (Nome, Nível, Recursos, Construções, Trabalhadores)
+- [x] Recursos: Comida, Madeira, Pedra, Ouro
+- [x] Enum `Profissao` com combate, coleta e produção
+- [ ] `/cidade ver` — painel com recursos, prédios e heróis alocados
+- [ ] `/cidade coletar` — coleta produção acumulada por tempo
+- [ ] Produção passiva com teto de 24h
+- [ ] Alocação manual (`/cidade alocar`, `/cidade desalocar`)
+- [ ] Upgrades de prédio nível 1 → 2
 
 ---
 
+## Cidade — Gestão Autônoma
 
-
-\## 🏙️ Fase 6 – Gestão de Cidade
-
-\- \[ ] Criar sistema de profissões e alocação de heróis
-
-\- \[ ] Produção de recursos pela cidade
-
-\- \[ ] Interação entre cidade e torre (ex: buffs, equipamentos)
-
-
+- [ ] Campo `Confianca` (0–100) na entidade `Heroi`
+- [ ] Campo `Humor` na entidade `Heroi` (enum: Deprimido → Animado)
+- [ ] Modificador de eficiência baseado no Humor
+- [ ] Auto-alocação por confiança seguindo a política ativa
+- [ ] `/cidade politica <foco>` (recursos / producao / combate / equilibrio)
+- [ ] `/cidade otimizar` — aloca todos os vagos no melhor slot
+- [ ] Lógica de líder de prédio (Parceiro+) reduzindo queda de humor do time
+- [ ] Prioridade por construção (`/cidade prioridade`)
+- [ ] Cadeia de dependência inteligente
+- [ ] `/cidade cadeia <prédio>` — exibe raciocínio e estimativa
 
 ---
 
+## Crafting
 
+- [ ] Receitas básicas definidas (armas, armaduras, poções)
+- [ ] Forja produzindo equipamentos passivamente
+- [ ] Qualidade do item (Comum → Mestre) baseada em habilidade + nível do prédio
+- [ ] Laboratório produzindo poções
+- [ ] Poções usadas automaticamente na Torre
+- [ ] Blueprints desbloqueáveis via missões ou drops
 
-\## 🧼 Fase 7 – Polimento e Extras
+---
 
-\- \[ ] Mensagens bonitas com embeds
+## Missões (Guilda)
 
-\- \[ ] Respostas amigáveis para erros
+- [ ] Geração automática de missões por nível da Guilda
+- [ ] Herói parte → retorna após duração → traz recompensas
+- [ ] Tipos: Coleta, Subjugação, Escolta, Transporte, Investigação, Recuperação
+- [ ] Falha possível se herói for fraco demais
+- [ ] `/cidade missoes` — lista missões ativas e status
+- [ ] Missões raras com fragmentos e blueprints como recompensa
 
-\- \[ ] Logs básicos no console
+---
 
-\- \[ ] Suporte básico a múltiplos usuários
+## Qualidade de Código
 
-\- \[ ] Criar versão em inglês (README e comandos, opcional)
+- [x] Token via variável de ambiente
+- [x] Clean Architecture com separação real de camadas
+- [x] Nullable warnings corrigidos (0 warnings)
+- [x] Migração para .NET 10
+- [ ] `Random.Shared` no `GachaService` (thread-safety)
+- [ ] `ILogger<T>` substituindo `Console.WriteLine` nos serviços
+- [ ] Guild ID movido para `appsettings.json`
+- [ ] Caminho do banco de dados via variável de ambiente ou relativo
+- [ ] Testes unitários: GachaService (pity, raridade)
+- [ ] Testes unitários: CombatService (turnos, dano)
+- [ ] Testes unitários: produção passiva da cidade
 
+---
 
+## Infraestrutura
 
+- [x] Repositório no GitHub
+- [x] `.gitignore` cobrindo `.claude/`, `.idea/`, binários
+- [ ] Bot rodando em servidor externo (VPS ou similar)
+- [ ] Variável de ambiente configurada no servidor
+- [ ] Script de deploy automatizado
