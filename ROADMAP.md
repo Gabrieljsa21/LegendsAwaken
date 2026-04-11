@@ -2,22 +2,22 @@
 
 ---
 
-## Fase 1 — Pré-produção ⬅ atual
+## Fase 1 — Pré-produção ✅ concluída
 **Objetivo:** fechar o design antes de codar.
 
 - [x] Conceito e visão geral definidos
 - [x] Stack técnica escolhida (C#, Discord.Net, EF Core, SQLite)
 - [x] Arquitetura Clean Architecture + DDD aplicada
 - [x] GDD criado com sistemas de gacha, cidade, confiança, prioridade e cadeia de dependência
-- [ ] Escopo do v1.0 fechado (o que entra, o que fica pra depois)
-- [ ] Pool inicial de personagens fixos 5★ e 4★ definida (nomes, lore, profissão, arte)
-- [ ] Receitas e cadeia de dependência dos itens básicos documentadas no GDD
+- [x] Escopo do v1.0 fechado
+- [x] Pool inicial de personagens fixos 5★ e 4★ definida (3 lendários + 6 épicos)
+- [x] Receitas e cadeia de dependência dos itens básicos documentadas no GDD
 
 **Sinal de saída:** GDD estável, sem features indefinidas no escopo do v1.0.
 
 ---
 
-## Fase 2 — Protótipo da Cidade
+## Fase 2 — Protótipo da Cidade ⬅ atual
 **Objetivo:** validar se o loop de gestão é divertido antes de polir.
 
 - [ ] Herói alocado em prédio produz recurso simples (sem cadeia, sem humor)

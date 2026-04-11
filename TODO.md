@@ -4,13 +4,13 @@ Tarefas granulares organizadas por área. Acompanhe o progresso macro no `ROADMA
 
 ---
 
-## Pré-produção (Fase 1) ⬅ atual
+## Pré-produção (Fase 1) ✅ concluída
 
-- [ ] Fechar escopo do v1.0 — definir o que entra e o que fica para depois
-- [ ] Definir pool inicial de personagens fixos (5★ e 4★): nome, raça, profissão, lore curto
-- [ ] Gerar arte IA para cada personagem fixo e subir as URLs
-- [ ] Documentar receitas básicas de crafting no GDD (picareta, espada, poção, etc.)
-- [ ] Documentar cadeia de dependência dos itens básicos no GDD
+- [x] Fechar escopo do v1.0
+- [x] Definir pool inicial de personagens fixos (3x 5★ + 6x 4★) com nome, raça, profissão e lore
+- [x] Documentar receitas básicas de crafting no GDD
+- [x] Documentar cadeia de dependência dos itens básicos no GDD
+- [ ] Gerar arte IA para cada personagem fixo e registrar as URLs *(pode ser feito em paralelo com a produção)*
 
 ---
 

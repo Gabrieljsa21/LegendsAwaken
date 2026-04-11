@@ -54,6 +54,27 @@ O jogador é um **Mestre** que invoca heróis via gacha, envia grupos para escal
 - Gerada por IA (Midjourney / DALL-E) com prompt padronizado por classe e raça.
 - URL da imagem salva no banco e exibida no embed do pull.
 
+### 3.5. Pool Inicial de Personagens Fixos
+
+#### 5★ — Lendários
+
+| Nome | Profissão | Raça | Elemento | Referência | Lore |
+|---|---|---|---|---|---|
+| **Aldric, o Sem-Corrente** | Guerreiro | Humano | Metal | Guts (Berserk) | Mercenário solitário com espada enorme que nunca serviu a nenhum mestre por vontade própria... até encontrar o Mestre. |
+| **Yuzara, a Tecelã do Destino** | Mago | Elfo | Luz | Mavis Vermillion (Fairy Tail) | Capaz de antever o futuro, raramente escolhe interferir. Sempre sorri como se soubesse o que está por vir. |
+| **Thorvald, o Arquiteto das Eras** | Ferreiro / Construtor | Anão | Terra | Artesãos lendários do fantasy | Ergueu três cidades antes de ser invocado. Diz que a quarta será a mais grandiosa de todas. |
+
+#### 4★ — Épicos
+
+| Nome | Profissão | Raça | Elemento | Referência | Lore |
+|---|---|---|---|---|---|
+| **Kaen** | Arqueiro | Humano | Fogo | Sinbad (Magi) | Aventureiro carismático que entrou em cada batalha sorrindo. Nunca perdeu — ainda. |
+| **Nyra** | Ladino | Bestial (felina) | Ar | Yoruichi (Bleach) | Aparece quando quer, desaparece quando bem entende. Diz que trabalha melhor sozinha, mas raramente está sozinha de verdade. |
+| **Seraph** | Paladino | Humano | Luz | Izuku / Simon (MHA / Gurren Lagann) | Jovem idealista convicto de que proteger todos é possível. Ainda não foi provado errado. |
+| **Mira** | Alquimista | Humano | Fogo | Edward Elric (FMA) | Prodígio da alquimia que transformou o laboratório da cidade em algo que nenhum mestre esperava. Teimosa. Brilhante. |
+| **Grom** | Mineiro | Anão | Terra | Anões clássicos do fantasy | Nunca abandona uma veia de minério. Nunca. Dizem que ele encontra metal onde outros só veem pedra comum. |
+| **Hana** | Cozinheiro / Agricultor | Humano | Natureza | Soma (Shokugeki no Soma) | A culinária dela tem efeitos que nenhuma poção replica. O time rende 20% a mais depois do almoço dela. |
+
 ---
 
 ## 4. Sistema de Heróis
@@ -278,12 +299,47 @@ Heróis alocados na Guilda saem em missões automáticas periódicas.
 - Equipamentos são atribuídos a heróis via `/heroi equipar`.
 
 ### 8.2. Poções e Consumíveis
-- Laboratório / Alquimia produz poções de HP, bônus temporários.
+- Laboratório / Alquimia produz poções de HP e bônus temporários.
 - Usadas automaticamente pelo grupo na Torre, ou manualmente.
 
 ### 8.3. Blueprints
 - Receitas desbloqueadas via missões, drops de boss ou reputação.
 - Itens raros exigem materiais de andares avançados da Torre.
+
+### 8.4. Cadeia de Receitas — v1.0
+
+#### Recursos brutos (coletados por heróis)
+
+| Recurso | Coletado em | Profissões ideais |
+|---|---|---|
+| Minério de Ferro | Mina | Mineiro |
+| Madeira | Serraria / Floresta | Lenhador |
+| Pedra | Mina | Mineiro |
+| Comida | Fazenda | Agricultor, Cozinheiro |
+| Erva | Fazenda / Floresta | Agricultor, Caçador |
+
+#### Recursos processados (Forja)
+
+| Item | Ingredientes |
+|---|---|
+| Barra de Ferro | Minério de Ferro x3 |
+| Tábua de Madeira | Madeira x2 |
+
+#### Equipamentos (Forja / Ateliê)
+
+| Item | Ingredientes | Efeito |
+|---|---|---|
+| Espada de Ferro | Barra de Ferro x2 | +Força (Guerreiro, Paladino) |
+| Arco Simples | Tábua de Madeira x2 | +Percepção (Arqueiro) |
+| Armadura de Couro | Madeira x1 + Comida x2 | +Vitalidade (qualquer) |
+| Picareta de Ferro | Barra de Ferro x2 + Tábua de Madeira x1 | +produção da Mina quando equipada por Mineiro |
+
+#### Consumíveis (Laboratório)
+
+| Item | Ingredientes | Efeito |
+|---|---|---|
+| Poção Simples | Comida x3 | Restaura HP na Torre |
+| Poção de Força | Comida x2 + Erva x1 | +Força temporário na Torre |
 
 ---
 
