@@ -6,29 +6,29 @@ namespace LegendsAwaken.Domain.Entities
     public class HeroiHabilidade
     {
         public Guid HeroiId { get; set; }
-        public Heroi Heroi { get; set; }
-        public string HabilidadeId { get; set; }
-        public Habilidade Habilidade { get; set; }
-        public bool EstaEmTreinamento { get; set; }  // Indica se está em treinamento (opcional)
-        public int Nivel { get; set; }            // Nível atual da habilidade (1-10)
-        public int XPAtual { get; set; }          // XP acumulado atual para o nível
-        public int XPMaximo { get; set; }         // XP necessário para subir de nível
+        public Heroi Heroi { get; set; } = null!;
+        public string HabilidadeId { get; set; } = string.Empty;
+        public Habilidade Habilidade { get; set; } = null!;
+        public bool EstaEmTreinamento { get; set; }  // Indica se estï¿½ em treinamento (opcional)
+        public int Nivel { get; set; }            // Nï¿½vel atual da habilidade (1-10)
+        public int XPAtual { get; set; }          // XP acumulado atual para o nï¿½vel
+        public int XPMaximo { get; set; }         // XP necessï¿½rio para subir de nï¿½vel
     }
     public class Habilidade
     {
-        public string Id { get; set; }              // Identificador único da habilidade
+        public string Id { get; set; } = string.Empty; // Identificador ï¿½nico da habilidade
         public required string Nome { get; set; }   // Nome da habilidade
-        public string? Descricao { get; set; }      // Descrição da habilidade
+        public string? Descricao { get; set; }      // Descriï¿½ï¿½o da habilidade
         public int Rank { get; set; }               // raridade
         public TipoHabilidade TipoHabilidade { get; set; }  // Atributo da habilidade (CombatEncounter, Coleta, Craft)
-        public Profissao ProfissaoVinculada { get; set; }   // Profissão que pode masterizar essa habilidade
-        public List<HabilidadeBonusAtributos> HabilidadeBonusAtributos { get; set; } //Atributo incrementado
+        public Profissao ProfissaoVinculada { get; set; }   // Profissï¿½o que pode masterizar essa habilidade
+        public List<HabilidadeBonusAtributos> HabilidadeBonusAtributos { get; set; } = new(); //Atributo incrementado
     }
 
     public class HabilidadeBonusAtributos
     {
-        public string HabilidadeId { get; set; }
-        public Habilidade Habilidade { get; set; }
+        public string HabilidadeId { get; set; } = string.Empty;
+        public Habilidade Habilidade { get; set; } = null!;
         public Atributo Atributo { get; set; }      //Atributo incrementado
         public BonusTipo BonusTipo { get; set; }
         public int BonusValor { get; set; }
@@ -36,14 +36,14 @@ namespace LegendsAwaken.Domain.Entities
     public enum BonusTipo
     {
         // CombatEncounter
-        Atributo,   // Aumenta atributos como Força, Destreza, etc.
+        Atributo,   // Aumenta atributos como Forï¿½a, Destreza, etc.
 
         // Coleta / Craft
         Rendimento, // Aumenta a quantidade obtida
-        Velocidade, // Aumenta a velocidade de produção
+        Velocidade, // Aumenta a velocidade de produï¿½ï¿½o
         Qualidade,  // Aumenta a qualidade do item produzido
         ChanceRaro, // Aumenta a chance de obter itens raros
-        Economia    // Reduz o custo de produção
+        Economia    // Reduz o custo de produï¿½ï¿½o
     }
 
 }

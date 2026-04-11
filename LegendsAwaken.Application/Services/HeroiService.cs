@@ -27,7 +27,7 @@ namespace LegendsAwaken.Application.Services
         }
 
         /// <summary>
-        /// Cria um novo herói usando a HeroiFactory e salva no repositório.
+        /// Cria um novo herï¿½i usando a HeroiFactory e salva no repositï¿½rio.
         /// </summary>
         public async Task<Heroi> CriarHeroiAsync(
             ulong usuarioId,
@@ -41,7 +41,7 @@ namespace LegendsAwaken.Application.Services
 
             var habilidades = await GerarHabilidadesIniciaisAsync(raridade, _habilidadeService);
 
-            // Cria o herói usando a factory
+            // Cria o herï¿½i usando a factory
             var heroi = HeroiFactory.CriarHeroi(
                 usuarioId,
                 nome,
@@ -52,11 +52,11 @@ namespace LegendsAwaken.Application.Services
                 habilidades,
                 funcao);
 
-            // Define datas de criação/alteração
+            // Define datas de criaï¿½ï¿½o/alteraï¿½ï¿½o
             heroi.DataCriacao = DateTime.UtcNow;
             heroi.DataAlteracao = DateTime.UtcNow;
 
-            // Salva no repositório
+            // Salva no repositï¿½rio
             await _heroiRepository.AdicionarAsync(heroi);
 
             return heroi;
@@ -64,7 +64,8 @@ namespace LegendsAwaken.Application.Services
 
         public async Task<AtributosBase> ObterAtributosFinaisAsync(Guid heroiId)
         {
-            var heroi = await _heroiRepository.ObterPorIdAsync(heroiId);
+            var heroi = await _heroiRepository.ObterPorIdAsync(heroiId)
+                ?? throw new InvalidOperationException($"HerÃ³i {heroiId} nÃ£o encontrado.");
             var bonus = _atributoBonusProvider.ObterBonus(heroi.Habilidades);
             return heroi.ObterAtributosTotais(bonus);
         }
@@ -106,7 +107,7 @@ namespace LegendsAwaken.Application.Services
 
 
         /// <summary>
-        /// Obtém herói pelo ID.
+        /// Obtï¿½m herï¿½i pelo ID.
         /// </summary>
         public async Task<Heroi?> ObterHeroiPorIdAsync(Guid heroiId)
         {
@@ -114,7 +115,7 @@ namespace LegendsAwaken.Application.Services
         }
 
         /// <summary>
-        /// Atualiza os dados do herói.
+        /// Atualiza os dados do herï¿½i.
         /// </summary>
         public async Task AtualizarHeroiAsync(Heroi heroi)
         {
@@ -123,7 +124,7 @@ namespace LegendsAwaken.Application.Services
         }
 
         /// <summary>
-        /// Lista todos os heróis do usuário.
+        /// Lista todos os herï¿½is do usuï¿½rio.
         /// </summary>
         public async Task<List<Heroi>> ObterHeroisPorUsuarioAsync(ulong usuarioId)
         {
@@ -131,25 +132,25 @@ namespace LegendsAwaken.Application.Services
         }
 
         /// <summary>
-        /// Incrementa XP de uma habilidade específica do herói.
+        /// Incrementa XP de uma habilidade especï¿½fica do herï¿½i.
         /// </summary>
         public async Task TreinarHabilidadeAsync(Guid heroiId, string nomeHabilidade, int xpGanho)
         {
             var heroi = await ObterHeroiPorIdAsync(heroiId);
             if (heroi == null)
-                throw new Exception("Herói não encontrado.");
+                throw new Exception("Herï¿½i nï¿½o encontrado.");
 
             var habilidade = heroi.Habilidades.FirstOrDefault(h => h.Habilidade.Nome.Equals(nomeHabilidade, StringComparison.OrdinalIgnoreCase));
 
             if (habilidade == null)
-                throw new Exception("Habilidade não encontrada.");
+                throw new Exception("Habilidade nï¿½o encontrada.");
 
             habilidade.XPAtual += xpGanho;
             while (habilidade.Nivel < 10 && habilidade.XPAtual >= habilidade.XPMaximo)
             {
                 habilidade.XPAtual -= habilidade.XPMaximo;
                 habilidade.Nivel++;
-                habilidade.XPMaximo += 50; // Exemplo de progressão
+                habilidade.XPMaximo += 50; // Exemplo de progressï¿½o
             }
 
             heroi.DataAlteracao = DateTime.UtcNow;

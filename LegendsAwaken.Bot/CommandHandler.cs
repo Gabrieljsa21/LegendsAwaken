@@ -112,7 +112,7 @@ namespace LegendsAwaken.Bot
                         break;
 
                     case "ver_heroi":
-                        var nomeHeroi = (string)command.Data.Options.FirstOrDefault(o => o.Name == "nome")?.Value;
+                        var nomeHeroi = command.Data.Options.FirstOrDefault(o => o.Name == "nome")?.Value as string ?? string.Empty;
                         var verHeroiCmd = new VerHeroiCommand(_heroiService);
                         await verHeroiCmd.ExecutarAsync(command, nomeHeroi);
                         break;

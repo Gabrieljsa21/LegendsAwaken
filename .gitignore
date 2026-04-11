@@ -3,13 +3,20 @@
 *.user
 *.suo
 
-# Ignore binários e builds
+# Ignore binï¿½rios e builds
 bin/
 obj/
 
-# Ignore configurações locais
+# Ignore configuraï¿½ï¿½es locais
 *.log
 *.db
 *.sqlite
 *.env
 .env.*
+
+# IDE
+.idea/
+.vs/
+
+# Claude Code (uso pessoal)
+.claude/

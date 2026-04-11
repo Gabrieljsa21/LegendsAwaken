@@ -11,9 +11,9 @@
     public class PartyHero
     {
         public Guid PartyId { get; set; }
-        public Party Party { get; set; }         // nav para Party
+        public Party Party { get; set; } = null!;  // nav para Party
 
         public Guid HeroiId { get; set; }
-        public Heroi Heroi { get; set; }         // nav para Heroi
+        public Heroi Heroi { get; set; } = null!;  // nav para Heroi
     }
 }
