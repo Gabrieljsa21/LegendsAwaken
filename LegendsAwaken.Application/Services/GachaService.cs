@@ -67,29 +67,24 @@ namespace LegendsAwaken.Application.Services
 
         public Raca SortearRaca(Raridade raridade, List<Raca> todasRacas)
         {
-            const Raca humanoId = Raca.Humano;
-
-            // Filtra outras raças que não são humanas
-            var outrasRacas = todasRacas.Where(r => r != humanoId).ToList();
-
-            double chanceHumano = raridade switch
+            // 1★ e 2★ são sempre humanos — raças especiais não surgem em baixa raridade
+            double chanceNaoHumano = raridade switch
             {
-                Raridade.Estrela1 => 100,
-                Raridade.Estrela2 => 100,
-                Raridade.Estrela3 => 90,
-                Raridade.Estrela4 => 75,
-                _ => 100
+                Raridade.Estrela3 => 10,
+                Raridade.Estrela4 => 25,
+                _                 => 0,
             };
 
             double roll = _random.NextDouble() * 100;
-            if (roll <= chanceHumano || !outrasRacas.Any())
-            {
-                return humanoId;
-            }
+            if (roll >= chanceNaoHumano)
+                return Raca.Humano;
 
-            // Sorteia uniformemente entre as outras raças
-            int index = _random.Next(outrasRacas.Count);
-            return outrasRacas[index];
+            // Todas as raças não-humanas têm a mesma chance entre si
+            var pool = todasRacas.Where(r => r != Raca.Humano).ToList();
+            if (!pool.Any())
+                return Raca.Humano;
+
+            return pool[_random.Next(pool.Count)];
         }
 
     }

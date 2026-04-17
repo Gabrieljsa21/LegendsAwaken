@@ -67,8 +67,11 @@ class Program
             .AddScoped<IHabilidadeRepository, HabilidadeRepository>()
             .AddScoped<IAtributoBonusService, AtributoBonusService>()
             .AddScoped<IPartyRepository, PartyRepository>()
+            .AddScoped<IItemRepository, ItemRepository>()
+            .AddScoped<ISlotOcupacaoRepository, SlotOcupacaoRepository>()
 
             // Serviços de aplicação
+            .AddScoped<HeroiLevelUpService>()
             .AddScoped<GeracaoDeDadosService>()
             .AddScoped<HeroiService>()
             .AddScoped<GachaService>()
@@ -84,6 +87,8 @@ class Program
             .AddScoped<AtributoBonusService>()
             .AddScoped<CombatService>()
             .AddScoped<PartyService>()
+            .AddScoped<CraftingService>()
+            .AddScoped<ArenaService>()
 
             .AddSingleton(_cliente)
             .AddSingleton<IConfiguration>(configuration)
@@ -127,8 +132,10 @@ class Program
             services.GetRequiredService<RacaService>(),
             services.GetRequiredService<AtributoBonusService>(),
             services.GetRequiredService<CombatService>(),
-            services.GetRequiredService<PartyService>()
-
+            services.GetRequiredService<PartyService>(),
+            services.GetRequiredService<CidadeService>(),
+            services.GetRequiredService<CraftingService>(),
+            services.GetRequiredService<ArenaService>()
         );
 
         // Eventos de botões para rolagem interativa

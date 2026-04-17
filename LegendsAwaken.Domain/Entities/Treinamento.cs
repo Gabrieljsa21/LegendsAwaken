@@ -12,5 +12,6 @@ namespace LegendsAwaken.Domain.Entities
         public DateTime Inicio { get; set; }
         public DateTime Fim { get; set; }
         public required string ResultadoEsperado { get; set; }
+        public DateTime? UltimoTreino { get; set; }
     }
 }

@@ -32,6 +32,9 @@ namespace LegendsAwaken.Bot
         private readonly AtributoBonusService _atributoBonusService;
         private readonly CombatService _combatService;
         private readonly PartyService _partyService;
+        private readonly CidadeService _cidadeService;
+        private readonly CraftingService _craftingService;
+        private readonly ArenaService _arenaService;
 
         public CommandHandler(
             DiscordSocketClient client,
@@ -46,7 +49,10 @@ namespace LegendsAwaken.Bot
             RacaService racaService,
             AtributoBonusService atributoBonusService,
             CombatService combatService,
-            PartyService partyService)
+            PartyService partyService,
+            CidadeService cidadeService,
+            CraftingService craftingService,
+            ArenaService arenaService)
         {
             _client = client;
             _logger = logger;
@@ -61,6 +67,9 @@ namespace LegendsAwaken.Bot
             _atributoBonusService = atributoBonusService;
             _combatService = combatService;
             _partyService = partyService;
+            _cidadeService = cidadeService;
+            _craftingService = craftingService;
+            _arenaService = arenaService;
         }
 
         public void Initialize()
@@ -104,7 +113,36 @@ namespace LegendsAwaken.Bot
                         break;
 
                     case "treinar":
-                        await command.RespondAsync("Treinamento iniciado! (Implementar lógica)", ephemeral: true);
+                    {
+                        var nomeHeroiTreino = command.Data.Options.FirstOrDefault(o => o.Name == "heroi")?.Value as string;
+                        if (string.IsNullOrWhiteSpace(nomeHeroiTreino))
+                        {
+                            await command.RespondAsync("Informe o nome do herói que deseja treinar.", ephemeral: true);
+                            break;
+                        }
+                        var heroisTreino = await _heroiService.ObterHeroisPorUsuarioAsync(command.User.Id);
+                        var heroiTreino  = heroisTreino.FirstOrDefault(h => h.Nome.Equals(nomeHeroiTreino, StringComparison.OrdinalIgnoreCase));
+                        if (heroiTreino == null)
+                        {
+                            await command.RespondAsync($"Herói '{nomeHeroiTreino}' não encontrado.", ephemeral: true);
+                            break;
+                        }
+                        var treinoResult = await _arenaService.TreinarAsync(command.User.Id, heroiTreino.Id);
+                        if (treinoResult.Erro != null)
+                        {
+                            await command.RespondAsync($"❌ {treinoResult.Erro}", ephemeral: true);
+                            break;
+                        }
+                        var treinoMsg = $"**{heroiTreino.Nome}** treinou e ganhou **{treinoResult.XpGanho} XP**!";
+                        if (treinoResult.NiveisGanhos > 0)
+                            treinoMsg += $" (+{treinoResult.NiveisGanhos} nível!)";
+                        treinoMsg += "\n*Custo: 100 Ouro + 10 Comida | Cooldown: 4h*";
+                        await command.RespondAsync(treinoMsg, ephemeral: true);
+                        break;
+                    }
+
+                    case "arena":
+                        await new ArenaCommand(_arenaService, _heroiService).ExecutarAsync(command);
                         break;
 
                     case "subir_andar":
@@ -120,6 +158,10 @@ namespace LegendsAwaken.Bot
                     case "listar_herois":
                         var listarCmd = new ListarHeroisCommand(_heroiService);
                         await listarCmd.ExecutarAsync(command);
+                        break;
+
+                    case "cidade":
+                        await new CidadeCommand(_cidadeService, _heroiService).ExecutarAsync(command);
                         break;
 
                     case "grupo":
@@ -223,6 +265,36 @@ namespace LegendsAwaken.Bot
                         break;
 
 
+                    case "crafting":
+                        await new CraftingCommand(_craftingService, _heroiService).ExecutarAsync(command);
+                        break;
+
+                    case "heroi_equipar":
+                        var nomeHeroiEq = command.Data.Options.FirstOrDefault(o => o.Name == "heroi")?.Value as string;
+                        var itemIdStr   = command.Data.Options.FirstOrDefault(o => o.Name == "item_id")?.Value as string;
+                        if (string.IsNullOrWhiteSpace(nomeHeroiEq) || string.IsNullOrWhiteSpace(itemIdStr))
+                        {
+                            await command.RespondAsync("Informe o heroi e o ID do item.", ephemeral: true);
+                            break;
+                        }
+                        if (!Guid.TryParse(itemIdStr, out var itemGuid))
+                        {
+                            await command.RespondAsync("ID do item invalido.", ephemeral: true);
+                            break;
+                        }
+                        var heroisEq = await _heroiService.ObterHeroisPorUsuarioAsync(command.User.Id);
+                        var heroiEq = heroisEq.FirstOrDefault(h => h.Nome.Equals(nomeHeroiEq, StringComparison.OrdinalIgnoreCase));
+                        if (heroiEq == null)
+                        {
+                            await command.RespondAsync($"Heroi '{nomeHeroiEq}' nao encontrado.", ephemeral: true);
+                            break;
+                        }
+                        var erroEquipar = await _heroiService.EquiparItemAsync(heroiEq.Id, itemGuid, command.User.Id);
+                        await command.RespondAsync(
+                            erroEquipar == null ? $"Item equipado em **{heroiEq.Nome}** com sucesso!" : $"Erro: {erroEquipar}",
+                            ephemeral: true);
+                        break;
+
                     default:
                         await command.RespondAsync("Comando não reconhecido.", ephemeral: true);
                         break;
@@ -260,6 +332,42 @@ namespace LegendsAwaken.Bot
                 await auto.RespondAsync(sugestoes);
             }
             else if (auto.Data.CommandName == "grupo" && auto.Data.Options.Any(o => o.Name == "heroi"))
+            {
+                var userId = auto.User.Id;
+                var query = auto.Data.Options.First(o => o.Name == "heroi").Value as string ?? "";
+                var herois = await _heroiService.ObterHeroisPorUsuarioAsync(userId);
+                var sugestoes = herois
+                    .Where(h => h.Nome.StartsWith(query, StringComparison.OrdinalIgnoreCase))
+                    .Select(h => new AutocompleteResult(h.Nome, h.Nome))
+                    .Take(25);
+                await auto.RespondAsync(sugestoes);
+            }
+
+            else if (auto.Data.CommandName == "treinar" && auto.Data.Options.Any(o => o.Name == "heroi"))
+            {
+                var userId = auto.User.Id;
+                var query  = auto.Data.Options.First(o => o.Name == "heroi").Value as string ?? "";
+                var herois = await _heroiService.ObterHeroisPorUsuarioAsync(userId);
+                var sugestoes = herois
+                    .Where(h => h.Nome.StartsWith(query, StringComparison.OrdinalIgnoreCase))
+                    .Select(h => new AutocompleteResult(h.Nome, h.Nome))
+                    .Take(25);
+                await auto.RespondAsync(sugestoes);
+            }
+
+            else if ((auto.Data.CommandName == "cidade") && auto.Data.Options.Any(o => o.Name == "heroi"))
+            {
+                var userId = auto.User.Id;
+                var query = auto.Data.Options.FirstOrDefault(o => o.Name == "heroi")?.Value as string ?? "";
+                var herois = await _heroiService.ObterHeroisPorUsuarioAsync(userId);
+                var sugestoes = herois
+                    .Where(h => h.Nome.StartsWith(query, StringComparison.OrdinalIgnoreCase))
+                    .Select(h => new AutocompleteResult(h.Nome, h.Nome))
+                    .Take(25);
+                await auto.RespondAsync(sugestoes);
+            }
+
+            else if (auto.Data.CommandName == "heroi_equipar" && auto.Data.Options.Any(o => o.Name == "heroi"))
             {
                 var userId = auto.User.Id;
                 var query = auto.Data.Options.First(o => o.Name == "heroi").Value as string ?? "";
@@ -393,7 +501,23 @@ namespace LegendsAwaken.Bot
 
                 new SlashCommandBuilder()
                     .WithName("treinar")
-                    .WithDescription("Treinar um herói"),
+                    .WithDescription("Treina um herói na Arena (custo: 100 Ouro + 10 Comida, cooldown 4h)")
+                    .AddOption(new SlashCommandOptionBuilder()
+                        .WithName("heroi")
+                        .WithDescription("Nome do herói")
+                        .WithRequired(true)
+                        .WithType(ApplicationCommandOptionType.String)
+                        .WithAutocomplete(true)),
+
+                new SlashCommandBuilder()
+                    .WithName("arena")
+                    .WithDescription("Comandos da Arena")
+                    .AddOption(new SlashCommandOptionBuilder()
+                        .WithName("acao")
+                        .WithDescription("O que fazer na Arena")
+                        .WithRequired(true)
+                        .WithType(ApplicationCommandOptionType.String)
+                        .AddChoice("desafio", "desafio")),
 
                 new SlashCommandBuilder()
                     .WithName("subir_andar")
@@ -419,6 +543,54 @@ namespace LegendsAwaken.Bot
                         .WithRequired(false)),
 
                 new SlashCommandBuilder()
+                    .WithName("cidade")
+                    .WithDescription("Gerencia sua cidade")
+                    .AddOption(new SlashCommandOptionBuilder()
+                        .WithName("acao")
+                        .WithDescription("O que deseja fazer")
+                        .WithRequired(true)
+                        .WithType(ApplicationCommandOptionType.String)
+                        .AddChoice("ver", "ver")
+                        .AddChoice("coletar", "coletar")
+                        .AddChoice("construir", "construir")
+                        .AddChoice("alocar_recurso", "alocar_recurso")
+                        .AddChoice("alocar_predio", "alocar_predio")
+                        .AddChoice("desalocar", "desalocar"))
+                    .AddOption(new SlashCommandOptionBuilder()
+                        .WithName("heroi")
+                        .WithDescription("Nome do herói")
+                        .WithRequired(false)
+                        .WithType(ApplicationCommandOptionType.String)
+                        .WithAutocomplete(true))
+                    .AddOption(new SlashCommandOptionBuilder()
+                        .WithName("predio")
+                        .WithDescription("Prédio (construir / alocar_predio): Fazenda, Serraria, Mina, Forja, Arena, Guilda")
+                        .WithRequired(false)
+                        .WithType(ApplicationCommandOptionType.String)
+                        .AddChoice("Fazenda",  "Fazenda")
+                        .AddChoice("Serraria", "Serraria")
+                        .AddChoice("Mina",     "Mina")
+                        .AddChoice("Forja",    "Forja")
+                        .AddChoice("Arena",    "Arena")
+                        .AddChoice("Guilda",   "Guilda"))
+                    .AddOption(new SlashCommandOptionBuilder()
+                        .WithName("node")
+                        .WithDescription("Node de recurso (alocar_recurso): Campo, Floresta, Mina, Prado")
+                        .WithRequired(false)
+                        .WithType(ApplicationCommandOptionType.String)
+                        .AddChoice("Campo",    "Campo")
+                        .AddChoice("Floresta", "Floresta")
+                        .AddChoice("Mina",     "Mina")
+                        .AddChoice("Prado",    "Prado"))
+                    .AddOption(new SlashCommandOptionBuilder()
+                        .WithName("slot_tipo")
+                        .WithDescription("Tipo de slot (alocar_predio): Responsabilidade ou Operacao")
+                        .WithRequired(false)
+                        .WithType(ApplicationCommandOptionType.String)
+                        .AddChoice("Responsabilidade", "Responsabilidade")
+                        .AddChoice("Operacao", "Operacao")),
+
+                new SlashCommandBuilder()
                     .WithName("grupo")
                     .WithDescription("Gerencia os grupos de heróis")
                     .AddOption(new SlashCommandOptionBuilder()
@@ -441,7 +613,38 @@ namespace LegendsAwaken.Bot
                         .WithDescription("Nome do herói (obrigatório para adicionar/remover)")
                         .WithRequired(false)
                         .WithType(ApplicationCommandOptionType.String)
+                        .WithAutocomplete(true)),
+
+                new SlashCommandBuilder()
+                    .WithName("crafting")
+                    .WithDescription("Sistema de crafting de itens")
+                    .AddOption(new SlashCommandOptionBuilder()
+                        .WithName("acao")
+                        .WithDescription("listar receitas ou fazer item")
+                        .WithRequired(true)
+                        .WithType(ApplicationCommandOptionType.String)
+                        .AddChoice("listar", "listar")
+                        .AddChoice("fazer", "fazer"))
+                    .AddOption(new SlashCommandOptionBuilder()
+                        .WithName("receita")
+                        .WithDescription("ID da receita (obrigatorio para 'fazer')")
+                        .WithRequired(false)
+                        .WithType(ApplicationCommandOptionType.String)),
+
+                new SlashCommandBuilder()
+                    .WithName("heroi_equipar")
+                    .WithDescription("Equipa um item craftado em um heroi")
+                    .AddOption(new SlashCommandOptionBuilder()
+                        .WithName("heroi")
+                        .WithDescription("Nome do heroi")
+                        .WithRequired(true)
+                        .WithType(ApplicationCommandOptionType.String)
                         .WithAutocomplete(true))
+                    .AddOption(new SlashCommandOptionBuilder()
+                        .WithName("item_id")
+                        .WithDescription("ID do item (obtido ao craftar)")
+                        .WithRequired(true)
+                        .WithType(ApplicationCommandOptionType.String))
             };
 
             foreach (var cmd in commands)

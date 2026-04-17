@@ -40,6 +40,7 @@ namespace LegendsAwaken.Domain.Entities.Auxiliares
         public Atributo Atributo { get; set; } // Forca, Agilidade, etc.
         public int Valor { get; set; }
         public OrigemBonusAtributo Origem { get; set; } // Profissao, Habilidade, Antecedente, Equipamento, etc.
+        public Guid? ItemId { get; set; }
     }
 
 }

@@ -36,6 +36,9 @@ namespace LegendsAwaken.Domain.Entities
         // Metadados
         public bool EstaAtivo { get; set; } = true;
         public string? ImagemUrl { get; set; }
+        public int Confianca { get; set; } = 0;
+        public int Humor { get; set; } = 50;
+        public string? Lore { get; set; }
         public DateTime DataCriacao { get; set; } = DateTime.UtcNow;
         public DateTime DataAlteracao { get; set; } = DateTime.UtcNow;
 

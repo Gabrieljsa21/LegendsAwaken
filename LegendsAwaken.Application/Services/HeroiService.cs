@@ -18,16 +18,20 @@ namespace LegendsAwaken.Application.Services
         private readonly IHeroiRepository _heroiRepository;
         private readonly HabilidadeService _habilidadeService;
         private readonly IAtributoBonusService _atributoBonusProvider;
+        private readonly HeroiLevelUpService _levelUpService;
+        private readonly IItemRepository _itemRepository;
 
-        public HeroiService(IHeroiRepository heroiRepository, HabilidadeService habilidadeService, IAtributoBonusService atributoBonusProvider)
+        public HeroiService(IHeroiRepository heroiRepository, HabilidadeService habilidadeService, IAtributoBonusService atributoBonusProvider, HeroiLevelUpService levelUpService, IItemRepository itemRepository)
         {
             _heroiRepository = heroiRepository;
             _habilidadeService = habilidadeService;
             _atributoBonusProvider = atributoBonusProvider;
+            _levelUpService = levelUpService;
+            _itemRepository = itemRepository;
         }
 
         /// <summary>
-        /// Cria um novo her�i usando a HeroiFactory e salva no reposit�rio.
+        /// Cria um novo heroi usando a HeroiFactory e salva no repositorio.
         /// </summary>
         public async Task<Heroi> CriarHeroiAsync(
             ulong usuarioId,
@@ -41,7 +45,11 @@ namespace LegendsAwaken.Application.Services
 
             var habilidades = await GerarHabilidadesIniciaisAsync(raridade, _habilidadeService);
 
-            // Cria o her�i usando a factory
+            // Stats base iguais para todos da raridade + bonus racial fixo por raca
+            int r = (int)raridade;
+            var atributosBase = _levelUpService.ObterAtributosBaseParaRaridade(r)
+                + HeroiLevelUpService.BonusRacial.GetValueOrDefault(raca, new AtributosBase());
+
             var heroi = HeroiFactory.CriarHeroi(
                 usuarioId,
                 nome,
@@ -50,13 +58,12 @@ namespace LegendsAwaken.Application.Services
                 antecedente,
                 afinidade,
                 habilidades,
+                atributosBase,
                 funcao);
 
-            // Define datas de cria��o/altera��o
             heroi.DataCriacao = DateTime.UtcNow;
             heroi.DataAlteracao = DateTime.UtcNow;
 
-            // Salva no reposit�rio
             await _heroiRepository.AdicionarAsync(heroi);
 
             return heroi;
@@ -65,7 +72,7 @@ namespace LegendsAwaken.Application.Services
         public async Task<AtributosBase> ObterAtributosFinaisAsync(Guid heroiId)
         {
             var heroi = await _heroiRepository.ObterPorIdAsync(heroiId)
-                ?? throw new InvalidOperationException($"Herói {heroiId} não encontrado.");
+                ?? throw new InvalidOperationException($"Heroi {heroiId} nao encontrado.");
             var bonus = _atributoBonusProvider.ObterBonus(heroi.Habilidades);
             return heroi.ObterAtributosTotais(bonus);
         }
@@ -74,7 +81,7 @@ namespace LegendsAwaken.Application.Services
         {
             var habilidades = new List<HeroiHabilidade>();
             var todasHabilidades = (await habilidadeService.ObterTodasAsync())
-                .Where(h => h.Rank <= (int)raridade)    //Heroi aprende apenas habilidades de acordo com a raridade
+                .Where(h => h.Rank <= (int)raridade)
                 .ToList();
 
             var random = new Random();
@@ -107,7 +114,7 @@ namespace LegendsAwaken.Application.Services
 
 
         /// <summary>
-        /// Obt�m her�i pelo ID.
+        /// Obtem heroi pelo ID.
         /// </summary>
         public async Task<Heroi?> ObterHeroiPorIdAsync(Guid heroiId)
         {
@@ -115,7 +122,7 @@ namespace LegendsAwaken.Application.Services
         }
 
         /// <summary>
-        /// Atualiza os dados do her�i.
+        /// Atualiza os dados do heroi.
         /// </summary>
         public async Task AtualizarHeroiAsync(Heroi heroi)
         {
@@ -124,7 +131,7 @@ namespace LegendsAwaken.Application.Services
         }
 
         /// <summary>
-        /// Lista todos os her�is do usu�rio.
+        /// Lista todos os herois do usuario.
         /// </summary>
         public async Task<List<Heroi>> ObterHeroisPorUsuarioAsync(ulong usuarioId)
         {
@@ -132,25 +139,92 @@ namespace LegendsAwaken.Application.Services
         }
 
         /// <summary>
-        /// Incrementa XP de uma habilidade espec�fica do her�i.
+        /// Equips an item on a hero. Removes old equipment bonuses from HeroiBonusAtributo,
+        /// adds new ones, updates Equipamentos slot FK, and persists both hero and item.
+        /// </summary>
+        public async Task<string?> EquiparItemAsync(Guid heroiId, Guid itemId, ulong usuarioId)
+        {
+            var heroi = await _heroiRepository.ObterPorIdAsync(heroiId);
+            if (heroi == null) return "Heroi nao encontrado.";
+            if (heroi.UsuarioId != usuarioId) return "Este heroi nao pertence a voce.";
+
+            var item = await _itemRepository.ObterPorIdAsync(itemId);
+            if (item == null) return "Item nao encontrado.";
+            if (item.ProprietarioId != usuarioId) return "Este item nao pertence a voce.";
+            if (item.EstaEquipado && item.HeroiEquipadoId != heroiId) return "Item ja equipado em outro heroi.";
+
+            // Unequip current item in same slot (if any)
+            Guid? antigoItemId = item.Slot switch
+            {
+                SlotEquipamento.Arma      => heroi.Equipamentos.ArmaId,
+                SlotEquipamento.Armadura  => heroi.Equipamentos.ArmaduraId,
+                SlotEquipamento.Acessorio => heroi.Equipamentos.AcessorioId,
+                _                         => null
+            };
+
+            if (antigoItemId.HasValue)
+            {
+                heroi.BonusAtributos.RemoveAll(b => b.ItemId == antigoItemId);
+                var antigoItem = await _itemRepository.ObterPorIdAsync(antigoItemId.Value);
+                if (antigoItem != null)
+                {
+                    antigoItem.EstaEquipado = false;
+                    antigoItem.HeroiEquipadoId = null;
+                    await _itemRepository.AtualizarAsync(antigoItem);
+                }
+            }
+
+            // Equip new item — add stat bonuses to hero
+            foreach (var bonus in item.Bonus)
+            {
+                heroi.BonusAtributos.Add(new HeroiBonusAtributo
+                {
+                    Id = Guid.NewGuid(),
+                    HeroiId = heroiId,
+                    Atributo = bonus.Atributo,
+                    Valor = bonus.Valor,
+                    Origem = OrigemBonusAtributo.Equipamento,
+                    ItemId = item.Id
+                });
+            }
+
+            // Update slot FK on Equipamentos
+            switch (item.Slot)
+            {
+                case SlotEquipamento.Arma:      heroi.Equipamentos.ArmaId      = item.Id; break;
+                case SlotEquipamento.Armadura:  heroi.Equipamentos.ArmaduraId  = item.Id; break;
+                case SlotEquipamento.Acessorio: heroi.Equipamentos.AcessorioId = item.Id; break;
+            }
+
+            item.EstaEquipado = true;
+            item.HeroiEquipadoId = heroiId;
+            heroi.DataAlteracao = DateTime.UtcNow;
+
+            await _heroiRepository.AtualizarAsync(heroi);
+            await _itemRepository.AtualizarAsync(item);
+            return null; // null = success
+        }
+
+        /// <summary>
+        /// Incrementa XP de uma habilidade especifica do heroi.
         /// </summary>
         public async Task TreinarHabilidadeAsync(Guid heroiId, string nomeHabilidade, int xpGanho)
         {
             var heroi = await ObterHeroiPorIdAsync(heroiId);
             if (heroi == null)
-                throw new Exception("Her�i n�o encontrado.");
+                throw new Exception("Heroi nao encontrado.");
 
             var habilidade = heroi.Habilidades.FirstOrDefault(h => h.Habilidade.Nome.Equals(nomeHabilidade, StringComparison.OrdinalIgnoreCase));
 
             if (habilidade == null)
-                throw new Exception("Habilidade n�o encontrada.");
+                throw new Exception("Habilidade nao encontrada.");
 
             habilidade.XPAtual += xpGanho;
             while (habilidade.Nivel < 10 && habilidade.XPAtual >= habilidade.XPMaximo)
             {
                 habilidade.XPAtual -= habilidade.XPMaximo;
                 habilidade.Nivel++;
-                habilidade.XPMaximo += 50; // Exemplo de progress�o
+                habilidade.XPMaximo += 50;
             }
 
             heroi.DataAlteracao = DateTime.UtcNow;

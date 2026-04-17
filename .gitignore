@@ -10,6 +10,8 @@ obj/
 # Ignore configura��es locais
 *.log
 *.db
+*.db-shm
+*.db-wal
 *.sqlite
 *.env
 .env.*

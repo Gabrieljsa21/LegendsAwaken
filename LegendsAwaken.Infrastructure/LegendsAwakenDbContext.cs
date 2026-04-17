@@ -1,8 +1,8 @@
 using LegendsAwaken.Domain.Entities;
 using LegendsAwaken.Domain.Entities.Auxiliares;
 using LegendsAwaken.Domain.Entities.Banner;
+using LegendsAwaken.Domain.Enum;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
 
@@ -10,12 +10,12 @@ namespace LegendsAwaken.Infrastructure
 {
     /// <summary>
     /// Representa o contexto do banco de dados para o projeto Legends Awaken.
-    /// Responsável por mapear as entidades do domínio para tabelas no SQLite.
+    /// Responsï¿½vel por mapear as entidades do domï¿½nio para tabelas no SQLite.
     /// </summary>
     public class LegendsAwakenDbContext : DbContext
     {
         /// <summary>
-        /// Construtor que recebe as opções de configuração do contexto.
+        /// Construtor que recebe as opï¿½ï¿½es de configuraï¿½ï¿½o do contexto.
         /// </summary>
         public LegendsAwakenDbContext(DbContextOptions<LegendsAwakenDbContext> options)
             : base(options)
@@ -37,6 +37,9 @@ namespace LegendsAwaken.Infrastructure
         public DbSet<BannerProgresso> BannerProgressos { get; set; }
         public DbSet<Party> Parties => Set<Party>();
         public DbSet<PartyHero> PartyHeroes => Set<PartyHero>();
+        public DbSet<Item> Itens => Set<Item>();
+        public DbSet<ItemBonus> ItemBonus => Set<ItemBonus>();
+        public DbSet<SlotOcupacao> SlotOcupacoes => Set<SlotOcupacao>();
 
 
 
@@ -69,7 +72,22 @@ namespace LegendsAwaken.Infrastructure
             modelBuilder.Entity<Cidade>()
                 .OwnsOne(c => c.Recursos);
 
-            // Define a chave primária da entidade Usuario como o ID do Discord.
+            // Configura construÃ§Ãµes e trabalhadores como entidades relacionadas Ã  cidade.
+            modelBuilder.Entity<Cidade>()
+                .HasMany(c => c.Construcoes)
+                .WithOne()
+                .HasForeignKey("CidadeId")
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Cidade>()
+                .HasMany(c => c.Trabalhadores)
+                .WithOne()
+                .HasForeignKey("CidadeId")
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Define a chave primï¿½ria da entidade Usuario como o ID do Discord.
             modelBuilder.Entity<Usuario>()
                 .HasKey(u => u.Id);
 
@@ -151,6 +169,36 @@ namespace LegendsAwaken.Infrastructure
                 .HasOne(ph => ph.Heroi)
                 .WithMany()
                 .HasForeignKey(ph => ph.HeroiId);
+
+            // Item e ItemBonus
+            modelBuilder.Entity<Item>()
+                .HasMany(i => i.Bonus)
+                .WithOne()
+                .HasForeignKey(b => b.ItemId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<ItemBonus>()
+                .HasKey(b => b.Id);
+
+            // HeroiBonusAtributo
+            modelBuilder.Entity<HeroiBonusAtributo>()
+                .HasKey(b => b.Id);
+
+            modelBuilder.Entity<HeroiBonusAtributo>()
+                .HasOne(b => b.Heroi)
+                .WithMany(h => h.BonusAtributos)
+                .HasForeignKey(b => b.HeroiId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // SlotOcupacao
+            modelBuilder.Entity<SlotOcupacao>()
+                .HasKey(s => s.Id);
+
+            modelBuilder.Entity<SlotOcupacao>()
+                .HasOne<Construcao>()
+                .WithMany()
+                .HasForeignKey(s => s.ConstrucaoId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

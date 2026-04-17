@@ -9,15 +9,8 @@ namespace LegendsAwaken.Application.Helpers
 {
     public class BannerDinamico
     {
-        private readonly List<Raca> _todasRacas = new()
-    {
-        Raca.Humano,
-        Raca.Bestial,
-        Raca.Anao,
-        Raca.Elfo,
-        Raca.Draconato,
-        Raca.Fada
-    };
+        // Populated from the enum — new races are picked up automatically.
+        private readonly List<Raca> _todasRacas = Enum.GetValues<Raca>().ToList();
 
         private readonly Dictionary<Raca, int> _chancesIniciais;
         private int _chanceHumanoInicial;

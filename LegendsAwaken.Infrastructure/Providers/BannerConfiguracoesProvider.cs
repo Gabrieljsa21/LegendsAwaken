@@ -1,74 +1,45 @@
-﻿using LegendsAwaken.Bot.Models.Banner;
+using LegendsAwaken.Bot.Models.Banner;
 using LegendsAwaken.Domain.Enum;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace LegendsAwaken.Infrastructure.Providers
 {
     public static class BannerConfiguracoesProvider
-    {        
+    {
         public static BannerConfiguracao BannerPadrao => new BannerConfiguracao
         {
-            Id = "banner_padrao",
+            Id   = "banner_padrao",
             Nome = "Banner Padrão",
+
+            // Raridade → { Raca → peso }.
+            // Non-human weight = (100 - chanceHumano) / count(non-human).
+            // Adding a new Raca to the enum automatically distributes weight here.
             RacaPorRaridade = new Dictionary<Raridade, Dictionary<Raca, int>>
             {
-                {
-                    Raridade.Estrela1, new Dictionary<Raca, int>
-                    {
-                        { Raca.Humano, 100 },
-                        { Raca.Bestial, 0 },
-                        { Raca.Anao, 0 },
-                        { Raca.Elfo, 0 },
-                        { Raca.Draconato, 0 },
-                        { Raca.Fada, 0 }
-                    }
-                },
-                {
-                    Raridade.Estrela2, new Dictionary<Raca, int>
-                    {
-                        { Raca.Humano, 100 },
-                        { Raca.Bestial, 0 },
-                        { Raca.Anao, 0 },
-                        { Raca.Elfo, 0 },
-                        { Raca.Draconato, 0 },
-                        { Raca.Fada, 0 }
-                    }
-                },
-                {
-                    Raridade.Estrela3, new Dictionary<Raca, int>
-                    {
-                        { Raca.Humano, 90 },
-                        { Raca.Bestial, 2 },
-                        { Raca.Anao, 2 },
-                        { Raca.Elfo, 2 },
-                        { Raca.Draconato, 2 },
-                        { Raca.Fada, 2 }
-                    }
-                },
-                {
-                    Raridade.Estrela4, new Dictionary<Raca, int>
-                    {
-                        { Raca.Humano, 85 },
-                        { Raca.Bestial, 3 },
-                        { Raca.Anao, 3 },
-                        { Raca.Elfo, 3 },
-                        { Raca.Draconato, 3 },
-                        { Raca.Fada, 3 }
-                    }
-                },
-                {
-                    Raridade.Estrela5, new Dictionary<Raca, int>
-                    {
-                        { Raca.Humano, 75 },
-                        { Raca.Bestial, 5 },
-                        { Raca.Anao, 5 },
-                        { Raca.Elfo, 5 },
-                        { Raca.Draconato, 5 },
-                        { Raca.Fada, 5 }
-                    }
-                }
+                { Raridade.Estrela1, TabelaRacas(chanceHumano: 100) },
+                { Raridade.Estrela2, TabelaRacas(chanceHumano: 100) },
+                { Raridade.Estrela3, TabelaRacas(chanceHumano:  90) },
+                { Raridade.Estrela4, TabelaRacas(chanceHumano:  85) },
+                { Raridade.Estrela5, TabelaRacas(chanceHumano:  75) },
             }
         };
+
+        /// <summary>
+        /// Builds a race-weight table for a given raridade.
+        /// Humano receives <paramref name="chanceHumano"/>; all non-human races
+        /// split the remainder evenly. Works for any number of races in the enum.
+        /// </summary>
+        private static Dictionary<Raca, int> TabelaRacas(int chanceHumano)
+        {
+            var naoHumanas = Enum.GetValues<Raca>().Where(r => r != Raca.Humano).ToList();
+            int chanceNaoHumano = naoHumanas.Count > 0
+                ? (100 - chanceHumano) / naoHumanas.Count
+                : 0;
+
+            return Enum.GetValues<Raca>()
+                .ToDictionary(r => r, r => r == Raca.Humano ? chanceHumano : chanceNaoHumano);
+        }
     }
 }

@@ -10,6 +10,7 @@ namespace LegendsAwaken.Domain.Entities.Combate
     {
         public Guid Id { get; init; }
         public string Nome { get; init; } = string.Empty;
+        public int Nivel { get; init; } = 1;
         public AtributosBase Atributos { get; set; } = new();
         public StatusCombate Status { get; set; } = new();
         public List<HeroiHabilidade>? Habilidades { get; set; }

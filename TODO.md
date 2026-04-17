@@ -21,6 +21,8 @@ Tarefas granulares organizadas por área. Acompanhe o progresso macro no `ROADMA
 - [x] Banners configuráveis
 - [x] Geração procedural de heróis
 - [x] Dropdown de seleção de banner
+- [x] Distribuição de raças por raridade (1★/2★ = humano; 3★ = 10% não-humano; 4★ = 25%)
+- [x] Distribuição uniforme entre raças não-humanas
 - [ ] Campo `ImageUrl` na entidade `Heroi`
 - [ ] Campo `Lore` na entidade `Heroi` (para personagens fixos)
 - [ ] Cadastrar pool de personagens fixos 5★/4★ no seed
@@ -37,12 +39,72 @@ Tarefas granulares organizadas por área. Acompanhe o progresso macro no `ROADMA
 - [x] Sistema de habilidades com XP e níveis
 - [x] `/ver_heroi` com autocomplete
 - [x] `/listar_herois` com paginação e filtro
-- [ ] Equipar herói com item craftado (`/heroi equipar`)
+- [x] `RaridadeConfig` centralizado (cap, base stats, ganhos) — SOLID
+- [x] Aplicar bônus racial (+50 no atributo foco) na criação do herói
+- [x] Aplicar `ObterAtributosBaseParaRaridade()` na criação do herói
+- [x] Equipar herói com item craftado (`/heroi_equipar`) — `HeroiService.EquiparItemAsync`, persiste via `HeroiBonusAtributo`
 - [ ] Exibir equipamentos no `/ver_heroi`
+- [ ] Apelido e arte customizada (`/heroi apelido`, `/heroi arte`)
 
 ---
 
-## Torre
+## Sistema de Níveis e Ascensão
+
+- [x] `HeroiLevelUpService` com `RaridadeConfig` (caps 20/40/60/80/100)
+- [x] Ganhos por level-up por raridade (+2/+3/+4/+6/+8+12)
+- [x] `CalcularGrantAscensao` — catch-up automático ao nativo da nova raridade
+- [x] `CalcularTotalPontosNativo` — total derivado, sem valores fixos
+- [x] **Curva de XP (Fase 3A):** `XP_next = B_r × nível` em `HeroiLevelUpService.XpParaProximoNivel`  
+  `B_r`: 1★=80 | 2★=100 | 3★=120 | 4★=150 | 5★=200 (campo `BaseXp` em `RaridadeConfig`)
+- [ ] **(Beta)** Migrar curva de XP para `B_r × nível^1.25` após coleta de dados reais (ver `DESIGN_SISTEMAS.md §1`)
+- [x] Ganho de XP ao subir andares da Torre (`TorreService.SubirAndarAsync` → `AplicarXp`)
+- [ ] Ganho de XP passivo na Cidade (menor que Torre)
+- [ ] Ganho de XP em missões da Guilda
+- [x] Level-up: distribuir pontos e checar cap da raridade (`HeroiLevelUpService.AplicarXp`)
+- [x] Bloquear XP ao atingir o cap (XP zerado, level travado até ascensão)
+- [ ] Sistema de fragmentos de arquétipo (entidade, acúmulo por atividade)
+- [ ] Ascensão: consumir fragmentos + materiais, aplicar grant, subir raridade
+- [ ] `/heroi ascender` com verificação de cap e custo
+
+---
+
+## Inventário Unificado (Fase 3A — fazer antes de Relíquias e Itens)
+
+Evita fragmentação de lógica entre itens, relíquias e recursos.
+
+- [ ] `Inventario` — entidade unificada por jogador; tipos: `Recurso | Item | Reliquia | Consumivel`
+- [ ] Operações atômicas: `Add(tipo, id, qtd)` / `Remove(tipo, id, qtd)` com validação prévia
+- [ ] Stack limit por tipo (ex: relíquias não stackam; recursos sim)
+- [ ] `/inventario` — visualização por categoria com paginação
+
+## Relíquias (Fase 3B)
+
+- [ ] Entidade `Reliquia` (Id, Nome, Descrição, Efeito, AndarMinimo)
+- [ ] 3 slots de relíquia por herói (`HeroiReliquia`)
+- [ ] Drop de relíquias em boss floors da Torre (requer Inventário Unificado)
+- [ ] `/heroi reliquia equipar`, `remover`, `ver`
+- [ ] `/inventario reliquias`
+- [ ] Aplicar efeito passivo da relíquia no combate
+- [ ] Extensibilidade: efeitos de relíquia via interface `IEfeitoReliquia` — evita switch gigante
+
+---
+
+## Combate — Especificação Core (Fase 3A.1 — fazer antes da Torre)
+
+Fórmulas definidas em `GDD.md §5.0` e `DESIGN_SISTEMAS.md §3`.
+
+- [x] **Fórmula de dano**: `ATK × SkillMult × (1 - DEF/(DEF+1000+Level×50)) × TypeMult`; crit 1.5× em `CombatService.CalcularDano`
+- [x] **Burst cap**: hit único ≤ 65% HP máximo do alvo (`BurstCapFactor = 0.65`)
+- [x] **Ordem de turno ATB**: `InitScore = Agilidade + Random(0, Agilidade×0.1)` em `ExecutarRound`
+- [ ] **Sistema de ameaça (aggro)**: tanques/paladinos atraem mais ataques; afeta alvo selecionado por inimigos
+- [ ] **Escalas de inimigos por andar**: `stats = base × (1 + 0.08)^floor`; calibrar com tabela CDI (`DESIGN_SISTEMAS.md §5`)
+- [ ] **Power Score**: implementar `HeroPowerScore` para usar em sucesso/falha de missões (`DESIGN_SISTEMAS.md §2`)
+- [ ] **Posicionamento leve (front/back)**: heróis melee → front; ranged/mago → back; inimigos atacam front por padrão
+- [ ] **Sinergia de habilidades**: pelo menos 1 combo básico (ex: fogo + vento = área)
+- [ ] **IA tática**: atacar menor HP (DPS focus) ou maior ameaça (proteção de suporte)
+- [ ] `IRandomProvider` interface — encapsula RNG com seed controlado (base para replay e debug determinístico)
+
+## Torre (Fase 3A — MVP)
 
 - [x] Torre infinita com andares por usuário
 - [x] Tipos de andar (Subjugação, Fuga, Escolta, Defesa, Armadilha, Evento)
@@ -52,57 +114,162 @@ Tarefas granulares organizadas por área. Acompanhe o progresso macro no `ROADMA
 - [ ] Drops de materiais de crafting em andares de boss
 - [ ] Fragmentos de personagens fixos como drop raro
 - [ ] `/treinar` funcional via Arena (XP acelerado)
-- [ ] IA tática no combate (atacar menor HP / maior ameaça)
+
+## Torre — Modo Operação (Fase 3B)
+
+Andar concluído passa a ter dois modos: Exploração (primeira vez) e Operação (farm automático após conclusão).
+
+- [ ] Estado `AndarConcluido` por usuário + andar
+- [ ] `/torre operar <andar>` — inicia operação automática em andar concluído
+- [ ] Definir grupo, objetivo (farm recurso / exploração leve) e perfil de risco (seguro / balanceado / agressivo)
+- [ ] Recursos exclusivos por andar (ex: andar 12 → Essência Corrompida; andar 18 → Cristal Arcano)
+- [ ] Combate automático durante operação; resumo periódico consolidado
+- [ ] Eventos de interrupção: jogador recebe notificação com decisão (2 min para responder)
+- [ ] Líder decide automaticamente se jogador não responder (baseado no perfil do líder)
+- [ ] `/torre recuar` — aborta operação com coleta parcial, sem penalidade pesada
+- [ ] Sistema de notificação inteligente (só notifica evento importante, fim de operação, risco alto)
+
+## Torre — Design Avançado (Fase 3C)
+
+- [ ] Progresso % por andar (múltiplas ações contam: inimigos derrotados, áreas exploradas, eventos resolvidos, boss)
+- [ ] Requisito secreto por andar (ex: "termine sem mortes", "não ataque o NPC", "ache a sala oculta") — progresso fica em 92% até ser cumprido
+- [ ] Zonas por andar (Entrada, Bioma, Núcleo do Boss)
+- [ ] Identidade mecânica por andar (ex: andar 10 → anti-cura; andar 18 → tempo limitado; andar 22 → anti-tank)
+- [ ] Memória do andar (NPCs/eventos lembram decisões anteriores do jogador)
+- [ ] Overclear: 100% concluído → 120% desbloqueio de evento raro → 150% domínio total
+- [ ] Estado do andar (Normal / Corrompido / Instável / Rico) que muda ao longo do tempo
+- [ ] Seed de run (identificador único por run para reprodutibilidade e debug)
+- [ ] Perfil de run ao final: estilo, eventos resolvidos, segredos, risco assumido
+- [ ] Anti-meta rígida: andares que penalizam builds específicas (anti-tank, anti-magia, anti-heal, anti-cura)
 
 ---
 
 ## Cidade — Base
 
 - [x] Entidade `Cidade` (Nome, Nível, Recursos, Construções, Trabalhadores)
-- [x] Recursos: Comida, Madeira, Pedra, Ouro
+- [x] Recursos: Comida, Madeira, Pedra, Ouro, Erva
 - [x] Enum `Profissao` com combate, coleta e produção
-- [ ] `/cidade ver` — painel com recursos, prédios e heróis alocados
-- [ ] `/cidade coletar` — coleta produção acumulada por tempo
-- [ ] Produção passiva com teto de 24h
-- [ ] Alocação manual (`/cidade alocar`, `/cidade desalocar`)
-- [ ] Upgrades de prédio nível 1 → 2
+- [x] `/cidade ver` — painel com recursos, prédios e heróis alocados
+- [x] `/cidade coletar` — coleta produção acumulada por tempo
+- [x] Produção passiva com teto de 24h
+- [x] Alocação manual (`/cidade alocar`, `/cidade desalocar`)
+- [x] `CidadeRepository` em EF Core
+- [ ] Upgrades de prédio nível 1→2
 
 ---
 
-## Cidade — Gestão Autônoma
+## Cidade — Modelo de Slots (Fase 3A — substitui modelo atual)
 
+Rework determinístico da cidade: sem auto-alocação, sem IA. Cada prédio tem dois tipos de slot.
+
+- [ ] **Slots de Responsabilidade**: heróis que "fazem o prédio funcionar" — requerem `Confianca` mínima + atributo mínimo; prédio inativo se não preenchidos
+- [ ] **Slots de Operação**: heróis que executam trabalho — não precisam de confiança alta; afetam volume e qualidade
 - [ ] Campo `Confianca` (0–100) na entidade `Heroi`
-- [ ] Campo `Humor` na entidade `Heroi` (enum: Deprimido → Animado)
-- [ ] Modificador de eficiência baseado no Humor
+- [ ] Campo `Humor` na entidade `Heroi`
+- [ ] **Humor da Cidade** = média ponderada do Humor dos heróis alocados (heróis em prédios críticos têm peso maior)
+- [ ] Estados de Humor da Cidade: Ruim (0–25, -10% produção) / Neutro (26–60) / Bom (61–85, +10%) / Excelente (86–100, +20%)
+- [ ] Fórmula de produção: `Base × Nível × Multiplicador(responsáveis) × Soma(operadores) × HumorCidade`
+- [ ] Modificador de eficiência individual: `1 + (AtributoRelevante / 100)` — penalidade abaixo do requisito, bônus leve acima, cap anti-exploit
+- [ ] Confiança desbloqueia funções avançadas (ex: Forja — 0–40: básico; 41–70: crafting Raro; 71–100: Mestre da Forja com redução de custo)
+- [ ] Slots de Liderança: herói com Confiança ≥ 61 pode ocupar slot de Líder — aplica +10% produção global do prédio + sinergia de profissão
+
+---
+
+## Cidade — Novos Prédios (Fase 3B)
+
+- [ ] **Armazém** — limite de estoque de recursos; overflow converte automaticamente (ex: madeira excedente → ouro a 80% eficiência)
+- [ ] **Mercado** — conversão de recursos em ouro; pode operar automático; melhores taxas com upgrade
+- [ ] **Prefeitura** — define limites globais (nº de heróis alocados, nº de construções); necessária para desbloquear novos prédios avançados
+- [ ] **Quartel** — profissões: Guerreiro, Paladino; produção: buffs para Torre; upgrade: +eficiência de combate
+- [ ] **Academia** — profissões: Pesquisador; produção: XP global / passivas; upgrade: desbloqueia perks permanentes
+- [ ] **Tesouro** — armazena ouro; protege contra eventos negativos; pode gerar juros leve
+- [ ] **Torre de Vigilância** — profissões: Arqueiro, Caçador; melhora previsibilidade da Torre; aumenta chance de encontrar segredos
+- [ ] **Pedreira** — profissões: Mineiro; produção: pedra em volume; separa pedra de minério para mais controle
+- [ ] **Santuário** — profissões: Mago, Clérigo; ativa buffs temporários (+drop, +XP, +evento raro); bom sink de recursos
+- [ ] **Oficina de Caça** — profissões: Caçador; produção: carne, couro; expande materiais de crafting
+
+---
+
+## Cidade — Gestão Autônoma (Fase 3C — não implementar antes de 3B estável)
+
+⚠️ Sistemas de IA dependem de economia e combate equilibrados. Implementar só após Fase 3B validada.
+
 - [ ] Auto-alocação por confiança seguindo a política ativa
 - [ ] `/cidade politica <foco>` (recursos / producao / combate / equilibrio)
-- [ ] `/cidade otimizar` — aloca todos os vagos no melhor slot
-- [ ] Lógica de líder de prédio (Parceiro+) reduzindo queda de humor do time
+- [ ] `/cidade otimizar`
 - [ ] Prioridade por construção (`/cidade prioridade`)
 - [ ] Cadeia de dependência inteligente
-- [ ] `/cidade cadeia <prédio>` — exibe raciocínio e estimativa
+- [ ] `/cidade cadeia <prédio>`
+- [ ] `/cidade orçamento` — define % global de produção/pesquisa/manutenção/reserva; sistema usa isso para decidir prioridades
+
+---
+
+## Sistema de Conversão de Heróis (Fase 3B)
+
+- [ ] Entidade/serviço `ConversaoHeroiService`
+- [ ] **Venda**: `Valor = BaseRaridade × EscalaDeNivel × FatorDeEscassezGlobal` — raridade pesa mais que nível; evita "farm de XP → venda → ouro infinito"
+- [ ] Bloqueios anti-exploit na Venda: herói equipado / em missão / na Torre / alocado em prédio = bloqueado
+- [ ] **Absorção**: consome herói, transfere 50% do XP acumulado para herói-alvo
+- [ ] Bloqueios anti-exploit na Absorção: mesmos critérios de Venda
+- [ ] `/heroi vender <herói>` com confirmação explícita (ação irreversível)
+- [ ] `/heroi absorver <alvo> <consumido>` com confirmação
+
+---
+
+## Sistema de Sustento (Fase 3B)
+
+- [ ] Campo `EstadoSustento` na entidade `Heroi` (enum: Ativo / Instável / Degradado / Inativo)
+- [ ] Consumo de Comida por herói: `Consumo = Base × Raridade × (1 + Nivel / 100)`
+- [ ] Consumo maior por classe (Guerreiro/Tanque > Mago/Suporte)
+- [ ] Limite de Moradia: prédio Alojamento define capacidade; sem moradia → redução de moral + aumento de custo
+- [ ] Estado **Ativo**: totalmente sustentado; 100% eficiência
+- [ ] Estado **Instável**: falta parcial de recursos; penalidade de -% atributos e -% ganho de XP
+- [ ] Estado **Degradado**: falta crítica; habilidades desativadas; risco de deserção temporária
+- [ ] Estado **Inativo** (manual): jogador desativa herói para reduzir custo; herói não participa de atividades
+- [ ] Consome automaticamente da produção de Comida da Fazenda
+- [ ] Feedback claro no `/cidade ver` sobre heróis em risco de sustento
 
 ---
 
 ## Crafting
 
-- [ ] Receitas básicas definidas (armas, armaduras, poções)
-- [ ] Forja produzindo equipamentos passivamente
-- [ ] Qualidade do item (Comum → Mestre) baseada em habilidade + nível do prédio
+- [x] 5 receitas estáticas (Fase 3A): espada-ferro, arco-simples, armadura-couro, anel-arcano, amuleto-agilidade
+- [x] `/crafting listar` e `/crafting fazer <receitaId>` (bot commands)
+- [ ] Forja produzindo equipamentos passivamente (Fase 3A.2 — slot de Responsabilidade)
+- [ ] Check de qualidade (skill_craft + bônus_prédio + roll 1-20)
 - [ ] Laboratório produzindo poções
 - [ ] Poções usadas automaticamente na Torre
 - [ ] Blueprints desbloqueáveis via missões ou drops
+- [ ] Confiança do responsável desbloqueia blueprints raros (Confiança ≥ 71 → Mestre da Forja)
 
 ---
 
-## Missões (Guilda)
+## Missões (Guilda) — Fase 3B
 
-- [ ] Geração automática de missões por nível da Guilda
-- [ ] Herói parte → retorna após duração → traz recompensas
+- [ ] Entidade de rank da Guilda (Ferro → Oricalco, 15 tiers)
+- [ ] Geração automática de missões a cada 6h (até 8 simultâneas)
+- [ ] Herói parte → state machine: `Aguardando → EmMissao → Retornando → Concluida`
 - [ ] Tipos: Coleta, Subjugação, Escolta, Transporte, Investigação, Recuperação
-- [ ] Falha possível se herói for fraco demais
-- [ ] `/cidade missoes` — lista missões ativas e status
-- [ ] Missões raras com fragmentos e blueprints como recompensa
+- [ ] Cálculo de sucesso/parcial/falha por poder vs dificuldade
+- [ ] **Fail interesting**: missão falhou → pode gerar evento secundário (herói capturado → nova dungeon)
+- [ ] `/cidade missoes` e `/cidade missoes enviar`
+
+---
+
+## Arena
+
+- [ ] Treino passivo: XP de combate acelerado, consome Comida
+- [ ] `/treinar <herói>` — sessão intensiva com XP em burst
+- [ ] `/arena desafio` — desafio de ondas com cooldown diário
+- [ ] Sistema de Prestígio e títulos honoríficos
+
+---
+
+## Meta Progressão (Fase 3B)
+
+- [ ] **Nível do Mestre** — progride com atividade global (pulls, andares, produções); desbloqueia bônus passivos (ex: +1% XP global por nível); exibido no perfil
+- [ ] **Bônus de Composição de Party** — 3 da mesma raça → +10% XP; full arqueiros → +crit chance; party balanceada (1 de cada arquétipo) → bônus misto
+- [ ] **Decisões irreversíveis leves**: ao ascender para 4★, herói ganha 1 traço fixo escolhido pelo jogador (ex: "Incansável" → +5% XP sempre; "Pragmático" → +10% gold sempre) — cria identidade de herói
 
 ---
 
@@ -112,13 +279,40 @@ Tarefas granulares organizadas por área. Acompanhe o progresso macro no `ROADMA
 - [x] Clean Architecture com separação real de camadas
 - [x] Nullable warnings corrigidos (0 warnings)
 - [x] Migração para .NET 10
-- [ ] `Random.Shared` no `GachaService` (thread-safety)
+- [x] `RaridadeConfig` — sem números mágicos no sistema de progressão
+- [ ] `Random.Shared` no `GachaService` (já existe como tarefa)
+- [ ] **`IRandomProvider` interface** — encapsula todo RNG; permite seed controlado para testes e debug; evitar `Random` solto em múltiplos serviços
 - [ ] `ILogger<T>` substituindo `Console.WriteLine` nos serviços
 - [ ] Guild ID movido para `appsettings.json`
-- [ ] Caminho do banco de dados via variável de ambiente ou relativo
-- [ ] Testes unitários: GachaService (pity, raridade)
-- [ ] Testes unitários: CombatService (turnos, dano)
-- [ ] Testes unitários: produção passiva da cidade
+- [ ] Caminho do banco via variável de ambiente ou relativo
+- [ ] **`TimeProvider` centralizado** — injetar `ITimeProvider` nos serviços que usam tempo (produção, missões, torre); permite testar sem `DateTime.Now` direto
+- [ ] **Transações EF Core** nas operações críticas (craft, ascensão, venda, absorção): validar → executar → commit; rollback em falha
+- [ ] **Guard clauses centralizadas** — padrão único de validação de estado inválido: herói em missão, herói inativo, recurso insuficiente, slot cheio; mensagem padronizada: "Você não pode fazer isso porque…"
+- [ ] **State machines para fluxos longos** — missões e Torre Operação modelados como `estado + transição` persistido; garante retomada após restart do bot
+- [ ] **Separação explícita Domain/Application/Discord** — Commands apenas orquestram; Services não conhecem Discord; verificar e corrigir onde acoplado
+- [ ] Idempotência nos comandos de coleta (evita duplicar recursos se spamado)
+- [ ] Testes unitários: GachaService (pity, raridade, distribuição de raças)
+- [ ] Testes unitários: HeroiLevelUpService (grants, totais, caps)
+- [ ] Testes unitários: CombatService (turnos, dano, crit)
+- [ ] Testes unitários: Produção passiva da cidade
+- [ ] **Testes de integração**: fluxo completo gacha → alocar → produzir → evoluir (SQLite in-memory)
+- [ ] **Configuração central de balanceamento** — taxas de drop, custo de ascensão, produção base em JSON/tabela; evitar rebuild para ajuste de números (além do `RaridadeConfig` existente)
+- [ ] **Validação e sanitização de input** — limites em apelidos, URLs de arte, strings maliciosas; guard em todos os slash commands
+- [ ] **Padrão de UX — 3 camadas**: toda resposta tem versão Resumo (default) / Detalhado (botão) / Debug (comando admin); nada exige leitura maior que 5 segundos
+
+---
+
+## Comandos Admin / Debug (Fase 3.5)
+
+Essenciais para desenvolvimento e beta — aceleram debug enormemente.
+
+- [ ] `/admin resetar_cidade <userId>` — reseta cidade para estado inicial
+- [ ] `/admin dar_recursos <userId> <tipo> <qtd>` — injeta recursos para teste
+- [ ] `/admin spawn_heroi <userId> <raridade>` — spawna herói com raridade definida
+- [ ] `/admin ver_estado <userId>` — dump completo do estado do jogador
+- [ ] `/admin forcar_nivel <heroiId> <nivel>` — avança nível para testar caps
+- [ ] Sistema de permissão admin (IDs autorizados em `appsettings.json`)
+- [ ] **Evento ao logar** — ao executar qualquer comando, bot verifica e exibe 1 item pendente relevante: missão concluída, alerta de cidade, herói subiu nível, decisão pendente na Torre
 
 ---
 
@@ -129,3 +323,5 @@ Tarefas granulares organizadas por área. Acompanhe o progresso macro no `ROADMA
 - [ ] Bot rodando em servidor externo (VPS ou similar)
 - [ ] Variável de ambiente configurada no servidor
 - [ ] Script de deploy automatizado
+- [ ] **Backup automático do SQLite** (diário, arquivo rotacionado)
+- [ ] **Definir estratégia de reset para beta** — wipe total / reset parcial (recursos, não heróis) / compensação com bônus

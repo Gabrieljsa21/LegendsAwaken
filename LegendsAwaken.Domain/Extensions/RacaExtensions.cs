@@ -9,9 +9,10 @@ namespace LegendsAwaken.Domain.Extensions
 {
     public static class RacaExtensions
     {
-        public static bool EhEspecial(this Raca raca)
-        {
-            return raca is Raca.Fada or Raca.Draconato or Raca.Bestial or Raca.Anao or Raca.Elfo;
-        }
+        /// <summary>
+        /// Returns true for any race that is not Humano.
+        /// Automatically includes new races added to the enum without code changes.
+        /// </summary>
+        public static bool EhEspecial(this Raca raca) => raca != Raca.Humano;
     }
 }

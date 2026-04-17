@@ -1,6 +1,7 @@
 ﻿using Discord;
 using Discord.WebSocket;
 using LegendsAwaken.Application.Services;
+using LegendsAwaken.Domain.Enum;
 using LegendsAwaken.Domain.Extensions;
 using System.Linq;
 using System.Text;
@@ -69,15 +70,24 @@ namespace LegendsAwaken.Bot.Commands
             var totalAtributos = heroi.ObterAtributosTotais(new Domain.Entities.AtributosBase());
 
             var sb = new StringBuilder();
-            sb.AppendLine($"Força: {totalAtributos.Forca}");
-            sb.AppendLine($"Agilidade: {totalAtributos.Agilidade}");
-            sb.AppendLine($"Vitalidade: {totalAtributos.Vitalidade}");
-            sb.AppendLine($"Inteligência: {totalAtributos.Inteligencia}");
-            sb.AppendLine($"Percepção: {totalAtributos.Percepcao}");
-            sb.AppendLine($"Pontos Disponíveis: {heroi.PontosAtributosDisponiveis}");
+            foreach (var (attr, valor) in totalAtributos.ToEnumerable())
+                sb.AppendLine($"{NomeAtributo(attr)}: {valor}");
 
+            sb.AppendLine($"Pontos Disponíveis: {heroi.PontosAtributosDisponiveis}");
             return sb.ToString();
         }
+
+        // Display names for known attributes; unknown attributes fall back to enum name.
+        // Update this when adding a new attribute if a localized label is needed.
+        private static string NomeAtributo(Atributo attr) => attr switch
+        {
+            Atributo.Forca        => "Força",
+            Atributo.Agilidade    => "Agilidade",
+            Atributo.Vitalidade   => "Vitalidade",
+            Atributo.Inteligencia => "Inteligência",
+            Atributo.Percepcao    => "Percepção",
+            _                     => attr.ToString()
+        };
 
         private string MontarHabilidades(Domain.Entities.Heroi heroi)
         {

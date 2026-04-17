@@ -3,6 +3,7 @@ using System;
 using LegendsAwaken.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LegendsAwaken.Infrastructure.Migrations
 {
     [DbContext(typeof(LegendsAwakenDbContext))]
-    partial class LegendsAwakenDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260411035328_CidadeRefactor")]
+    partial class CidadeRefactor
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.5");
@@ -40,9 +43,6 @@ namespace LegendsAwaken.Infrastructure.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<Guid>("HeroiId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid?>("ItemId")
                         .HasColumnType("TEXT");
 
                     b.Property<int>("Origem")
@@ -191,9 +191,6 @@ namespace LegendsAwaken.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("TipoPredio")
-                        .HasColumnType("INTEGER");
-
                     b.HasKey("Id");
 
                     b.HasIndex("CidadeId");
@@ -258,9 +255,6 @@ namespace LegendsAwaken.Infrastructure.Migrations
                     b.Property<string>("Antecedente")
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("Confianca")
-                        .HasColumnType("INTEGER");
-
                     b.Property<DateTime>("DataAlteracao")
                         .HasColumnType("TEXT");
 
@@ -279,17 +273,11 @@ namespace LegendsAwaken.Infrastructure.Migrations
                     b.Property<string>("Historia")
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("Humor")
-                        .HasColumnType("INTEGER");
-
                     b.Property<string>("ImagemUrl")
                         .HasColumnType("TEXT");
 
                     b.Property<int>("Lealdade")
                         .HasColumnType("INTEGER");
-
-                    b.Property<string>("Lore")
-                        .HasColumnType("TEXT");
 
                     b.Property<int>("Nivel")
                         .HasColumnType("INTEGER");
@@ -385,58 +373,6 @@ namespace LegendsAwaken.Infrastructure.Migrations
                     b.ToTable("Inimigo");
                 });
 
-            modelBuilder.Entity("LegendsAwaken.Domain.Entities.Item", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("EstaEquipado")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<Guid?>("HeroiEquipadoId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Nome")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<ulong>("ProprietarioId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("Qualidade")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("Slot")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Itens");
-                });
-
-            modelBuilder.Entity("LegendsAwaken.Domain.Entities.ItemBonus", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("Atributo")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<Guid>("ItemId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("Valor")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ItemId");
-
-                    b.ToTable("ItemBonus");
-                });
-
             modelBuilder.Entity("LegendsAwaken.Domain.Entities.Party", b =>
                 {
                     b.Property<Guid>("Id")
@@ -485,39 +421,11 @@ namespace LegendsAwaken.Infrastructure.Migrations
                     b.Property<DateTime>("InicioTrabalho")
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("ResourceNode")
-                        .HasColumnType("INTEGER");
-
                     b.HasKey("Id");
 
                     b.HasIndex("CidadeId");
 
                     b.ToTable("PersonagemTrabalhador");
-                });
-
-            modelBuilder.Entity("LegendsAwaken.Domain.Entities.SlotOcupacao", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("ConstrucaoId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("HeroiId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("PosicaoSlot")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("SlotTipo")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ConstrucaoId");
-
-                    b.ToTable("SlotOcupacoes");
                 });
 
             modelBuilder.Entity("LegendsAwaken.Domain.Entities.TorreAndar", b =>
@@ -733,13 +641,14 @@ namespace LegendsAwaken.Infrastructure.Migrations
                             b1.Property<Guid>("HeroiId")
                                 .HasColumnType("TEXT");
 
-                            b1.Property<Guid?>("AcessorioId")
+                            b1.PrimitiveCollection<string>("Acessorios")
+                                .IsRequired()
                                 .HasColumnType("TEXT");
 
-                            b1.Property<Guid?>("ArmaId")
+                            b1.Property<string>("Arma")
                                 .HasColumnType("TEXT");
 
-                            b1.Property<Guid?>("ArmaduraId")
+                            b1.Property<string>("Armadura")
                                 .HasColumnType("TEXT");
 
                             b1.Property<int>("Id")
@@ -853,9 +762,6 @@ namespace LegendsAwaken.Infrastructure.Migrations
                                 .IsRequired()
                                 .HasColumnType("TEXT");
 
-                            b1.Property<DateTime?>("UltimoTreino")
-                                .HasColumnType("TEXT");
-
                             b1.HasKey("HeroiId");
 
                             b1.ToTable("Herois");
@@ -936,15 +842,6 @@ namespace LegendsAwaken.Infrastructure.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("LegendsAwaken.Domain.Entities.ItemBonus", b =>
-                {
-                    b.HasOne("LegendsAwaken.Domain.Entities.Item", null)
-                        .WithMany("Bonus")
-                        .HasForeignKey("ItemId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("LegendsAwaken.Domain.Entities.PartyHero", b =>
                 {
                     b.HasOne("LegendsAwaken.Domain.Entities.Heroi", "Heroi")
@@ -973,15 +870,6 @@ namespace LegendsAwaken.Infrastructure.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("LegendsAwaken.Domain.Entities.SlotOcupacao", b =>
-                {
-                    b.HasOne("LegendsAwaken.Domain.Entities.Construcao", null)
-                        .WithMany()
-                        .HasForeignKey("ConstrucaoId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("LegendsAwaken.Domain.Entities.Cidade", b =>
                 {
                     b.Navigation("Construcoes");
@@ -1005,11 +893,6 @@ namespace LegendsAwaken.Infrastructure.Migrations
                     b.Navigation("Tags");
 
                     b.Navigation("VinculosHeroicos");
-                });
-
-            modelBuilder.Entity("LegendsAwaken.Domain.Entities.Item", b =>
-                {
-                    b.Navigation("Bonus");
                 });
 
             modelBuilder.Entity("LegendsAwaken.Domain.Entities.Party", b =>

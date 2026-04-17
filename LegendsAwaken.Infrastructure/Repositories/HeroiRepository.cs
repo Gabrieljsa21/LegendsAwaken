@@ -22,8 +22,9 @@ namespace LegendsAwaken.Infrastructure.Repositories
 
         public async Task<Heroi?> ObterPorIdAsync(Guid heroiId)
         {
-            var entity = await _dbContext.Herois.FindAsync(heroiId);
-            return entity;
+            return await _dbContext.Herois
+                .Include(h => h.BonusAtributos)
+                .FirstOrDefaultAsync(h => h.Id == heroiId);
         }
 
         public async Task<List<Heroi>> ObterPorUsuarioIdAsync(ulong usuarioId)
@@ -32,10 +33,10 @@ namespace LegendsAwaken.Infrastructure.Repositories
                 .AsNoTracking()
                 .Include(h => h.Habilidades)
                     .ThenInclude(hh => hh.Habilidade)
-                        .ThenInclude(h => h.HabilidadeBonusAtributos) // incluir bônus de atributos
+                        .ThenInclude(h => h.HabilidadeBonusAtributos)
+                .Include(h => h.BonusAtributos)
                 .Where(h => h.UsuarioId == usuarioId)
                 .ToListAsync();
-
         }
 
         public async Task<List<Heroi>> ObterTodosAsync()
@@ -44,9 +45,9 @@ namespace LegendsAwaken.Infrastructure.Repositories
                 .AsNoTracking()
                 .Include(h => h.Habilidades)
                     .ThenInclude(hh => hh.Habilidade)
-                        .ThenInclude(h => h.HabilidadeBonusAtributos) // incluir bônus de atributos
+                        .ThenInclude(h => h.HabilidadeBonusAtributos)
+                .Include(h => h.BonusAtributos)
                 .ToListAsync();
-
         }
 
         public async Task AdicionarAsync(Heroi heroi)
@@ -58,7 +59,7 @@ namespace LegendsAwaken.Infrastructure.Repositories
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Erro ao adicionar herói no banco de dados:");
+                Console.WriteLine("Erro ao adicionar heroi no banco de dados:");
                 Console.WriteLine(ex.ToString());
                 throw;
             }
@@ -73,12 +74,10 @@ namespace LegendsAwaken.Infrastructure.Repositories
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Erro ao atualizar herói no banco de dados:");
+                Console.WriteLine("Erro ao atualizar heroi no banco de dados:");
                 Console.WriteLine(ex.ToString());
                 throw;
             }
         }
-
-
     }
 }

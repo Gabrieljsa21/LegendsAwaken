@@ -108,6 +108,7 @@ namespace LegendsAwaken.Domain.Enum
 
     public enum OrigemBonusAtributo
     {
+        Racial,
         Profissao,
         Antecedente,
         Equipamento,
@@ -116,5 +117,14 @@ namespace LegendsAwaken.Domain.Enum
         Outro
     }
 
+    public enum SlotEquipamento { Arma, Armadura, Acessorio }
+
+    public enum Qualidade { Comum = 1, Bom = 2, Raro = 3, Excepcional = 4, Mestre = 5 }
+
+    public enum TipoResourceNode { Campo, Floresta, Mina, Prado }
+
+    public enum TipoPredio { Fazenda, Serraria, Mina, Forja, Arena, Guilda }
+
+    public enum SlotTipo { Responsabilidade, Operacao }
 
 }
