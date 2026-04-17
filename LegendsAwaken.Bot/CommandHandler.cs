@@ -69,8 +69,6 @@ namespace LegendsAwaken.Bot
             _client.ButtonExecuted += HandleButtonExecutedAsync;
             _client.AutocompleteExecuted += HandleAutocompleteAsync;
             _client.Ready += OnReadyAsync;
-            _client.SelectMenuExecuted += HandleSelectMenuExecutedAsync;
-
         }
 
         private Task OnReadyAsync()
@@ -398,11 +396,6 @@ namespace LegendsAwaken.Bot
             }
         }
 
-
-        private async Task HandleSelectMenuExecutedAsync(SocketMessageComponent comp)
-        {
-            await Task.CompletedTask;
-        }
 
         public async Task SetupCommandsAsync()
         {

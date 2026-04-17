@@ -39,7 +39,7 @@ namespace LegendsAwaken.Bot.Commands
             var herois = await _heroiService.ObterHeroisPorUsuarioAsync(command.User.Id);
             if (!herois.Any())
             {
-                await command.RespondAsync("Você não tem heróis. Use `/invocar` primeiro.", ephemeral: true);
+                await command.RespondAsync("Você ainda não tem heróis. Use /colecao para ver sua coleção.", ephemeral: true);
                 return;
             }
 
