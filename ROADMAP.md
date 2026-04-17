@@ -76,44 +76,54 @@
 
 ---
 
-## Fase 3A.2 — Consolidação do Core
+## Fase 3A.2 — Consolidação do Core ✅ concluída
 **Objetivo:** aprofundar os sistemas core. Cidade com modelo de slots, gacha completo, arena.
 
 ### Gacha
-- [ ] Campo `ImageUrl` e `Lore` nos heróis fixos
-- [ ] Pool de personagens fixos 5★/4★ cadastrada no seed
+- [x] Campo `Lore` na entidade `Heroi`
+- [x] Pool de personagens fixos 5★/4★ cadastrada no seed (9 personagens, idempotente)
 - [ ] Arte exibida no embed do pull
 
 ### Cidade — Modelo de Slots
-- [ ] Campo `Confianca` (0–100) na entidade `Heroi` (valor inicial fixo/simples na 3A.2)
-- [ ] Campo `Humor` na entidade `Heroi`
-- [ ] **Dois tipos de slot por prédio:** Responsabilidade (gate por Confiança + atributo) e Operação
-- [ ] Prédio inativo se slots de Responsabilidade não preenchidos
-- [ ] Humor da Cidade: média ponderada dos heróis alocados
-- [ ] Fórmula de produção: `Base × Nível × Multi(responsáveis) × Soma(operadores) × HumorCidade`
+- [x] Campo `Confianca` (0–100) na entidade `Heroi` (default 0)
+- [x] Campo `Humor` na entidade `Heroi` (default 50)
+- [x] **ResourceNode architecture**: Campo, Floresta, Mina, Prado — sempre disponíveis, sem slot
+- [x] **Dois tipos de slot por prédio:** Responsabilidade (gate por Confiança + atributo) e Operação
+- [x] Prédio inativo se slots de Responsabilidade não preenchidos
+- [x] Humor da Cidade: média dos heróis alocados (mult 0.9–1.2×)
+- [x] Fórmula de produção dois tiers: ResourceNode (`BaseRate × (1+ProfBonus) × h`) + Building (`Base × MultResp × SomaOp × HumorMult`)
+- [x] `/cidade construir <prédio>` com validação de recursos
+- [x] `/cidade alocar_recurso <herói> <node>` com taxa/h calculada no feedback
+- [x] `/cidade alocar_predio <herói> <prédio> <slot_tipo>` com gates de Confiança e atributo
+- [x] `/cidade ver` reworked: coletores com taxa, prédios com slots + heróis, HumorCidade
+- [x] `PredioConfig` + `ResourceNodeConfig` — configurações estáticas imutáveis
+- [x] `SlotOcupacao` entity + repository + migration
 
 ### Crafting Completo
-- [ ] Check de qualidade: `skill_craft + bônus_prédio + roll(1..20)`
+- [x] Check de qualidade: `skill_craft + bônus_prédio(Nivel×2) + roll(1..20)` via Responsável da Forja
 - [ ] Laboratório produzindo poções usadas automaticamente na Torre
 
+### Torre
+- [x] Ouro por andar: `5 + Numero×3` × boss_mult (mesmo multiplicador do XP)
+
 ### Arena
-- [ ] `/treinar` — sessão intensiva com XP em burst
-- [ ] `/arena desafio` — desafio de ondas com cooldown diário
+- [x] `/treinar <herói>` — XP acelerado (3× XpParaProximoNivel), 4h cooldown, custo 100 Ouro + 10 Comida
+- [x] `/arena desafio` — desafio de ondas com cooldown 24h, top-5 heróis automático
 - [ ] Sistema de Prestígio e títulos
 
-### Testes (contínuos — adicionar junto com cada sistema)
+### Testes (pendentes — carry-over para 3B)
 - [ ] Testes unitários: GachaService (pity, raridade, raças)
 - [ ] Testes unitários: HeroiLevelUpService (grants, totais, caps)
 - [ ] Testes unitários: CombatService (turnos, dano, crit)
 - [ ] Testes unitários: Produção passiva da cidade
 - [ ] Testes de integração: loop gacha → alocar → produzir → evoluir (SQLite in-memory)
 
-### Qualidade
+### Qualidade (pendente — carry-over para 3.5)
 - [ ] `Random.Shared` no `GachaService`
 - [ ] `ILogger<T>` substituindo `Console.WriteLine`
-- [ ] Guild ID e caminho do banco em variável de ambiente
+- [ ] Guild ID e caminho do banco em variável de ambiente / appsettings
 
-**Sinal de saída:** todos os sistemas core profundos e testados; cidade com slots funcionando.
+**Sinal de saída:** ✅ todos os sistemas core da 3A implementados; cidade com dois tiers de produção funcionando; arena jogável.
 
 ---
 

@@ -23,9 +23,9 @@ Tarefas granulares organizadas por área. Acompanhe o progresso macro no `ROADMA
 - [x] Dropdown de seleção de banner
 - [x] Distribuição de raças por raridade (1★/2★ = humano; 3★ = 10% não-humano; 4★ = 25%)
 - [x] Distribuição uniforme entre raças não-humanas
-- [ ] Campo `ImageUrl` na entidade `Heroi`
-- [ ] Campo `Lore` na entidade `Heroi` (para personagens fixos)
-- [ ] Cadastrar pool de personagens fixos 5★/4★ no seed
+- [x] Campo `ImageUrl` na entidade `Heroi` (campo existe; exibição no embed pendente)
+- [x] Campo `Lore` na entidade `Heroi` (para personagens fixos)
+- [x] Cadastrar pool de personagens fixos 5★/4★ no seed (9 personagens via `GeracaoDeDadosService`, idempotente)
 - [ ] Exibir arte no embed do pull quando disponível
 - [ ] Banner de Profissão (rate-up por profissão)
 
@@ -113,7 +113,7 @@ Fórmulas definidas em `GDD.md §5.0` e `DESIGN_SISTEMAS.md §3`.
 - [x] Party de até 5 heróis (`/grupo`)
 - [ ] Drops de materiais de crafting em andares de boss
 - [ ] Fragmentos de personagens fixos como drop raro
-- [ ] `/treinar` funcional via Arena (XP acelerado)
+- [x] `/treinar` funcional via Arena (XP acelerado)
 
 ## Torre — Modo Operação (Fase 3B)
 
@@ -158,20 +158,22 @@ Andar concluído passa a ter dois modos: Exploração (primeira vez) e Operaçã
 
 ---
 
-## Cidade — Modelo de Slots (Fase 3A — substitui modelo atual)
+## Cidade — Modelo de Slots (Fase 3A — ✅ concluída)
 
 Rework determinístico da cidade: sem auto-alocação, sem IA. Cada prédio tem dois tipos de slot.
 
-- [ ] **Slots de Responsabilidade**: heróis que "fazem o prédio funcionar" — requerem `Confianca` mínima + atributo mínimo; prédio inativo se não preenchidos
-- [ ] **Slots de Operação**: heróis que executam trabalho — não precisam de confiança alta; afetam volume e qualidade
-- [ ] Campo `Confianca` (0–100) na entidade `Heroi`
-- [ ] Campo `Humor` na entidade `Heroi`
-- [ ] **Humor da Cidade** = média ponderada do Humor dos heróis alocados (heróis em prédios críticos têm peso maior)
-- [ ] Estados de Humor da Cidade: Ruim (0–25, -10% produção) / Neutro (26–60) / Bom (61–85, +10%) / Excelente (86–100, +20%)
-- [ ] Fórmula de produção: `Base × Nível × Multiplicador(responsáveis) × Soma(operadores) × HumorCidade`
-- [ ] Modificador de eficiência individual: `1 + (AtributoRelevante / 100)` — penalidade abaixo do requisito, bônus leve acima, cap anti-exploit
-- [ ] Confiança desbloqueia funções avançadas (ex: Forja — 0–40: básico; 41–70: crafting Raro; 71–100: Mestre da Forja com redução de custo)
-- [ ] Slots de Liderança: herói com Confiança ≥ 61 pode ocupar slot de Líder — aplica +10% produção global do prédio + sinergia de profissão
+- [x] **Slots de Responsabilidade**: requerem `Confianca` mínima + atributo mínimo; prédio inativo se não preenchidos
+- [x] **Slots de Operação**: heróis que executam trabalho; afetam volume via `Soma(operadores)`
+- [x] Campo `Confianca` (0–100) na entidade `Heroi` (default 0)
+- [x] Campo `Humor` na entidade `Heroi` (default 50)
+- [x] **ResourceNode** (Campo/Floresta/Mina/Prado): tier 1 de produção, sem slot, com bônus de profissão
+- [x] **Humor da Cidade** = média simples dos heróis alocados nos trabalhadores; mult 0.9/1.0/1.1/1.2
+- [x] Fórmula Tier 2: `BaseProdPorHora × MultResp × SomaOp × HumorMult × horas`
+- [x] Modificador de eficiência individual: `1 + (AtributoRelevante / 100)`
+- [x] `PredioConfig` — slots, custos e recurso produzido por (TipoPredio, Nivel) — sem hardcode
+- [x] `SlotOcupacao` entity + `ISlotOcupacaoRepository` + migration `CidadeSlotModel3A2`
+- [ ] Confiança desbloqueia funções avançadas (ex: Forja nível 71+ → Mestre da Forja) — Fase 3B
+- [ ] Slots de Liderança: herói com Confiança ≥ 61 → +10% produção global do prédio — Fase 3B
 
 ---
 
@@ -235,8 +237,9 @@ Rework determinístico da cidade: sem auto-alocação, sem IA. Cada prédio tem 
 
 - [x] 5 receitas estáticas (Fase 3A): espada-ferro, arco-simples, armadura-couro, anel-arcano, amuleto-agilidade
 - [x] `/crafting listar` e `/crafting fazer <receitaId>` (bot commands)
-- [ ] Forja produzindo equipamentos passivamente (Fase 3A.2 — slot de Responsabilidade)
-- [ ] Check de qualidade (skill_craft + bônus_prédio + roll 1-20)
+- [x] Check de qualidade: `skill_craft + bônus_prédio(Nivel×2) + roll(1..20)` via Responsável da Forja
+- [ ] Forja produzindo equipamentos passivamente (Fase 3B)
+- [ ] Laboratório produzindo poções usadas automaticamente na Torre
 - [ ] Laboratório produzindo poções
 - [ ] Poções usadas automaticamente na Torre
 - [ ] Blueprints desbloqueáveis via missões ou drops
@@ -258,9 +261,8 @@ Rework determinístico da cidade: sem auto-alocação, sem IA. Cada prédio tem 
 
 ## Arena
 
-- [ ] Treino passivo: XP de combate acelerado, consome Comida
-- [ ] `/treinar <herói>` — sessão intensiva com XP em burst
-- [ ] `/arena desafio` — desafio de ondas com cooldown diário
+- [x] `/treinar <herói>` — XP em burst (3× XpParaProximoNivel), 4h cooldown, 100 Ouro + 10 Comida (`ArenaService.TreinarAsync`)
+- [x] `/arena desafio` — desafio de ondas com cooldown 24h, top-5 heróis automático (`ArenaService.DesafioOndasAsync`)
 - [ ] Sistema de Prestígio e títulos honoríficos
 
 ---
@@ -319,7 +321,7 @@ Essenciais para desenvolvimento e beta — aceleram debug enormemente.
 ## Infraestrutura
 
 - [x] Repositório no GitHub
-- [x] `.gitignore` cobrindo `.claude/`, `.idea/`, binários
+- [x] `.gitignore` cobrindo `.claude/`, `.idea/`, binários, `*.db-shm`, `*.db-wal`, arquivos pessoais Claude
 - [ ] Bot rodando em servidor externo (VPS ou similar)
 - [ ] Variável de ambiente configurada no servidor
 - [ ] Script de deploy automatizado
