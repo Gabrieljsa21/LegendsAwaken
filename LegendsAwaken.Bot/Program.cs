@@ -62,7 +62,6 @@ class Program
             .AddScoped<ICidadeRepository, CidadeRepository>()
             .AddScoped<ITorreRepository, TorreRepository>()
             .AddScoped<IHeroiRepository, HeroiRepository>()
-            .AddScoped<IBannerHistoricoRepository, BannerHistoricoRepository>()
             .AddScoped<IUsuarioRepository, UsuarioRepository>()
             .AddScoped<IHabilidadeRepository, HabilidadeRepository>()
             .AddScoped<IAtributoBonusService, AtributoBonusService>()
@@ -74,15 +73,11 @@ class Program
             .AddScoped<HeroiLevelUpService>()
             .AddScoped<GeracaoDeDadosService>()
             .AddScoped<HeroiService>()
-            .AddScoped<GachaService>()
             .AddScoped<TreinamentoService>()
             .AddScoped<TorreService>()
             .AddScoped<CidadeService>()
-            .AddScoped<BannerService>()
-            .AddScoped<BannerHistoricoService>()
             .AddScoped<UsuarioService>()
             .AddScoped<RacaService>()
-            .AddScoped<BannerCommand>()  
             .AddScoped<HabilidadeService>()
             .AddScoped<AtributoBonusService>()
             .AddScoped<CombatService>()
@@ -125,10 +120,7 @@ class Program
             GUILD_ID,
             services.GetRequiredService<HeroiService>(),
             services.GetRequiredService<GeracaoDeDadosService>(),
-            services.GetRequiredService<BannerService>(),
-            services.GetRequiredService<BannerHistoricoService>(),
             services.GetRequiredService<UsuarioService>(),
-            services.GetRequiredService<GachaService>(),
             services.GetRequiredService<RacaService>(),
             services.GetRequiredService<AtributoBonusService>(),
             services.GetRequiredService<CombatService>(),

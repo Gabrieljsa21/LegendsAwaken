@@ -1,7 +1,6 @@
 using LegendsAwaken.Application.Interfaces;
 using LegendsAwaken.Domain.Entities;
 using LegendsAwaken.Domain.Entities.Auxiliares;
-using LegendsAwaken.Domain.Entities.Banner;
 using LegendsAwaken.Domain.Enum;
 using LegendsAwaken.Domain.Factories;
 using LegendsAwaken.Domain.Interfaces;

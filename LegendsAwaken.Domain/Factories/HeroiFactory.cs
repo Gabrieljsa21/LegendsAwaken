@@ -1,13 +1,10 @@
-﻿using LegendsAwaken.Bot.Models.Banner;
 using LegendsAwaken.Domain;
 using LegendsAwaken.Domain.Entities;
 using LegendsAwaken.Domain.Entities.Auxiliares;
-using LegendsAwaken.Domain.Entities.Banner;
 using LegendsAwaken.Domain.Enum;
 using LegendsAwaken.Domain.Extensions;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace LegendsAwaken.Domain.Factories
 {
@@ -55,28 +52,6 @@ namespace LegendsAwaken.Domain.Factories
             heroi.Status = heroi.AtributosBase.FromAtributos();
 
             return heroi;
-        }
-
-
-
-        private static Raca SortearRaca(Raridade raridade, Dictionary<Raridade, List<RacaChance>> racaPorRaridade)
-        {
-            if (!racaPorRaridade.TryGetValue(raridade, out var racasDisponiveis))
-                throw new Exception($"Nenhuma raça configurada para a raridade {raridade}");
-
-            int total = racasDisponiveis.Sum(r => r.Chance);
-            int rolagem = _random.Next(1, total + 1);
-            int acumulado = 0;
-
-            foreach (var racaChance in racasDisponiveis)
-            {
-                acumulado += racaChance.Chance;
-                if (rolagem <= acumulado)
-                    return racaChance.Raca;
-            }
-
-            // Fallback de segurança
-            return racasDisponiveis.First().Raca;
         }
     }
 }

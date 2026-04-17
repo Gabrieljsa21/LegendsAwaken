@@ -1,4 +1,4 @@
-﻿using Discord;
+using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
 using LegendsAwaken.Application.Interfaces;
@@ -24,10 +24,7 @@ namespace LegendsAwaken.Bot
         private readonly ulong _guildId;
         private readonly HeroiService _heroiService;
         private readonly GeracaoDeDadosService _geracaoDeDadosService;
-        private readonly BannerService _bannerService;
-        private readonly BannerHistoricoService _bannerHistoricoService;
         private readonly UsuarioService _usuarioService;
-        private readonly GachaService _gachaService;
         private readonly RacaService _racaService;
         private readonly AtributoBonusService _atributoBonusService;
         private readonly CombatService _combatService;
@@ -42,10 +39,7 @@ namespace LegendsAwaken.Bot
             ulong guildId,
             HeroiService heroiService,
             GeracaoDeDadosService geracaoDeDadosService,
-            BannerService bannerService,
-            BannerHistoricoService bannerHistoricoService,
             UsuarioService usuarioService,
-            GachaService gachaService,
             RacaService racaService,
             AtributoBonusService atributoBonusService,
             CombatService combatService,
@@ -59,10 +53,7 @@ namespace LegendsAwaken.Bot
             _guildId = guildId;
             _heroiService = heroiService;
             _geracaoDeDadosService = geracaoDeDadosService;
-            _bannerService = bannerService;
-            _bannerHistoricoService = bannerHistoricoService;
             _usuarioService = usuarioService;
-            _gachaService = gachaService;
             _racaService = racaService;
             _atributoBonusService = atributoBonusService;
             _combatService = combatService;
@@ -97,21 +88,6 @@ namespace LegendsAwaken.Bot
             {
                 switch (command.CommandName)
                 {
-                    case "invocar":
-                        await new InvocarCommand(
-                            _heroiService,
-                            _bannerHistoricoService,
-                            _bannerService,
-                            _gachaService,
-                            _racaService)
-                        .ExecutarAsync(command);
-                        break;
-
-                    case "banners":
-                        await new BannerCommand(_bannerService, _bannerHistoricoService)
-                            .ExecutarAsync(command);
-                        break;
-
                     case "treinar":
                     {
                         var nomeHeroiTreino = command.Data.Options.FirstOrDefault(o => o.Name == "heroi")?.Value as string;
@@ -309,18 +285,7 @@ namespace LegendsAwaken.Bot
 
         private async Task HandleAutocompleteAsync(SocketAutocompleteInteraction auto)
         {
-            if (auto.Data.CommandName == "invocar" && auto.Data.Options.First().Name == "banner")
-            {
-                var query = auto.Data.Options.First().Value as string ?? string.Empty;
-                var suggestions = _bannerService.ObterTodosBanners()
-                    .Select(b => b.Id)
-                    .Where(id => id.StartsWith(query, StringComparison.OrdinalIgnoreCase))
-                    .Select(id => new AutocompleteResult(id, id))
-                    .Take(25);
-
-                await auto.RespondAsync(suggestions);
-            }
-            else if(auto.Data.CommandName == "party_add" || auto.Data.CommandName == "party_remove")
+            if(auto.Data.CommandName == "party_add" || auto.Data.CommandName == "party_remove")
             {
                 var userId = auto.User.Id;
                 var herois = await _heroiService.ObterHeroisPorUsuarioAsync(userId);
@@ -402,21 +367,6 @@ namespace LegendsAwaken.Bot
         {
             var parts = comp.Data.CustomId.Split('|');
 
-            // ————— Roll (se for o botão de roll existente) —————
-            if (parts[0] == "roll" && parts.Length == 3)
-            {
-                int quantidade = int.Parse(parts[1]);
-                string bannerId = parts[2];
-                await new InvocarCommand(
-                    _heroiService,
-                    _bannerHistoricoService,
-                    _bannerService,
-                    _gachaService,
-                    _racaService
-                ).ExecutarRollAsync(comp);
-                return;
-            }
-
             // ————— Paginação do listar_herois —————
             if (parts[0] == "listar" && parts.Length == 3)
             {
@@ -451,30 +401,7 @@ namespace LegendsAwaken.Bot
 
         private async Task HandleSelectMenuExecutedAsync(SocketMessageComponent comp)
         {
-            if (comp.Data.CustomId != "select_banner_roll") return;
-
-            var selectedBannerId = comp.Data.Values.FirstOrDefault();
-            if (string.IsNullOrWhiteSpace(selectedBannerId))
-            {
-                await comp.RespondAsync("Nenhum banner selecionado.", ephemeral: true);
-                return;
-            }
-
-            var banner = _bannerService.ObterBannerPorId(selectedBannerId);
-            if (banner == null)
-            {
-                await comp.RespondAsync("Banner não encontrado.", ephemeral: true);
-                return;
-            }
-
-            // ✅ Reutiliza o mesmo método já criado para exibir detalhes + botões
-            await new InvocarCommand(
-                _heroiService,
-                _bannerHistoricoService,
-                _bannerService,
-                _gachaService,
-                _racaService)
-            .EnviarMenuInvocacao(comp, banner);
+            await Task.CompletedTask;
         }
 
         public async Task SetupCommandsAsync()
@@ -485,20 +412,6 @@ namespace LegendsAwaken.Bot
 
             var commands = new[]
             {
-                new SlashCommandBuilder()
-                    .WithName("banners")
-                    .WithDescription("Mostra todos os banners disponíveis e seu pity"),
-
-                new SlashCommandBuilder()
-                    .WithName("invocar")
-                    .WithDescription("Invoca em um banner específico")
-                    .AddOption(new SlashCommandOptionBuilder()
-                        .WithName("banner")
-                        .WithDescription("ID do banner")
-                        .WithRequired(true)
-                        .WithType(ApplicationCommandOptionType.String)
-                        .WithAutocomplete(true)),
-
                 new SlashCommandBuilder()
                     .WithName("treinar")
                     .WithDescription("Treina um herói na Arena (custo: 100 Ouro + 10 Comida, cooldown 4h)")

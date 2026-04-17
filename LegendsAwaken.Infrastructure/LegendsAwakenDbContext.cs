@@ -1,6 +1,5 @@
 using LegendsAwaken.Domain.Entities;
 using LegendsAwaken.Domain.Entities.Auxiliares;
-using LegendsAwaken.Domain.Entities.Banner;
 using LegendsAwaken.Domain.Enum;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
@@ -33,8 +32,6 @@ namespace LegendsAwaken.Infrastructure
         public DbSet<HeroiAfinidadeElemental> HeroisAfinidades => Set<HeroiAfinidadeElemental>();
         public DbSet<HeroiVinculo> HeroisVinculos => Set<HeroiVinculo>();
         public DbSet<HeroiTag> HeroisTags => Set<HeroiTag>();
-        public DbSet<BannerHistorico> BannerHistorico => Set<BannerHistorico>();
-        public DbSet<BannerProgresso> BannerProgressos { get; set; }
         public DbSet<Party> Parties => Set<Party>();
         public DbSet<PartyHero> PartyHeroes => Set<PartyHero>();
         public DbSet<Item> Itens => Set<Item>();
@@ -118,9 +115,6 @@ namespace LegendsAwaken.Infrastructure
                 .HasOne(h => h.Heroi)
                 .WithMany(h => h.VinculosHeroicos)
                 .HasForeignKey(h => h.HeroiId);
-
-            modelBuilder.Entity<BannerProgresso>()
-                .HasKey(bp => new { bp.UsuarioId, bp.BannerId });
 
             // HeroiHabilidade (chave composta + relacionamentos)
             modelBuilder.Entity<HeroiHabilidade>()
