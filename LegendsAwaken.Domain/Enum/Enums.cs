@@ -127,4 +127,30 @@ namespace LegendsAwaken.Domain.Enum
 
     public enum SlotTipo { Responsabilidade, Operacao }
 
+    public enum TipoFragmento
+    {
+        Heroi = 1,
+        Arquetipo = 2,
+        Generico = 3
+    }
+
+    public enum TipoUnlock
+    {
+        Fragmentos = 1,
+        MarcoTorre = 2,
+        CondicaoUnica = 3
+    }
+
+    public enum TipoContrato
+    {
+        Arquetipo = 1,
+        Nomeado = 2
+    }
+
+    public enum TipoEventoAlto
+    {
+        DescobertaBioma = 1,
+        HeroiIconicoDesbloqueado = 2
+    }
+
 }
