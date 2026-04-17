@@ -68,6 +68,11 @@ class Program
             .AddScoped<IPartyRepository, PartyRepository>()
             .AddScoped<IItemRepository, ItemRepository>()
             .AddScoped<ISlotOcupacaoRepository, SlotOcupacaoRepository>()
+            .AddScoped<IBiomaRepository, BiomaRepository>()
+            .AddScoped<IFragmentoRepository, FragmentoRepository>()
+            .AddScoped<IContratoRepository, ContratoRepository>()
+            .AddScoped<IHeroiDesbloqueadoRepository, HeroiDesbloqueadoRepository>()
+            .AddScoped<IHeroiConfigRepository, HeroiConfigRepository>()
 
             // Serviços de aplicação
             .AddScoped<HeroiLevelUpService>()

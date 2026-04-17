@@ -1,6 +1,8 @@
 using LegendsAwaken.Domain.Entities;
 using LegendsAwaken.Domain.Entities.Auxiliares;
+using LegendsAwaken.Domain.Entities.Fragmento;
 using LegendsAwaken.Domain.Enum;
+using LegendsAwaken.Infrastructure.SeedData;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -37,6 +39,15 @@ namespace LegendsAwaken.Infrastructure
         public DbSet<Item> Itens => Set<Item>();
         public DbSet<ItemBonus> ItemBonus => Set<ItemBonus>();
         public DbSet<SlotOcupacao> SlotOcupacoes => Set<SlotOcupacao>();
+
+        // Fragmento system
+        public DbSet<HeroiConfig> HeroiConfigs => Set<HeroiConfig>();
+        public DbSet<Bioma> Biomas => Set<Bioma>();
+        public DbSet<BiomHeroPool> BiomHeroPools => Set<BiomHeroPool>();
+        public DbSet<HeroiUnlockConfig> HeroiUnlockConfigs => Set<HeroiUnlockConfig>();
+        public DbSet<FragmentoProgresso> FragmentosProgresso => Set<FragmentoProgresso>();
+        public DbSet<Contrato> Contratos => Set<Contrato>();
+        public DbSet<HeroiDesbloqueado> HeroisDesbloqueados => Set<HeroiDesbloqueado>();
 
 
 
@@ -193,6 +204,48 @@ namespace LegendsAwaken.Infrastructure
                 .WithMany()
                 .HasForeignKey(s => s.ConstrucaoId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // BiomHeroPool — explicit FK mappings to avoid shadow property conflicts
+            modelBuilder.Entity<BiomHeroPool>()
+                .HasOne(p => p.Bioma)
+                .WithMany(b => b.Pool)
+                .HasForeignKey(p => p.BiomeId);
+
+            modelBuilder.Entity<BiomHeroPool>()
+                .HasOne(p => p.Heroi)
+                .WithMany()
+                .HasForeignKey(p => p.HeroiId);
+
+            // HeroiUnlockConfig — PK is HeroiId (1:1 with HeroiConfig); HeroiId is both PK and FK
+            modelBuilder.Entity<HeroiUnlockConfig>()
+                .HasKey(h => h.HeroiId);
+
+            modelBuilder.Entity<HeroiUnlockConfig>()
+                .HasOne(h => h.Heroi)
+                .WithMany()
+                .HasForeignKey(h => h.HeroiId);
+
+            // HeroiDesbloqueado — composite PK
+            modelBuilder.Entity<HeroiDesbloqueado>()
+                .HasKey(h => new { h.UsuarioId, h.HeroiId });
+
+            // FragmentoProgresso — performance indexes
+            modelBuilder.Entity<FragmentoProgresso>()
+                .HasIndex(f => new { f.UsuarioId, f.HeroiId });
+            modelBuilder.Entity<FragmentoProgresso>()
+                .HasIndex(f => new { f.UsuarioId, f.Arquetipo });
+
+            // Contrato — unique index: 1 active per type per user
+            modelBuilder.Entity<Contrato>()
+                .HasIndex(c => new { c.UsuarioId, c.Tipo, c.Ativo })
+                .IsUnique()
+                .HasFilter("\"Ativo\" = 1");
+
+            // Seed data
+            modelBuilder.Entity<HeroiConfig>().HasData(FragmentoSeed.HeroiConfigs());
+            modelBuilder.Entity<HeroiUnlockConfig>().HasData(FragmentoSeed.UnlockConfigs());
+            modelBuilder.Entity<Bioma>().HasData(FragmentoSeed.Biomas());
+            modelBuilder.Entity<BiomHeroPool>().HasData(FragmentoSeed.BiomHeroPools());
         }
     }
 }
