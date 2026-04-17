@@ -44,10 +44,7 @@ namespace LegendsAwaken.Application.Services
         /// </summary>
         public async Task CriarTabelasAsync()
         {
-            using var connection = new SqliteConnection(_connectionString);
-            await connection.OpenAsync();
-            using var cmd = connection.CreateCommand();
-
+            await _db.Database.MigrateAsync();
             await ListarTabelasAsync();
         }
 

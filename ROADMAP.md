@@ -127,32 +127,216 @@
 
 ---
 
+## Fase Q — Fundações de Qualidade
+**Objetivo:** fechar a dívida técnica da 3A antes de construir a 3B sobre ela.
+
+- [ ] `Random.Shared` no `GachaService` (thread-safety em chamadas Discord concorrentes)
+- [ ] `ILogger<T>` substituindo `Console.WriteLine` nos serviços
+- [ ] Guild ID e caminho do banco em `appsettings.json` / variável de ambiente
+- [ ] Guard clauses centralizadas: padrão único para herói em missão / alocado / inativo / equipado
+- [ ] Testes unitários: GachaService, HeroiLevelUpService, CombatService, CidadeService
+- [ ] Teste de integração: gacha → alocar → produzir → evoluir (SQLite in-memory)
+
+**Sinal de saída:** build verde com cobertura nos serviços core; sem valores hardcoded de ambiente; sem `Random` solto.
+
+---
+
+## Fase UX-0 — Camada de Interação (Mínima)
+**Objetivo:** estabelecer o padrão de UX híbrido usando `/cidade` como validação. Nenhuma feature de jogo nova — apenas a infraestrutura de UI. Expandir para outros sistemas só após validação.
+
+### Decisões de UX aprovadas
+- Painéis principais (`/cidade`, `/torre`, `/heroi`) → **públicos** — persistem no canal
+- Feedback de ação e sub-fluxos → **efêmero**
+- Confirmações destrutivas → efêmero com `[Confirmar] [Cancelar]` e timeout de 30s
+- Navegação entre sub-painéis → atualiza mensagem in-place (`UpdateAsync`)
+- Expiração de interação → aceitar limite de 15 min; player reabre com `/sistema`
+- Seleção de listas → Select Menu; ações primárias → botões (máx 4–5 por painel)
+- Dados → sempre lidos do banco a cada interação (sem cache de painel)
+- Eventos pendentes da Torre → exibidos quando player executar qualquer próximo comando
+
+### Implementação
+- [ ] Convenção de `customId`: `sistema:acao[:param1:param2]`
+- [ ] `InteractionRouter` — parseia `customId` e despacha ao handler correto
+- [ ] `PanelBuilder` — padrão base: ViewModel → `(Embed, ComponentBuilder)`; nenhum tipo Discord nos Services
+- [ ] Padrão `DeferAsync` + `UpdateAsync` para operações com acesso ao banco
+- [ ] `/cidade` convertido para painel público com botões (primeiro sistema validado)
+
+**Sinal de saída:** `/cidade` funciona como painel público com botões e Select Menu; padrão documentado e reutilizável pelos demais sistemas.
+
+---
+
 ## Fase 3B — Expansão de Sistemas (P1)
-**Objetivo:** adicionar profundidade econômica e loops complementares. Implementar após 3A.2 estável.
+**Objetivo:** adicionar profundidade econômica e loops complementares. Implementar após UX-0 validado.
 
-### Sistemas Econômicos
-- [ ] **Sistema de Conversão de Heróis** — Venda (fórmula por raridade) e Absorção (50% XP transferido)
-- [ ] **Sistema de Sustento** — Comida e Moradia; estados Ativo/Instável/Degradado; grace period de dívida antes de punição
-- [ ] Sinks de Ouro explícitos: manutenção leve de prédios, reroll de missões, upgrades progressivamente caros
+### Ordem de build aprovada
+Cada etapa é pré-requisito ou dependência lógica da seguinte.
 
-### Conteúdo Paralelo
-- [ ] **Missões (Guilda)** — geração automática a cada 6h; herói vai e retorna; 15 ranks
-- [ ] **Relíquias** — drop em boss floors, inventário, equipar/remover, efeito passivo aplicado
+| # | Sistema | Dependência |
+|---|---|---|
+| 3B-1 | Inventário Unificado | Pré-requisito para Relíquias |
+| 3B-2 | Conversão de Heróis (Venda + Absorção) | — |
+| 3B-3 | Torre — Modo Operação | — |
+| 3B-4 | Sustento (Comida / Moradia / Estados) | — |
+| 3B-5 | Guilda / Missões | HeroPowerScore (requer combate estável) |
+| 3B-6 | Relíquias | Inventário Unificado (3B-1) |
+| 3B-7 | Novos Prédios | Sustento (3B-4) + Guilda (3B-5) |
+| 3B-Mercado | Sistema de Mercado P2P | Inventário (3B-1); pode rodar em paralelo com 3B-7 |
+| 3B-Merc | Mercenários (empréstimo de heróis) | Snapshot model; pode rodar em paralelo com 3B-Mercado |
+| 3B-Treino | Treinamento como Serviço | Requer Arena rank ≥ 1; complementar à Torre/Arena |
+| 3B-Meta | Nível do Mestre + Traços 4★ | Requer atividade de todos os sistemas 3B |
 
-### Torre e Cidade
-- [ ] **Torre — Modo Operação** — andar concluído → farm automático com eventos de interrupção
+Cada sistema recebe UX de painel desde o primeiro dia (usando o padrão da UX-0).
+
+### 3B-1 — Inventário Unificado
+- [ ] `Inventario` — entidade unificada por jogador; tipos: `Recurso | Item | Reliquia | Consumivel`
+- [ ] Operações atômicas: `Add(tipo, id, qtd)` / `Remove(tipo, id, qtd)` com validação prévia
+- [ ] Stack limit por tipo (relíquias não stackam; recursos sim)
+- [ ] `/inventario` — painel com abas por categoria e paginação
+
+### 3B-2 — Conversão de Heróis
+- [ ] **Venda**: `Valor = BaseRaridade × EscalaDeNivel × FatorDeEscassezGlobal`
+- [ ] **Absorção**: consome herói, transfere 50% do XP acumulado para herói-alvo
+- [ ] Bloqueios anti-exploit: herói equipado / em missão / na Torre / alocado em prédio
+- [ ] Botões `[Vender]` e `[Absorver]` no painel de herói com confirmação efêmera
+
+### 3B-3 — Torre — Modo Operação
+- [ ] Estado `AndarConcluido` por usuário + andar
+- [ ] Sub-painel: escolha de andar (Select Menu), objetivo (farm / exploração leve), perfil de risco
+- [ ] Combate automático com resumo periódico consolidado
+- [ ] Eventos de interrupção: exibidos no próximo comando do jogador
+- [ ] `[Recuar]` com coleta parcial sem penalidade pesada
 - [ ] Recursos exclusivos por andar (biomas produtivos)
-- [ ] Novos prédios: Armazém (limite de estoque), Mercado (conversão), Prefeitura (limites globais)
-- [ ] Upgrades de prédio nível 2→3
-- [ ] Confiança desbloqueia funções avançadas do prédio (ex: Forja nível 71+ → Mestre da Forja)
-- [ ] Fragmentos de arquétipo + ascensão de raridade
 
-### Meta Progressão
+### 3B-4 — Sustento
+- [ ] Campo `EstadoSustento` na entidade `Heroi` (enum: Ativo / Instável / Degradado / Inativo)
+- [ ] Consumo de Comida: `Base × Raridade × (1 + Nivel/100)`; guerreiro/tanque > mago/suporte
+- [ ] Limite de Moradia via prédio Alojamento
+- [ ] Transições de estado + penalidades de atributo e XP
+- [ ] Alerta de sustento exibido no painel `/cidade`
+- [ ] Sinks de Ouro: manutenção leve de prédios, reroll de missões, upgrades progressivamente caros
+
+### 3B-5 — Guilda / Missões
+- [ ] `HeroPowerScore` implementado (`DESIGN_SISTEMAS.md §2`) — pré-requisito de cálculo de sucesso
+- [ ] Entidade de rank da Guilda (Ferro → Oricalco, 15 tiers)
+- [ ] Geração automática de missões a cada 6h (até 8 simultâneas)
+- [ ] State machine: `Aguardando → EmMissao → Retornando → Concluida`
+- [ ] Cálculo de sucesso/parcial/falha por poder vs dificuldade
+- [ ] Painel `/guilda` com botões `[Missões Ativas]` `[Missões Disponíveis]` `[Enviar Heróis]`
+
+### 3B-6 — Relíquias
+- [ ] Entidade `Reliquia` (Id, Nome, Descrição, Efeito, AndarMinimo)
+- [ ] 3 slots de relíquia por herói (`HeroiReliquia`)
+- [ ] Drop em boss floors → armazenado no Inventário (3B-1)
+- [ ] Equipar/remover via painel `/inventario`
+- [ ] Efeito passivo aplicado no combate via interface `IEfeitoReliquia`
+
+### 3B-7 — Novos Prédios
+- [ ] **Armazém** — limite de estoque; overflow converte automaticamente
+- [ ] **Mercado** — conversão de recursos em ouro; taxas melhoram com upgrade
+- [ ] **Prefeitura** — limites globais; pré-requisito para prédios avançados
+- [ ] Upgrades de prédio nível 2→3
+- [ ] Confiança desbloqueia funções avançadas (ex: Forja nível 71+ → Mestre da Forja)
+
+### 3B-Mercado — Sistema de Mercado P2P
+Pode ser implementado em paralelo com 3B-7 ou logo após. Depende apenas de 3B-1 (Inventário Unificado).
+
+**Decisões aprovadas:**
+- `/mercado` → efêmero (gestão privada); canal `#mercado` → público (vitrine)
+- Phase 1: Equipamentos + Consumíveis apenas (recursos brutos adiados para Step 3)
+- Taxa de listagem: 5 Ouro flat por listagem (não reembolsável, anti-spam)
+- Taxa de venda: 10% base (reduzida pelo prédio Mercado: nível 1→8%, 2→6%, 3→3%)
+- Limite: 3 listagens ativas por jogador; sem cap global no canal
+- Expiração: 24h; bot edita mensagem no canal (badge status + botão desabilitado) antes de deletar
+- Preço: livre com floor (50% BasePrice) e ceiling (1000% BasePrice); mostra BasePrice + média recente
+
+**Step 1 — MVP:**
+- [ ] Entidades `MarketListing` + `MarketSaleHistory` + migration
+- [ ] `IsLocked` + `LockReason` no `InventarioEntry`
+- [ ] `MarketConfig` data-driven (taxa, limite, expiração, floors)
+- [ ] `MarketService`: listar, comprar, cancelar, expirar
+- [ ] `MarketBoardService`: post/edit/delete mensagens no `#mercado`
+- [ ] `MarketExpiryWorker`: detecta e resolve expirados (roda a cada 10 min)
+- [ ] `/mercado` painel efêmero: `[Vender Item]` + `[Minhas Listagens]`
+- [ ] Flow de venda: Select Menu → Modal de preço → confirmação → post no canal
+- [ ] Flow de compra: `[Comprar]` → confirmação efêmera → transaction com `BEGIN IMMEDIATE`
+
+**Step 2 — UX Polish:**
+- [ ] Média recente de preço exibida nas listagens (`MarketSaleHistory` — últimas 5 vendas)
+- [ ] Post público breve no canal em vendas acima de threshold (ex: 500 Ouro)
+- [ ] Notificação "Evento ao Logar" para o vendedor quando item for vendido
+- [ ] Board Summary pinado no `#mercado` (editado a cada transação)
+- [ ] `[Ver Detalhes]` na listagem: ephemeral com stats completos do item
+
+**Step 3 — Integração e Extensão:**
+- [ ] `MarketService.GetTaxRateForPlayer()` consulta nível do prédio Mercado na cidade
+- [ ] `ItemConfig.IsTradeable` (bool) — controle por tipo de item sem lógica de switch
+- [ ] Suporte a Consumíveis com quantidade (comprador recebe lote inteiro)
+- [ ] Suporte a recursos brutos (madeira, pedra, minério) com stacking
+- [ ] Relíquias como item tradeable (quando 3B-6 estiver estável)
+
+### 3B-Mercenários — Mercenários (Empréstimo de Heróis)
+Pode rodar em paralelo com 3B-Mercado. Compartilha a infraestrutura de `HeroSnapshot` com 3B-Treino.
+
+**Decisões aprovadas:**
+- Herói nunca transferido — snapshot capturado no momento do empréstimo, write-once, frozen
+- Arena proibida para mercenários (integridade competitiva + anti-exploit circular com ArenaRank)
+- Torre e Missões: liberados. Cidade: proibida
+- Custo: `CustoBase + (CustoPorNivel × heroi.Nivel)` via `MercenarioConfig` (data-driven)
+- Duração: 6h / 12h / 24h
+- Limites: 1 herói emprestado + 1 contratado por jogador simultâneo
+- NPC fallback sempre disponível (sem snapshot real, stats virtuais por tier no config)
+- Anti-exploit: anti-chain bilateral, same-pair cooldown 24h, `BEGIN IMMEDIATE TRANSACTION`
+
+**Step 1 — MVP:**
+- [ ] `IHeroCombatant` interface no Domain; `Heroi` e `HeroSnapshot` implementam
+- [ ] Estender `HeroLockStatus`: + `AsMercenary`, `InTraining`, `AsTrainer`
+- [ ] Adicionar `LockStatus` + `LockReason` em `Heroi`
+- [ ] Entidade `HeroSnapshot` + `SnapshotTipo` enum + migration
+- [ ] Entidade `EmprestimoHeroi` + `EmprestimoStatus` + `DuracaoOpcao` enums + migration
+- [ ] `MercenarioConfig` data-driven: seed 3 durações (6h/12h/24h)
+- [ ] `SnapshotService.CaptureAsync` + `GetActiveForContratante`
+- [ ] `MercenarioService`: disponibilizar, contratar, cancelar (com `BEGIN IMMEDIATE TRANSACTION`)
+- [ ] `MercenarioExpiryWorker` (IHostedService, poll 5 min): expire → unlock herói → edit+delete channel message
+- [ ] `MercenarioPanelBuilder` + `MercenarioInteractionHandler`
+- [ ] `/mercenarios` painel efêmero: `[Disponibilizar Herói]` `[Buscar Mercenário]` `[Meu Empréstimo]`
+- [ ] Canal `#mercenarios`: post automático com `[Contratar]` button
+
+**Step 2 — Integração combat:**
+- [ ] `CombatService`, `TorreService`, `MissaoService`: aceitar `IHeroCombatant` em vez de `Heroi` direto
+- [ ] `ArenaService`: permanece usando `Heroi` — não recebe `IHeroCombatant`
+- [ ] Guard `LockStatus == None` em absorb/sell/equip (reaproveita padrão do market)
+- [ ] Recovery job no startup: unlock forçado de heróis com `LockStatus != None` e `ExpiresAt < Now`
+
+### 3B-Treinamento — Treinamento como Serviço
+Complementar à Torre e Arena — nunca substituto. Implementar após 3B-Merc (compartilha snapshot model).
+
+**Decisões aprovadas:**
+- XP fórmula: `base_xp = TrainerPowerScore × XpFatorConfig × DuracaoHoras × (1 + ArenaBonus%)`; frozen no cap: `min(base_xp, MaxXpSemana - acumulado)`
+- Cap semanal por herói: `500 + (heroi.Nivel × 50)` — treino é suplementar
+- `TreinamentoConfig` (data-driven, keyed por ArenaRank 0–5): XpBonus, MaxSlots, DuracaoHoras, NpcEficiência
+- ArenaRank ≥ 1 obrigatório para oferecer treino
+- NPC trainers sempre disponíveis a 40% eficiência
+- Custo split: 70% para treinador, 30% sink de ouro
+- Técnicas Especiais: NOT Phase 1 — deferido para pós-lançamento
+
+**Step 1 — MVP:**
+- [ ] Entidade `TreinamentoHeroi` + `TreinamentoStatus` enum + migration (reusa `HeroSnapshot` de 3B-Merc)
+- [ ] `TreinamentoConfig` data-driven: seed 6 ranks (0–5)
+- [ ] `TreinamentoService`: oferecer treino, enroll aluno, concluir (calcula XP, aplica, desbloqueia)
+- [ ] `TreinamentoExpiryWorker` (IHostedService, poll 5 min): conclude → apply XP → unlock aluno → conditional unlock treinador
+- [ ] Anti-exploit: same-pair 24h, anti-chain bilateral, cap semanal via aggregate query, ArenaRank ≥ 1
+- [ ] `TreinamentoPanelBuilder` + `TreinamentoInteractionHandler`
+- [ ] `/treinamento` painel efêmero: `[Oferecer Treino]` `[Enviar Herói]` `[Meus Treinos]`
+- [ ] Canal `#treinamento`: post com rank badge + XpBonus% + `[Enviar Herói]` button
+- [ ] Weekly XP tracking via aggregate query em `TreinamentoHeroi` (sem campo extra em `Heroi`)
+
+### Meta Progressão (após 3B-7)
 - [ ] **Nível do Mestre** — progride com atividade global; desbloqueia bônus passivos e identidade de conta
-- [ ] **Bônus de Composição de Party** — 3 heróis da mesma raça → bônus XP; full arqueiros → +crítico; party balanceada → bônus misto
+- [ ] **Bônus de Composição de Party** — 3 da mesma raça → +10% XP; full arqueiros → +crit; party balanceada → bônus misto
+- [ ] **Traço fixo na ascensão 4★** — jogador escolhe 1 traço permanente (ex: Incansável, Pragmático)
 - [ ] Personagens fixos via fragmentos específicos (ex: `Fragmento de Nyra`)
 
-**Sinal de saída:** economia com pressão real; heróis excedentes têm destino; Torre tem replay value; missões e relíquias funcionam.
+**Sinal de saída:** economia com pressão real; heróis excedentes têm destino; Torre tem replay value; missões e relíquias funcionam; mercado P2P ativo; empréstimo de heróis e treino entre jogadores operacionais.
 
 ---
 

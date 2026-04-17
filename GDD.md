@@ -1267,38 +1267,96 @@ Para evitar inflação, ouro deve ter destinos obrigatórios:
 | Custo de Expedições | Pós-lançamento |
 | Apostas nos Torneios da Arena | Pós-lançamento |
 
+### 15.7. Modelo de Interação Híbrido *(UX-0 em diante)*
+
+O jogo evolui de comandos puros para um modelo híbrido: **comando abre painel; ações acontecem via botões**.
+
+#### Princípio central
+
+```
+/sistema → painel público (persiste no canal)
+  → botão de ação  → resultado efêmero (só o jogador vê)
+  → botão de navegação → sub-painel atualiza in-place (UpdateAsync)
+  → expiração após 15 min → /sistema reabre painel fresco
+```
+
+#### Tipos de interação
+
+| Tipo | Quando usar | Primitivo Discord |
+|---|---|---|
+| **Painel** | Visão principal de um sistema | Embed público + botões |
+| **Ação** | Operação simples (coletar, treinar, subir andar) | Botão → feedback efêmero |
+| **Confirmação** | Ação irreversível (vender herói, absorver) | Efêmero com `[Confirmar] [Cancelar]` + timeout 30s |
+| **Sub-painel** | Detalhe navegável (prédio, herói específico) | Atualiza mensagem in-place |
+| **Select Menu** | Escolha de lista (qual herói, qual prédio, qual andar) | `SelectMenuComponent` |
+| **Modal** | Input de texto livre (apelido, URL de arte, quantidade) | `ModalBuilder` acionado por botão |
+
+#### Regras de visibilidade
+
+- `/cidade`, `/torre`, `/heroi` → **públicos** — persistem no canal como referência social
+- Feedback de ação, confirmações, sub-fluxos → **efêmeros** — só o jogador vê
+- Eventos de milestone (pull 5★, boss derrubado, nível cap atingido) → **públicos** separados
+
+#### Arquitetura de suporte
+
+```
+DiscordCommand / InteractionHandler
+    → Service  (sem tipos Discord — retorna ViewModel)
+    → PanelBuilder  (ViewModel → Embed + ComponentBuilder)
+```
+
+- `customId` dos botões segue convenção: `sistema:acao[:param1:param2]`
+- Services não conhecem Discord; PanelBuilders não chamam Services diretamente
+- Dados sempre lidos do banco a cada interação — sem cache de estado de painel
+
 ---
 
-## 16. Comandos Planejados
+## 16. Comandos e Interações
+
+O modelo de interação é híbrido: comandos abrem painéis; a maioria das ações acontece via botões. Veja §15.7 para o modelo completo.
+
+### 16.1. Painéis Principais (entrada via comando, ações via botões)
+
+| Comando | Painel abre | Botões / ações disponíveis |
+|---|---|---|
+| `/cidade` | Painel da cidade (público) | `[Coletar]` `[Construir]` `[Alocar]` `[Ver Prédios]` `[Missões]` |
+| `/heroi` | Lista de heróis + detalhe (público) | `[Treinar]` `[Equipar]` `[Alocar]` `[Vender]` `[Absorver]` `[Ascender]` |
+| `/torre` | Painel da Torre (público) | `[Subir Andar]` `[Trocar Party]` `[Modo Operação]` |
+| `/arena` | Painel da Arena (público) | `[Treinar Herói]` `[Desafio de Ondas]` |
+| `/guilda` | Painel da Guilda (público) — *Fase 3B* | `[Missões Ativas]` `[Missões Disponíveis]` `[Enviar Heróis]` |
+| `/inventario` | Inventário por categoria — *Fase 3B* | `[Equipamentos]` `[Relíquias]` `[Recursos]` `[Consumíveis]` |
+
+> `/ver_heroi` e `/listar_herois` são substituídos pelo painel `/heroi`. Os comandos antigos podem ser mantidos como alias enquanto a transição ocorre.
+
+### 16.2. Comandos de Entrada Direta (permanecem como comando)
 
 | Comando | Descrição |
 |---|---|
-| `/invocar` | Sistema gacha — já implementado |
-| `/ver_heroi` | Detalhes do herói — já implementado |
-| `/listar_herois` | Lista paginada — já implementada |
-| `/grupo` | Gerenciar party — já implementado |
-| `/subir_andar` | Combate na Torre — já implementado |
-| `/cidade ver` | Painel geral da cidade (recursos, prédios, heróis alocados, humor geral) |
-| `/cidade coletar` | Coleta produção acumulada de todos os prédios |
+| `/invocar` | Sistema gacha — pull x1 ou x11; resultado embed público |
+| `/grupo` | Gerenciar party — permanece como comando por enquanto |
+| `/cidade construir <prédio>` | Construção com validação de recursos; pode migrar para modal no painel |
+| `/heroi arte <herói> <url>` | Define arte customizada via URL |
+| `/heroi apelido <herói> <nome>` | Define apelido — modal acionado do painel de herói |
+| `/heroi ascender <herói>` | Ascensão de raridade — botão no painel de herói |
+
+### 16.3. Comandos de Automação e Gestão *(Fase 3C)*
+
+| Comando | Descrição |
+|---|---|
 | `/cidade politica <foco>` | Define política macro: `recursos \| producao \| combate \| equilibrio` |
-| `/cidade prioridade <prédio> <nível>` | Define prioridade do prédio: `pausado \| baixa \| normal \| alta \| critica` |
-| `/cidade otimizar` | Auto-aloca todos os heróis vagos no melhor slot disponível |
-| `/cidade alocar <herói> <prédio>` | Alocação manual de herói em um prédio |
-| `/cidade desalocar <herói>` | Remove herói do trabalho |
-| `/cidade construir <prédio>` | Inicia construção ou upgrade de prédio |
-| `/cidade missoes` | Vê missões ativas na guilda e seus status |
-| `/cidade missoes enviar <herói>` | Designa herói para uma missão do mural |
-| `/cidade cadeia <prédio>` | Exibe a cadeia de dependência e status atual da produção |
-| `/treinar <herói>` | Envia herói para sessão intensiva na Arena (XP burst) |
-| `/arena desafio` | Inicia desafio de ondas com a party ativa |
-| `/heroi equipar <herói> <item>` | Equipa item craftado em um herói |
-| `/heroi arte <herói> <url>` | Define arte customizada para um herói |
-| `/heroi apelido <herói> <apelido>` | Define apelido exibido para um herói |
-| `/heroi ascender <herói>` | Inicia ascensão de raridade consumindo fragmentos |
-| `/heroi reliquia ver <herói>` | Exibe os 3 slots de relíquia do herói |
-| `/heroi reliquia equipar <herói> <relíquia>` | Equipa relíquia do inventário em um herói |
-| `/heroi reliquia remover <herói> <slot>` | Remove relíquia do slot e devolve ao inventário do Mestre |
-| `/inventario reliquias` | Lista todas as relíquias no inventário do Mestre |
+| `/cidade prioridade <prédio> <nível>` | Define prioridade: `pausado \| baixa \| normal \| alta \| critica` |
+| `/cidade otimizar` | Auto-aloca todos os heróis vagos no melhor slot |
+| `/cidade cadeia <prédio>` | Exibe cadeia de dependência e gargalos |
+
+### 16.4. Comandos Admin / Debug *(Fase 3.5)*
+
+| Comando | Descrição |
+|---|---|
+| `/admin resetar_cidade <userId>` | Reseta cidade para estado inicial |
+| `/admin dar_recursos <userId> <tipo> <qtd>` | Injeta recursos para teste |
+| `/admin spawn_heroi <userId> <raridade>` | Spawna herói para teste |
+| `/admin ver_estado <userId>` | Dump completo do estado do jogador |
+| `/admin forcar_nivel <heroiId> <nivel>` | Avança nível para testar caps |
 
 ---
 
@@ -1325,71 +1383,328 @@ Longo prazo:
 
 ---
 
-## 18. O que Está Implementado Hoje
+## 18. Status de Implementação *(atualizado em 2026-04-17 — pós Fase 3A.2)*
 
-| Sistema | Status |
-|---|---|
-| Gacha com soft-pity e banners | Implementado |
-| Geração procedural de heróis | Implementado |
-| Sistema de habilidades com XP | Implementado |
-| Party (até 5 heróis) | Implementado |
-| Torre infinita com bosses | Implementado |
-| Combate automático por turnos | Implementado |
-| Listagem paginada de heróis | Implementado |
-| Autocomplete nos comandos | Implementado |
-| Estrutura base da Cidade (entidade) | Implementado |
-| Profissões no enum | Implementado |
-| Recursos (Comida, Madeira, Pedra, Ouro, Erva) | Implementado |
-| `/cidade ver` — painel de recursos e heróis | Implementado |
-| `/cidade alocar` / `/cidade desalocar` | Implementado |
-| `/cidade coletar` — produção passiva (cap 24h) | Implementado |
-| Progressão de nível (XP, level cap, curva) | Design definido, não implementado |
-| Ascensão por fragmentos | Design definido, não implementado |
-| Progressão de skills por atividade | Design definido, não implementado |
-| Apelidos e arte customizada | Design definido, não implementado |
-| Personagens fixos nomeados (seed + arte) | Não iniciado |
-| Sistema de Confiança e Humor | Não iniciado |
-| Política da cidade (macro gestão) | Não iniciado |
-| Prioridade por construção | Não iniciado |
-| Cadeia de dependência inteligente | Não iniciado |
-| Upgrades de prédios | Não iniciado |
-| Sistema de missões (Guilda) | Não iniciado |
-| Crafting de equipamentos | Não iniciado |
-| `/treinar` (Arena) | Stub — lógica não implementada |
-| Sistema de Relíquias (drop, inventário, equip/remover) | Design definido, não implementado |
+| Sistema | Status | Fase |
+|---|---|---|
+| Gacha com soft-pity e banners | ✅ Implementado | 2 |
+| Geração procedural de heróis | ✅ Implementado | 2 |
+| Sistema de habilidades com XP | ✅ Implementado | 2 |
+| Party (até 5 heróis) | ✅ Implementado | 2 |
+| Torre infinita com bosses | ✅ Implementado | 2 |
+| Combate automático por turnos | ✅ Implementado | 2 |
+| Listagem paginada de heróis | ✅ Implementado | 2 |
+| Autocomplete nos comandos | ✅ Implementado | 2 |
+| Estrutura base da Cidade (entidade) | ✅ Implementado | 2 |
+| Profissões no enum | ✅ Implementado | 2 |
+| Recursos (Comida, Madeira, Pedra, Ouro, Erva) | ✅ Implementado | 2 |
+| Produção passiva com cap de 24h | ✅ Implementado | 2 |
+| Curva de XP (`B_r × nível`) + level-up com cap por raridade | ✅ Implementado | 3A.1 |
+| Fórmula de combate (dano, crit, burst cap, ATB) | ✅ Implementado | 3A.1 |
+| XP e Ouro na Torre por andar + boss mults | ✅ Implementado | 3A.1 |
+| Stats base por raridade + bônus racial (+50) | ✅ Implementado | 3A.1 |
+| Crafting — 5 receitas estáticas + check de qualidade | ✅ Implementado | 3A.1 |
+| `/heroi_equipar` com bônus persistidos | ✅ Implementado | 3A.1 |
+| Pool de personagens fixos 5★/4★ (9 personagens, seed) | ✅ Implementado | 3A.2 |
+| Campo `Confiança` (0–100) e `Humor` (0–100) no herói | ✅ Implementado | 3A.2 |
+| Modelo de Slots da Cidade (Responsabilidade + Operação) | ✅ Implementado | 3A.2 |
+| ResourceNode (Campo/Floresta/Mina/Prado) sem slot | ✅ Implementado | 3A.2 |
+| `PredioConfig` + `ResourceNodeConfig` data-driven | ✅ Implementado | 3A.2 |
+| Humor da Cidade (média dos alocados, mult 0.9–1.2×) | ✅ Implementado | 3A.2 |
+| `/cidade construir`, `alocar_recurso`, `alocar_predio`, `desalocar` | ✅ Implementado | 3A.2 |
+| Arena — `/treinar` (burst XP, cooldown 4h) | ✅ Implementado | 3A.2 |
+| Arena — `/arena desafio` (ondas, cooldown 24h) | ✅ Implementado | 3A.2 |
+| Painel de interação com botões (`/cidade`) | ⏳ UX-0 | UX-0 |
+| Inventário Unificado | ⏳ Planejado | 3B-1 |
+| Conversão de Heróis (Venda + Absorção) | ⏳ Planejado | 3B-2 |
+| Torre — Modo Operação | ⏳ Planejado | 3B-3 |
+| Sistema de Sustento (Comida/Moradia/Estados) | ⏳ Planejado | 3B-4 |
+| Sistema de Missões (Guilda, 15 ranks) | ⏳ Planejado | 3B-5 |
+| Sistema de Relíquias (drop, inventário, equip/remover) | ⏳ Planejado | 3B-6 |
+| Novos Prédios (Armazém, Mercado, Prefeitura) | ⏳ Planejado | 3B-7 |
+| Nível do Mestre + Traços na ascensão 4★ | ⏳ Planejado | 3B-Meta |
+| Upgrades de prédio nível 2→3 | ⏳ Planejado | 3B |
+| Ascensão por fragmentos | ⏳ Planejado | 3B |
+| Arte no embed do pull | ⏳ Planejado | Qualquer |
+| Apelidos e arte customizada de herói | ⏳ Planejado | Qualquer |
+| Progressão de skills por atividade (onde está → skill evolui) | ⏳ Planejado | 3B |
+| Política da cidade (macro gestão) | ⏳ Planejado | 3C |
+| Auto-alocação e cadeia de dependência inteligente | ⏳ Planejado | 3C |
+| Torre — design avançado (%, secreto, zonas, identidade) | ⏳ Planejado | 3C |
+| Invasão NPC, Traição, Expedições | ⏳ Planejado | Pós-lançamento |
+| Sistema de Mercado P2P (`#mercado`, listagens, compra/venda) | ⏳ Planejado | 3B-Mercado |
 
 ---
 
-## 19. Prioridades e Escopo por Fase
+## 19. Sistema de Mercado P2P *(Fase 3B-Mercado)*
 
-### P0 — Core Loop (Fase 3A)
-> Não avançar antes de cada item estar funcional.
+Mercado de itens entre jogadores via canal Discord dedicado. Heróis **não são negociáveis** — apenas equipamentos e consumíveis craftados ou obtidos na Torre.
 
-1. **Curva de XP** ⚠️ — definir fórmula (linear vs. exponencial leve); bloqueia todo o sistema de progressão
-2. **Personagens fixos** — seed de 5★/4★ nomeados com `ImageUrl` e `Lore`
-3. **Leveling** — XP por combate na Torre, level-up com check de cap por raridade
-4. **Skill XP por atividade** — Combate na Torre → skills de Combate; Forja → skills de Craft; etc.
-5. **Modelo de Slots da Cidade** — slots de Responsabilidade + Operação com Confiança como gate; Humor da Cidade como média ponderada
-6. **Crafting** — Forja funcional com check de qualidade e produção passiva
+### 19.1. Superfícies e Responsabilidades
+
+| Superfície | Papel |
+|---|---|
+| Canal `#mercado` | Vitrine pública — feed de listagens ativas como mensagens do bot |
+| `/mercado` | Painel de gestão **efêmero** — vender, ver e cancelar próprias listagens |
+| Flows efêmeros | Seleção de item, definição de preço, confirmação de compra |
+
+### 19.2. Regras Econômicas
+
+| Regra | Valor | Configurável via |
+|---|---|---|
+| Taxa de listagem | 5 Ouro flat (não reembolsável) | `MarketConfig` |
+| Taxa de venda | 10% base | `MarketConfig.BaseTaxRate` |
+| Taxa com prédio Mercado nível 1 | 8% | `CidadeService.GetBuildingLevel` |
+| Taxa com prédio Mercado nível 2 | 6% | — |
+| Taxa com prédio Mercado nível 3 | 3% | — |
+| Listagens ativas por jogador | 3 | `MarketConfig.MaxActiveListings` |
+| Expiração | 24h | `MarketConfig.ListingDurationHours` |
+| Preço mínimo | 50% do `BasePrice` | `MarketConfig.MinPriceFactor` |
+| Preço máximo | 1000% do `BasePrice` | `MarketConfig.MaxPriceFactor` |
+
+A taxa de listagem é um **ouro sink ativo** — mesmo que o item não seja vendido, a economia perdeu ouro. Isso desincentiva listagens especulativas e vitrine fake sem punir tentativas honestas.
+
+### 19.3. Itens Negociáveis
+
+| Tipo | Phase 1 | Futuro |
+|---|---|---|
+| Equipamentos (armas, armaduras, acessórios) | ✅ | — |
+| Consumíveis (poções, buffs) | ✅ | — |
+| Recursos brutos (madeira, pedra, minério) | ❌ | Step 3 |
+| Relíquias | ❌ | Step 3 (após 3B-6) |
+| Heróis | ❌ | Nunca (fora do escopo) |
+
+Extensibilidade via `ItemConfig.IsTradeable` (bool) — nenhum switch/if por tipo.
+
+### 19.4. Ciclo de Vida da Listagem
+
+```
+[/mercado → Vender Item]
+       │  taxa de listagem cobrada (5 Ouro)
+       ▼
+[Item locked no Inventário]
+       │
+       ▼
+[MarketListing — Status: Active]
+[Bot posta mensagem em #mercado]
+       │
+   ────┴─────────────────────────────────────
+   │                                         │
+[Comprador clica Comprar]             [24h sem compra]
+   │                                         │
+[Transaction atômica]                 [ExpiryWorker]
+   ├─ Sucesso:                               │
+   │   item → inventário comprador     [Mensagem editada: ⏰ EXPIRADA]
+   │   ouro transferido com taxa       [Item desbloqueado]
+   │   mensagem editada: ✅ VENDIDO    [Mensagem deletada após 10 min]
+   │   mensagem deletada após 30s
+   │
+   └─ Race condition:
+       "Item já foi vendido."
+```
+
+### 19.5. Concorrência
+
+`BEGIN IMMEDIATE TRANSACTION` no SQLite — idêntico ao sistema de missões. O segundo comprador recebe resposta efêmera imediata sem janela de duplicação. `RowVersion` no `MarketListing` para concorrência otimista via EF Core.
+
+### 19.6. Mensagem de Listagem no Canal
+
+Cada listagem é uma mensagem pública com embed + botão. A mensagem é sempre editada antes de ser deletada (nunca deletada direto sem feedback visual):
+
+```
+🗡️  ESPADA DE FERRO — Qualidade: Raro
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Tipo: Equipamento  │  Slot: Arma
+Vendedor: @player
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+💰 Preço: 600 Ouro
+📊 Referência: 450 Ouro  |  Média recente: 520 Ouro
+⏱️ Expira em: 23h 55m
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[Comprar]
+```
+
+Quando resolvida, a mensagem é editada para mostrar o estado (`✅ VENDIDO` / `⏰ EXPIRADA` / `❌ CANCELADA`) com o botão desabilitado, antes de ser deletada.
+
+### 19.7. Integração com Sistemas
+
+- **Inventário** (3B-1): campo `IsLocked` no `InventarioEntry`; operações `Lock/Unlock` atômicas
+- **Prédio Mercado** (3B-7): nível do prédio reduz taxa de venda via `GetTaxRateForPlayer()`
+- **Crafting**: itens craftados entram no inventário e podem ser listados voluntariamente
+- **Torre**: drops de boss (equipamentos, consumíveis) alimentam o mercado naturalmente
+- **Economia global** (`DESIGN_SISTEMAS.md §6`): taxa de venda é ouro sink real; alinha com modelo de equilíbrio
+
+---
+
+## 20. Sistema de Mercenários + Treinamento como Serviço
+
+Dois sistemas integrados que criam economia de heróis entre jogadores: empréstimo temporário (Mercenários) e XP offline contratado (Treinamento). Compartilham infraestrutura de snapshot e lock.
+
+### 20.1 Princípios de Design
+
+- **Herói nunca transferido** — snapshot capturado no momento do empréstimo; write-once; frozen para sempre
+- **Complementar, não substituto** — Treinamento é suplementar à Torre e Arena (cap semanal por herói)
+- **Seguro por design** — locks mutex no herói, `BEGIN IMMEDIATE TRANSACTION`, anti-chain bilateral
+- **Data-driven** — custos, duração, XP bonus, slots via `MercenarioConfig` e `TreinamentoConfig`
+- **Técnicas Especiais** — NOT Phase 1; deferido para pós-lançamento
+
+### 20.2 Superfícies de Interação
+
+| Superfície | Visibilidade | Conteúdo |
+|---|---|---|
+| `/mercenarios` | Efêmero (privado) | Gerenciar empréstimo: disponibilizar, buscar, cancelar |
+| `#mercenarios` | Público | Cards dos heróis disponíveis + `[Contratar]` button |
+| `/treinamento` | Efêmero (privado) | Gerenciar treinos: oferecer, enviar herói, ver ativos |
+| `#treinamento` | Público | Cards de treinadores com rank badge + `[Enviar Herói]` button |
+
+### 20.3 Modelo de Dados
+
+**HeroSnapshot** (write-once, compartilhado):
+- `Id`, `HeroiOrigemId`, `DonoId`, `Tipo` (Mercenario/Treinamento)
+- Stats congelados: `Nome`, `Nivel`, `Vida`, `Ataque`, `Defesa`, `Agilidade`, `Raridade`, `Raca`, `HabilidadeEspecial`, `PowerScore`
+- `CapturedAt`, `ExpiresAt`
+
+**HeroLockStatus** (enum estendido):
+```
+None | LockedForSale | AsMercenary | InTraining | AsTrainer
+```
+
+**EmprestimoHeroi**: snapshot + dono + contratante + status + duração + custo + ChannelMessageId
+
+**TreinamentoHeroi**: snapshot treinador + herói aluno + XpCap (frozen) + XpGanho (preenchido ao concluir) + status
+
+### 20.4 IHeroCombatant
+
+Interface que abstrai `Heroi` real e `HeroSnapshot` para os serviços de combate:
+```
+Id | Nome | Nivel | Vida | Ataque | Defesa | Agilidade | Raridade | Raca | HabilidadeEspecial | PowerScore
+```
+`CombatService`, `TorreService`, `MissaoService` aceitam `IHeroCombatant`.
+`ArenaService` permanece usando `Heroi` diretamente — mercenários **proibidos na Arena**.
+
+### 20.5 Regras — Mercenários
+
+| Regra | Implementação |
+|---|---|
+| Não pode contratar próprio herói | `ContratanteId != DonoId` |
+| Max 1 emprestado + 1 contratado simultâneo | Query active loans por jogador |
+| Anti-chain A→B + B→A bloqueado | Cross-check active (DonoId, ContratanteId) |
+| Same-pair cooldown 24h | Query `TreinamentoHeroi` history |
+| Custo: `CustoBase + (CustoPorNivel × heroi.Nivel)` | `MercenarioConfig` por DuracaoOpcao |
+| Duração: 6h / 12h / 24h | Enum `DuracaoOpcao` |
+| NPC fallback sempre disponível | `IsNpc=true`, stats virtuais do config |
+
+**Uso permitido:** Torre ✅ Missões ✅ Cidade ❌ Arena ❌
+
+**Justificativa Arena proibida:** Arena pareia por PowerScore — mercenário inflacionaria score sem representar progressão real; combinado com ArenaRank → TreinamentoBonus criaria loop circular de escalonamento artificial.
+
+### 20.6 Regras — Treinamento
+
+| Regra | Implementação |
+|---|---|
+| ArenaRank ≥ 1 obrigatório para treinar | Validação ao oferecer |
+| Aluno ≠ Treinador (mesmo jogador) | `AlunoId != TreinadorId` |
+| Anti-chain bilateral | Cross-check sessões ativas |
+| Same-pair cooldown 24h | Query history por (TreinadorId, AlunoId) |
+| Cap semanal por herói | `500 + (heroi.Nivel × 50)` XP/semana |
+| XpCap frozen na criação | `CalcWeeklyCap - AcumuladoSemana` |
+| NPC trainers: 40% eficiência | `NpcEficiência%` no `TreinamentoConfig` |
+| Pagamento split | 70% → treinador, 30% sink de ouro |
+
+**Fórmula XP:**
+```
+base_xp = TrainerPowerScore × XpFatorConfig × DuracaoHoras × (1 + ArenaBonus%)
+xp_final = min(base_xp, XpCap)
+```
+`XpFatorConfig = 0.02` (calibrável no beta sem rebuild).
+
+**TreinamentoConfig por ArenaRank:**
+| Rank | XpBonus | MaxSlots | Duração | NPC Efic. |
+|---|---|---|---|---|
+| 0 | — | 0 | — | 40% |
+| 1 | +10% | 1 | 4h | 40% |
+| 2 | +20% | 2 | 4h | 40% |
+| 3 | +35% | 2 | 6h | 40% |
+| 4 | +50% | 3 | 6h | 40% |
+| 5 | +75% | 3 | 8h | 40% |
+
+### 20.7 Ciclo de Vida (ambos)
+
+```
+Disponibilizar → Post canal → [Contratar/Enviar Herói]
+  → BEGIN IMMEDIATE TRANSACTION (validações anti-exploit)
+  → Status = Ativo → herói locked
+  → ExpiryWorker (poll 5 min) → conclude/expire
+  → unlock herói → edit channel message → delete após delay
+  → notification na fila do jogador (exibe no próximo comando)
+```
+
+### 20.8 Integração com outros sistemas
+
+- **Arena** (`ArenaService`): usa `Heroi` direto — isola mercenários da competição
+- **Torre/Missões**: `SnapshotService.GetActiveForContratante()` → `IHeroCombatant?`
+- **Conversão (3B-2)**: guard `LockStatus == None` bloqueia venda/absorção de herói locked
+- **HeroiLevelUpService**: `TreinamentoExpiryWorker` chama `AddXpAsync(heroi, xpFinal)` na conclusão
+- **Economia** (`DESIGN_SISTEMAS.md §6`): 30% do custo de treino é ouro sink; custo de mercenário é transferência pura entre jogadores
+
+---
+
+## 21. Prioridades e Escopo por Fase  *(antigo §20)*
+
+### P0 — Core Loop (Fase 3A) ✅ concluída
+
+1. ✅ **Curva de XP** — `B_r × nível` (linear), migra para `l^1.25` no beta
+2. ✅ **Personagens fixos** — 9 personagens 5★/4★ no seed
+3. ✅ **Leveling** — XP por Torre, level-up, caps por raridade
+4. ✅ **Modelo de Slots da Cidade** — Responsabilidade + Operação, Confiança como gate, Humor da Cidade
+5. ✅ **Crafting** — 5 receitas com check de qualidade
+6. ✅ **Arena** — treino (burst XP) e desafio de ondas
+
+### Fase Q — Qualidade (antes da 3B)
+> Fechar dívida técnica de 3A.
+
+- `Random.Shared` no GachaService
+- `ILogger<T>` substituindo `Console.WriteLine`
+- Guild ID + caminho do banco em appsettings/env
+- Guard clauses centralizadas (herói em missão / alocado / inativo)
+- Testes unitários: GachaService, HeroiLevelUpService, CombatService, CidadeService
+- Teste de integração: gacha → alocar → produzir → evoluir
+
+### Fase UX-0 — Camada de Interação (antes de expandir sistemas)
+> Padrão de UX híbrido validado com `/cidade` antes de aplicar a outros sistemas.
+
+- `InteractionRouter` + `PanelBuilder` (ViewModel → Embed + ComponentBuilder)
+- `/cidade` convertido para painel público com botões e Select Menu
+- Padrões: DeferAsync, UpdateAsync, confirmação efêmera (§15.7)
 
 ### P1 — Expansão (Fase 3B)
-> Implementar após P0 estável.
+> Implementar após UX-0 validado. Cada sistema usa o padrão de painel desde o primeiro dia.
 
-7. **Sistema de Conversão de Heróis** — Venda e Absorção (sink econômico de 1★/2★ excedentes)
-8. **Sistema de Sustento** — consumo de Comida e Moradia; estados de eficiência por herói
-9. **Torre — Modo Operação** — andares concluídos viram fonte de recursos com eventos de interrupção
-10. **Novos prédios** — Armazém, Mercado, Prefeitura como base da expansão econômica
+| # | Sistema | Por que esta ordem |
+|---|---|---|
+| 3B-1 | **Inventário Unificado** | Pré-requisito para Relíquias |
+| 3B-2 | **Conversão de Heróis** (Venda + Absorção) | Sink econômico imediato; sem dependências |
+| 3B-3 | **Torre — Modo Operação** | Farm loop; replay value na Torre |
+| 3B-4 | **Sustento** (Comida / Moradia / Estados) | Pressão econômica; dá sentido à Conversão |
+| 3B-5 | **Guilda / Missões** | Loop paralelo; requer HeroPowerScore estável |
+| 3B-6 | **Relíquias** | Requer Inventário (3B-1) |
+| 3B-7 | **Novos Prédios** (Armazém, Mercado, Prefeitura) | Requer Sustento + Guilda funcionando |
+| 3B-Mercado | **Sistema de Mercado P2P** | Requer Inventário (3B-1); pode rodar em paralelo com 3B-7 |
+| 3B-Merc | **Mercenários** (empréstimo de heróis) | Snapshot model; pode rodar em paralelo com 3B-Mercado |
+| 3B-Treino | **Treinamento como Serviço** | Requer Arena rank ≥ 1; complementar à Torre/Arena |
+| 3B-Meta | **Nível do Mestre + Traços 4★** | Requer atividade de todos os sistemas 3B |
 
 ### P2 — IA e Automação (Fase 3C)
-> Só após economia e combate equilibrados (validados com beta).
+> Só após economia e combate equilibrados no beta.
 
-11. **Gestão autônoma da cidade** — política, auto-alocação, cadeia inteligente, ministros/líderes
-12. **Torre avançada** — progresso % por andar, requisito secreto, zonas, identidade de andar
+- **Gestão autônoma da cidade** — política, auto-alocação, cadeia inteligente, lideranças
+- **Torre avançada** — progresso % por andar, requisito secreto, zonas, identidade mecânica
 
 ### Pós-lançamento (sem data)
-13. **Sistema de Invasão NPC + Traição** — pressão de crescimento, risco real de perda de herói
-14. **Sistema de Expedições** — loop de alto risco/recompensa com retaliação conectada à Invasão
-15. **Anti-meta rígida na Torre** — andares com counters de build específicos
-16. **Torneios da Arena** com apostas em Ouro; conecta com Mercado futuro
-17. **Sacrifício/Síntese** — consumir herói cria relíquia especial ou transfere traço
-18. **Heróis Únicos / Permadeath** — decisões de design que mudam o escopo radicalmente (tomar antes de implementar)
+
+- **Invasão NPC + Traição** — pressão de crescimento, risco de perda de herói
+- **Expedições** — loop ofensivo de alto risco/recompensa com retaliação
+- **Anti-meta rígida na Torre** — andares com counters de build
+- **Torneios da Arena** com apostas em Ouro
+- **Sacrifício/Síntese** — consumir herói gera relíquia especial
+- **Heróis Únicos / Permadeath** — decisões de design que mudam o escopo radicalmente

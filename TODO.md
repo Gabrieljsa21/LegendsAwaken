@@ -68,16 +68,31 @@ Tarefas granulares organizadas por área. Acompanhe o progresso macro no `ROADMA
 
 ---
 
-## Inventário Unificado (Fase 3A — fazer antes de Relíquias e Itens)
+## Camada de Interação — UX-0 (fazer antes de expandir para novos sistemas)
+
+Padrão de UX híbrido aprovado. Validar com `/cidade` antes de aplicar aos demais sistemas.
+
+**Decisões:** painéis principais são públicos (canal); feedback de ação é efêmero; navegação atualiza in-place; expiração de 15 min aceita; dados sempre lidos do banco.
+
+- [ ] Convenção de `customId`: `sistema:acao[:param1:param2]`
+- [ ] `InteractionRouter` — parseia `customId`, despacha ao handler correto
+- [ ] `PanelBuilder` base — ViewModel → `(Embed, ComponentBuilder)`; Services sem tipos Discord
+- [ ] Padrão `DeferAsync` + `UpdateAsync` para handlers com acesso ao banco
+- [ ] Padrão de confirmação efêmera: `[Confirmar] [Cancelar]` com timeout para ações destrutivas
+- [ ] `/cidade` convertido para painel público com botões e Select Menu (validação do padrão)
+
+---
+
+## Inventário Unificado (Fase 3B-1 — pré-requisito para Relíquias)
 
 Evita fragmentação de lógica entre itens, relíquias e recursos.
 
 - [ ] `Inventario` — entidade unificada por jogador; tipos: `Recurso | Item | Reliquia | Consumivel`
 - [ ] Operações atômicas: `Add(tipo, id, qtd)` / `Remove(tipo, id, qtd)` com validação prévia
 - [ ] Stack limit por tipo (ex: relíquias não stackam; recursos sim)
-- [ ] `/inventario` — visualização por categoria com paginação
+- [ ] `/inventario` — painel com abas por categoria (`[Equipamentos] [Relíquias] [Recursos] [Consumíveis]`) e paginação
 
-## Relíquias (Fase 3B)
+## Relíquias (Fase 3B-6 — requer Inventário Unificado)
 
 - [ ] Entidade `Reliquia` (Id, Nome, Descrição, Efeito, AndarMinimo)
 - [ ] 3 slots de relíquia por herói (`HeroiReliquia`)
@@ -115,7 +130,7 @@ Fórmulas definidas em `GDD.md §5.0` e `DESIGN_SISTEMAS.md §3`.
 - [ ] Fragmentos de personagens fixos como drop raro
 - [x] `/treinar` funcional via Arena (XP acelerado)
 
-## Torre — Modo Operação (Fase 3B)
+## Torre — Modo Operação (Fase 3B-3)
 
 Andar concluído passa a ter dois modos: Exploração (primeira vez) e Operação (farm automático após conclusão).
 
@@ -177,7 +192,7 @@ Rework determinístico da cidade: sem auto-alocação, sem IA. Cada prédio tem 
 
 ---
 
-## Cidade — Novos Prédios (Fase 3B)
+## Cidade — Novos Prédios (Fase 3B-7)
 
 - [ ] **Armazém** — limite de estoque de recursos; overflow converte automaticamente (ex: madeira excedente → ouro a 80% eficiência)
 - [ ] **Mercado** — conversão de recursos em ouro; pode operar automático; melhores taxas com upgrade
@@ -206,7 +221,7 @@ Rework determinístico da cidade: sem auto-alocação, sem IA. Cada prédio tem 
 
 ---
 
-## Sistema de Conversão de Heróis (Fase 3B)
+## Sistema de Conversão de Heróis (Fase 3B-2)
 
 - [ ] Entidade/serviço `ConversaoHeroiService`
 - [ ] **Venda**: `Valor = BaseRaridade × EscalaDeNivel × FatorDeEscassezGlobal` — raridade pesa mais que nível; evita "farm de XP → venda → ouro infinito"
@@ -218,7 +233,7 @@ Rework determinístico da cidade: sem auto-alocação, sem IA. Cada prédio tem 
 
 ---
 
-## Sistema de Sustento (Fase 3B)
+## Sistema de Sustento (Fase 3B-4)
 
 - [ ] Campo `EstadoSustento` na entidade `Heroi` (enum: Ativo / Instável / Degradado / Inativo)
 - [ ] Consumo de Comida por herói: `Consumo = Base × Raridade × (1 + Nivel / 100)`
@@ -247,7 +262,7 @@ Rework determinístico da cidade: sem auto-alocação, sem IA. Cada prédio tem 
 
 ---
 
-## Missões (Guilda) — Fase 3B
+## Missões (Guilda) — Fase 3B-5
 
 - [ ] Entidade de rank da Guilda (Ferro → Oricalco, 15 tiers)
 - [ ] Geração automática de missões a cada 6h (até 8 simultâneas)
@@ -256,6 +271,110 @@ Rework determinístico da cidade: sem auto-alocação, sem IA. Cada prédio tem 
 - [ ] Cálculo de sucesso/parcial/falha por poder vs dificuldade
 - [ ] **Fail interesting**: missão falhou → pode gerar evento secundário (herói capturado → nova dungeon)
 - [ ] `/cidade missoes` e `/cidade missoes enviar`
+
+---
+
+## Sistema de Mercado P2P (Fase 3B-Mercado — após 3B-1)
+
+**Decisões:** `/mercado` efêmero; canal `#mercado` público; Phase 1 = equipamentos + consumíveis; taxa de listagem 5 Ouro flat; taxa de venda 10%; limite 3 listagens/player; 24h expiração; sem cap global no canal; bot edita mensagem antes de deletar.
+
+### Step 1 — MVP
+- [ ] Entidade `MarketListing` (Id, SellerId, InventoryEntryId, ItemType, ItemName, Quantity, PricePerUnit, TotalPrice, TaxRate, Status, CreatedAt, ExpiresAt, ResolvedAt, BuyerId, DiscordMessageId, RowVersion)
+- [ ] Entidade `MarketSaleHistory` (Id, ItemTemplateId, SalePrice, Quantity, SoldAt) — append-only
+- [ ] `IsLocked` + `LockReason` no `InventarioEntry` (adicionado ao Inventário Unificado)
+- [ ] `MarketConfig` data-driven: `BaseTaxRate=0.10`, `ListingFeeOuro=5`, `MaxActiveListings=3`, `ListingDurationHours=24`, `MinPriceFactor=0.5`, `MaxPriceFactor=10.0`, `PublicSaleThreshold=500`
+- [ ] `MarketService.ListItemAsync`: valida elegibilidade + lock + desconta 5 Ouro + cria listing
+- [ ] `MarketService.BuyItemAsync`: pipeline de validação + `BEGIN IMMEDIATE TRANSACTION` + transferência atômica
+- [ ] `MarketService.CancelListingAsync`: desbloqueia item, atualiza status, agenda delete da mensagem
+- [ ] `MarketExpiryWorker`: roda a cada 10 min; resolve Active listings com `ExpiresAt <= now`
+- [ ] `MarketBoardService`: `PostListingAsync`, `EditSoldAsync` (badge + desabilita botão), `EditExpiredAsync`, `DeleteAfterDelayAsync`
+- [ ] `MarketInteractionHandler`: rota `mercado:comprar:{id}`, `mercado:comprar_confirmar:{id}`, `mercado:cancelar:{id}`, `mercado:vender`, `mercado:minhas_listagens`
+- [ ] `/mercado` painel efêmero: `[Vender Item]` + `[Minhas Listagens]`
+- [ ] Flow de venda: Select Menu (itens não-locked, elegíveis) → Modal de preço → confirmação com cálculo de taxa → post no canal
+- [ ] Flow de compra: `[Comprar]` no canal → check validação → confirmação efêmera → `[Confirmar Compra]` → transaction
+
+### Step 2 — UX Polish
+- [ ] `MarketSaleHistory` populado em cada venda
+- [ ] Média recente exibida na mensagem (últimas 5 vendas do mesmo `ItemTemplateId`)
+- [ ] Post público no canal para vendas acima de `PublicSaleThreshold`
+- [ ] Notificação "Evento ao Logar" ao vendedor quando item for vendido
+- [ ] Board Summary pinado no `#mercado` (editado a cada transação)
+- [ ] `[Ver Detalhes]` na listagem: ephemeral com stats completos do item
+
+### Step 3 — Integração e Extensão
+- [ ] `MarketService.GetTaxRateForPlayer()` consulta nível do prédio Mercado (nível 1→8%, 2→6%, 3→3%)
+- [ ] `ItemConfig.IsTradeable` (bool) — controle por tipo sem switch/if
+- [ ] Suporte a Consumíveis com quantidade (lote único por listagem)
+- [ ] Suporte a recursos brutos com stacking (madeira, pedra, minério)
+- [ ] Relíquias tradeable (quando 3B-6 estável)
+
+---
+
+## Sistema de Mercenários + Treinamento (Fase 3B-Merc / 3B-Treino — após Market MVP)
+
+Infraestrutura compartilhada entre os dois sistemas. `HeroSnapshot` e `HeroLockStatus` são o núcleo. Implementar Mercenários primeiro; Treinamento reutiliza o mesmo snapshot model.
+
+### Step 1 — Domain + Entities (compartilhado)
+- [ ] Estender `HeroLockStatus` enum: + `AsMercenary`, `InTraining`, `AsTrainer`
+- [ ] Adicionar `LockStatus` + `LockReason` em `Heroi`
+- [ ] Criar `IHeroCombatant` interface no Domain (Id, Nome, Nivel, stats, PowerScore)
+- [ ] Implementar `IHeroCombatant` em `Heroi`
+- [ ] Criar `HeroSnapshot` entity + `SnapshotTipo` enum (Mercenario | Treinamento)
+- [ ] Implementar `IHeroCombatant` em `HeroSnapshot`
+- [ ] Criar `EmprestimoHeroi` entity + `EmprestimoStatus` + `DuracaoOpcao` enums
+- [ ] Criar `TreinamentoHeroi` entity + `TreinamentoStatus` enum
+- [ ] Criar `MercenarioConfig` data-driven (keyed DuracaoOpcao): 6h/12h/24h; CustoBase, CustoPorNivel
+- [ ] Criar `TreinamentoConfig` data-driven (keyed ArenaRank 0–5): XpBonus%, MaxSlots, DuracaoHoras, NpcEficiência%
+- [ ] EF migrations para todas as novas entidades
+
+### Step 2 — Application Services — Mercenários
+- [ ] `SnapshotService.CaptureAsync(heroiId, tipo, expiresAt)` — write-once snapshot
+- [ ] `SnapshotService.GetActiveForContratante(playerId)` → `IHeroCombatant?`
+- [ ] `MercenarioService.DisponibilizarAsync(playerId, heroiId, duracao)` — cria snapshot + lock herói + cria listing
+- [ ] `MercenarioService.ContratarAsync(playerId, emprestimoId)` — validações anti-exploit + `BEGIN IMMEDIATE TRANSACTION`
+  - Validações: não próprio herói, limite 1 ativo, anti-chain bilateral, same-pair 24h, ouro suficiente
+- [ ] `MercenarioService.CancelarAsync(donoId, emprestimoId)` — unlock herói, atualiza status
+- [ ] `MercenarioService.GetDisponiveisAsync()` → lista para board
+
+### Step 3 — Application Services — Treinamento
+- [ ] `TreinamentoService.OferecerrTreinoAsync(treinadorId, heroiId)` — valida ArenaRank ≥ 1, cria snapshot, lock herói treinador
+- [ ] `TreinamentoService.EnviarHeroiAsync(alunoId, studentHeroId, snapshotId)` — `BEGIN IMMEDIATE TRANSACTION`
+  - Validações: aluno ≠ treinador, anti-chain bilateral, same-pair 24h, cap semanal, slots disponíveis
+  - XpCap frozen na criação: `CalcWeeklyCap(heroi) - XpSemanaAcumulado(heroi)`
+- [ ] `TreinamentoService.ConcluirTreinamentoAsync(treinamentoId)` — calcula XP, aplica via HeroiLevelUpService, unlock aluno, conditional unlock treinador
+  - Fórmula: `min(TrainerPS × XpFatorConfig × Horas × (1 + ArenaBonus%), XpCap)`
+- [ ] `TreinamentoService.GetAtivosAsync()` → lista para board
+
+### Step 4 — Background Workers
+- [ ] `MercenarioExpiryWorker` (IHostedService, poll 5 min):
+  - `EmprestimoHeroi.ExpiresAt < Now` → Status = Expirado → heroi.LockStatus = None
+  - Edit `#mercenarios` message: "[EXPIRADO]" + disable buttons → delete after 10 min
+  - Queue notification para Dono + Contratante (exibe no próximo comando)
+- [ ] `TreinamentoExpiryWorker` (IHostedService, poll 5 min):
+  - `TreinamentoHeroi.ExpiresAt < Now` → calcular XP → HeroiLevelUpService.AddXpAsync → unlock aluno
+  - Se treinador sem sessões ativas → unlock herói treinador
+  - Status = Concluido, XpGanho preenchido → queue notification ao aluno
+
+### Step 5 — Adaptar combat services
+- [ ] `CombatService`: aceitar `IHeroCombatant` em vez de `Heroi` direto nos parâmetros
+- [ ] `TorreService`: buscar snapshot ativo (`SnapshotService.GetActiveForContratante`) antes de montar combate
+- [ ] `MissaoService`: idem — verificar mercenário ativo
+- [ ] `ArenaService`: **não alterar** — permanece usando `Heroi` diretamente (mercenários proibidos na Arena)
+
+### Step 6 — Bot layer + Slash commands
+- [ ] `MercenarioPanelBuilder`: painel efêmero + card de board (`#mercenarios`)
+- [ ] `MercenarioInteractionHandler`: rotas `mercenario:disponibilizar`, `mercenario:contratar:{id}`, `mercenario:cancelar:{id}`
+- [ ] `/mercenarios` → painel efêmero: `[Disponibilizar Herói]` `[Buscar Mercenário]` `[Meu Empréstimo]`
+- [ ] `TreinamentoPanelBuilder`: painel efêmero + card de board (`#treinamento`)
+- [ ] `TreinamentoInteractionHandler`: rotas `treinamento:oferecer`, `treinamento:enviar:{snapshotId}`, `treinamento:cancelar:{id}`
+- [ ] `/treinamento` → painel efêmero: `[Oferecer Treino]` `[Enviar Herói]` `[Meus Treinos]`
+
+### Step 7 — Guards e integrações
+- [ ] Guard `LockStatus == None` em absorb/sell/equip: estender padrão existente do market para novos valores
+- [ ] Weekly XP cap via aggregate query em `TreinamentoHeroi` (sem campo extra em `Heroi`)
+- [ ] Seed NPC mercenaries: 3 `EmprestimoHeroi` com `IsNpc=true` por tier em `DbSeeder`
+- [ ] Seed NPC trainers: 1 entry por ArenaRank com flag NPC em config
+- [ ] Recovery job no startup: scan heróis com `LockStatus != None` e `ExpiresAt < Now` → force unlock + warn log
 
 ---
 
@@ -275,32 +394,34 @@ Rework determinístico da cidade: sem auto-alocação, sem IA. Cada prédio tem 
 
 ---
 
-## Qualidade de Código
+## Qualidade de Código — Fase Q (prioridade antes da 3B)
 
-- [x] Token via variável de ambiente
-- [x] Clean Architecture com separação real de camadas
-- [x] Nullable warnings corrigidos (0 warnings)
-- [x] Migração para .NET 10
-- [x] `RaridadeConfig` — sem números mágicos no sistema de progressão
-- [ ] `Random.Shared` no `GachaService` (já existe como tarefa)
-- [ ] **`IRandomProvider` interface** — encapsula todo RNG; permite seed controlado para testes e debug; evitar `Random` solto em múltiplos serviços
+**Fase Q (fazer primeiro):**
+- [ ] `Random.Shared` no `GachaService`
 - [ ] `ILogger<T>` substituindo `Console.WriteLine` nos serviços
 - [ ] Guild ID movido para `appsettings.json`
 - [ ] Caminho do banco via variável de ambiente ou relativo
-- [ ] **`TimeProvider` centralizado** — injetar `ITimeProvider` nos serviços que usam tempo (produção, missões, torre); permite testar sem `DateTime.Now` direto
-- [ ] **Transações EF Core** nas operações críticas (craft, ascensão, venda, absorção): validar → executar → commit; rollback em falha
-- [ ] **Guard clauses centralizadas** — padrão único de validação de estado inválido: herói em missão, herói inativo, recurso insuficiente, slot cheio; mensagem padronizada: "Você não pode fazer isso porque…"
-- [ ] **State machines para fluxos longos** — missões e Torre Operação modelados como `estado + transição` persistido; garante retomada após restart do bot
-- [ ] **Separação explícita Domain/Application/Discord** — Commands apenas orquestram; Services não conhecem Discord; verificar e corrigir onde acoplado
-- [ ] Idempotência nos comandos de coleta (evita duplicar recursos se spamado)
+- [ ] **Guard clauses centralizadas** — padrão único para herói em missão / alocado / inativo / equipado
 - [ ] Testes unitários: GachaService (pity, raridade, distribuição de raças)
 - [ ] Testes unitários: HeroiLevelUpService (grants, totais, caps)
 - [ ] Testes unitários: CombatService (turnos, dano, crit)
 - [ ] Testes unitários: Produção passiva da cidade
 - [ ] **Testes de integração**: fluxo completo gacha → alocar → produzir → evoluir (SQLite in-memory)
+
+**Carry-over (Fase 3.5):**
+- [x] Token via variável de ambiente
+- [x] Clean Architecture com separação real de camadas
+- [x] Nullable warnings corrigidos (0 warnings)
+- [x] Migração para .NET 10
+- [x] `RaridadeConfig` — sem números mágicos no sistema de progressão
+- [ ] **`IRandomProvider` interface** — encapsula todo RNG; permite seed controlado para testes e debug; evitar `Random` solto em múltiplos serviços
+- [ ] **`TimeProvider` centralizado** — injetar `ITimeProvider` nos serviços que usam tempo (produção, missões, torre); permite testar sem `DateTime.Now` direto
+- [ ] **Transações EF Core** nas operações críticas (craft, ascensão, venda, absorção): validar → executar → commit; rollback em falha
+- [ ] **State machines para fluxos longos** — missões e Torre Operação modelados como `estado + transição` persistido; garante retomada após restart do bot
+- [ ] **Separação explícita Domain/Application/Discord** — Commands apenas orquestram; Services não conhecem Discord; verificar e corrigir onde acoplado
+- [ ] Idempotência nos comandos de coleta (evita duplicar recursos se spamado)
 - [ ] **Configuração central de balanceamento** — taxas de drop, custo de ascensão, produção base em JSON/tabela; evitar rebuild para ajuste de números (além do `RaridadeConfig` existente)
 - [ ] **Validação e sanitização de input** — limites em apelidos, URLs de arte, strings maliciosas; guard em todos os slash commands
-- [ ] **Padrão de UX — 3 camadas**: toda resposta tem versão Resumo (default) / Detalhado (botão) / Debug (comando admin); nada exige leitura maior que 5 segundos
 
 ---
 
