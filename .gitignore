@@ -22,3 +22,6 @@ obj/
 
 # Claude Code (uso pessoal)
 .claude/
+AI_INDEX.md
+CLAUDE.md
+SESSAO_*.md
