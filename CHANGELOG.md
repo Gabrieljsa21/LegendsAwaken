@@ -1,14 +1,19 @@
 # Changelog — Legends Awaken
 
-Histórico de mudanças por fase de desenvolvimento. Versões seguem progressão das fases do ROADMAP.
+Todas as alterações significativas neste projeto serão documentadas neste arquivo.
+
+O formato segue o padrão [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/), e o versionamento segue [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ---
 
-## [0.5.0] — 2026-04-18 · Fase 3A.3 — Sistema de Fragmentos
+## [3.0.0] - 2026-04-18 · Fase 3A.3 — Sistema de Fragmentos
+
+> **Breaking change:** sistema de gacha removido integralmente. Aquisição de heróis agora é 100% determinística.
 
 ### Removido
-- `GachaService` e `BannerService` — sistema de gacha eliminado integralmente
+- `GachaService` e `BannerService` — sistema de gacha eliminado
 - Entidades `Banner`, `BannerHeroiPool` e DTO `GachaResultadoDTO`
+- Tabelas `Banners` e `BannerHeroiPools` removidas do banco
 
 ### Adicionado
 **Domínio**
@@ -21,7 +26,7 @@ Histórico de mudanças por fase de desenvolvimento. Versões seguem progressão
 - `FragmentService` — drops ponderados por bioma com multiplicador de contrato; upsert TOCTOU-safe
 - `RecruitmentService` — 3 caminhos de desbloqueio: fragmentos, marco da Torre, condição única
 - `ContractService` — contratos arquétipo (+30%) e nomeado (+50%); expiração automática
-- `RewardDistributionService` — factory de payloads `Micro` / `Médio` / `Alto` por tipo de evento
+- `RewardDistributionService` — factory de payloads Micro / Médio / Alto por tipo de evento
 - DTOs: `ContractConfig`, `FragmentDropResult`, `RecruitmentResult`, `RewardPayload`
 
 **Infrastructure**
@@ -38,85 +43,122 @@ Histórico de mudanças por fase de desenvolvimento. Versões seguem progressão
 
 ### Alterado
 - `TorreService.SubirAndarAsync` — estendido com drop de fragmentos, detecção de bioma novo e desbloqueio de herói por marco
-- `SubirAndarResult` — ampliado de 4 para 8 campos: `+ Fragmentos`, `+ NovoBioma`, `+ HeroiDesbloqueado`, `+ RewardPayloads`
-- `CommandHandler` — 8 novos campos injetados; 3 novos slash commands; handlers para `colecao_recrutar`, `contrato_arquetipo`, `bioma_ver_colecao`, `bioma_contratos`, `contrato_remover_nomeado`
-- `CommandHandler` — logging estruturado (`LogInformation("... {Param}", value)`) nos pontos de entrada de slash commands
+- `SubirAndarResult` — ampliado de 4 para 8 campos: `Fragmentos`, `NovoBioma`, `HeroiDesbloqueado`, `RewardPayloads`
+- `CommandHandler` — 8 novos campos injetados; 3 novos slash commands; handlers para `colecao_recrutar`, `contrato_arquetipo`, `bioma_ver_colecao`, `bioma_contratos`, `contrato_remover_nomeado`; logging estruturado
 - `TipoReward` movido de `Application/DTOs` para `Domain/Enum/Enums.cs`
 
 ### Testes
-- 39 testes unitários adicionados: `BiomeServiceTests`, `FragmentServiceTests`, `ContractServiceTests`, `RecruitmentServiceTests`, `TorreServiceExtensionTests`
+- 39 testes unitários: `BiomeServiceTests`, `FragmentServiceTests`, `ContractServiceTests`, `RecruitmentServiceTests`, `TorreServiceExtensionTests`
 
 ---
 
-## [0.4.0] — 2026-04-16 · Fase 3A.2 — Consolidação do Core
+## [2.0.0] - 2026-04-16 · Fase 3A — Loop Jogável + Consolidação do Core
+
+> Implementação em um único commit de grande porte cobrindo Fase 3A.1 (vertical slice) e Fase 3A.2 (consolidação). Build: 0 warnings, 0 errors.
 
 ### Adicionado
-- **Cidade — Modelo de Slots**: `SlotOcupacao` entity + `ISlotOcupacaoRepository` + migration `CidadeSlotModel3A2`
+
+**XP e Progressão**
+- `RaridadeConfig.BaseXp` — curva de XP linear `XP_next = B_r × nível` por raridade (80/100/120/150/200)
+- Stats base por raridade via `ObterAtributosBaseParaRaridade` aplicados na criação do herói
+- Bônus racial +50 no atributo foco aplicado via `HeroiLevelUpService.BonusRacial`
+- Level-up com distribuição de pontos e verificação de cap por raridade
+- Bloqueio de XP ao atingir o cap (XP zerado, level travado até ascensão)
+- XP e Ouro concedidos ao limpar andar da Torre
+
+**Combate**
+- Fórmula de dano: `ATK × SkillMult × (1 - DEF/(DEF+1000+Level×50)) × TypeMult`
+- Crítico: 1.5× de dano
+- Burst cap: hit único ≤ 65% HP máximo do alvo
+- Ordem de turno ATB: `InitScore = Agilidade + Random(0, Agilidade×0.1)`
+
+**Crafting e Equipamentos**
+- 5 receitas estáticas: espada-ferro, arco-simples, armadura-couro, anel-arcano, amuleto-agilidade
+- Check de qualidade: `skill_craft + bônus_prédio(Nível×2) + roll(1..20)` via Responsável da Forja
+- `/crafting listar`, `/crafting fazer <receitaId>`, `/heroi_equipar`
+- `HeroiBonusAtributo` — bônus de equipamento persistido separadamente dos atributos base
+
+**Cidade — Modelo de Slots**
+- `SlotOcupacao` entity + `ISlotOcupacaoRepository` + migration `CidadeSlotModel3A2`
 - Campos `Confianca` (0–100) e `Humor` (0–100) na entidade `Heroi`
-- **ResourceNode** (Campo/Floresta/Mina/Prado) — tier 1 de produção sem slot, com bônus de profissão
-- **Slots de Responsabilidade e Operação** por prédio — prédio inativo se responsabilidade vazia
-- **Humor da Cidade** = média dos heróis alocados × multiplicador (0.9/1.0/1.1/1.2)
+- ResourceNode (Campo/Floresta/Mina/Prado) — tier 1 de produção por profissão, sem slot
+- Slots de Responsabilidade (gate por Confiança + atributo) e Operação por prédio
+- Humor da Cidade = média dos heróis alocados × multiplicador 0.9/1.0/1.1/1.2
+- Fórmula Tier 2: `BaseProd × MultResp × SomaOp × HumorMult × horas`
 - `PredioConfig` e `ResourceNodeConfig` — configs estáticas sem hardcode
-- `/cidade construir`, `/cidade alocar_recurso`, `/cidade alocar_predio`
+- `/cidade construir`, `/cidade alocar_recurso`, `/cidade alocar_predio`, `/cidade desalocar`
+
+**Arena**
+- `/treinar <heroi>` — XP em burst (3× XpParaProximoNivel), 4h cooldown, custo 100 Ouro + 10 Comida
+- `/arena desafio` — desafio de ondas, cooldown 24h, top-5 heróis automático
+
+**Personagens fixos**
 - Campo `Lore` na entidade `Heroi`
 - Seed de 9 personagens fixos 5★/4★ via `GeracaoDeDadosService` (idempotente)
-- **Check de qualidade no crafting**: `skill_craft + bônus_prédio(Nivel×2) + roll(1..20)` via Responsável da Forja
-- `/treinar` via `ArenaService.TreinarAsync` — XP em burst (3×), 4h cooldown, custo Ouro + Comida
-- `/arena desafio` — desafio de ondas com cooldown 24h, top-5 heróis automático
 - Ouro por andar da Torre: `5 + Numero×3` × boss_mult
 
 ### Alterado
-- `/cidade ver` reworked — coletores com taxa, prédios com slots + heróis, HumorCidade
-- Fórmula de produção Tier 2: `BaseProd × MultResp × SomaOp × HumorMult × horas`
+- `/cidade ver` reworked — coletores com taxa/h, prédios com slots e heróis alocados, HumorCidade exibido
 
 ---
 
-## [0.3.0] — 2026-04-15 · Fase 3A.1 — Loop Jogável Mínimo (Vertical Slice)
+## [1.1.0] - 2026-04-10 · Migração para .NET 10
 
-### Adicionado
-- **Fórmula de dano**: `ATK × SkillMult × (1 - DEF/(DEF+1000+Level×50)) × TypeMult`; crit 1.5×; burst cap 65%
-- **Ordem de turno ATB**: `InitScore = Agilidade + Random(0, Agilidade×0.1)`
-- **Curva de XP (linear)**: `XP_next = B_r × nível` com `B_r` em `RaridadeConfig.BaseXp`
-- Stats base por raridade via `ObterAtributosBaseParaRaridade` aplicados na criação do herói
-- Bônus racial (+50 no atributo foco) aplicado na criação via `HeroiLevelUpService.BonusRacial`
-- XP ganho ao subir andar da Torre (`TorreService.SubirAndarAsync → AplicarXp`)
-- Level-up com distribuição de pontos e verificação de cap
-- Bloqueio de XP ao atingir o cap (XP zerado, level travado até ascensão)
-- 5 receitas de crafting estáticas — espada-ferro, arco-simples, armadura-couro, anel-arcano, amuleto-agilidade
-- `/crafting listar` e `/crafting fazer <receitaId>`
-- `/heroi_equipar` — equipa item em herói, persiste bônus via `HeroiBonusAtributo`
-- `AtributosBase.Get/Set`, `Distribute`, `With`, `ToEnumerable` via `Enum.GetValues`
-
-### Marco
-> Um jogador novo entra, invoca, sobe a torre, coleta recursos, crafta e equipa um item. Build: 0 warnings, 0 errors.
+### Alterado
+- Target framework atualizado de .NET 8 para .NET 10
+- Todos os nullable warnings corrigidos (0 warnings, 0 errors no build)
+- Dependências atualizadas para versões compatíveis com .NET 10
 
 ---
 
-## [0.2.0] — 2026-04-11 · Fase 2 — Protótipo da Cidade
+## [1.0.3] - 2025-07-24
 
 ### Adicionado
-- Produção passiva por profissão com cap de 24h
-- `/cidade ver`, `/cidade coletar`, `/cidade alocar`, `/cidade desalocar`
-- Recurso Erva adicionado
-- `CidadeRepository` reescrito em EF Core
-- Distribuição de raças por raridade (1★/2★ = humano; 3★ = 10% não-humano; 4★ = 25%)
-- Distribuição uniforme entre raças não-humanas
-- `HeroiLevelUpService` com `RaridadeConfig` — caps, ganhos e grants calculados sem números mágicos
+- Sistema de grupos implementado: agora é possível montar um grupo com até 5 heróis utilizando o comando `/grupo`.
+- Comando `/listar_herois` aprimorado com sistema de paginação: exibe até 25 heróis por página com botões ⏮️ Anterior e ⏭️ Próximo para facilitar a navegação.
 
 ---
 
-## [0.1.0] — 2026-04 · Fase 1 — Pré-produção + Fundação
+## [1.0.2] - 2025-07-24
 
 ### Adicionado
-- Clean Architecture em 6 projetos: Domain, Application, Infrastructure, Bot, Data, Tests
-- Entidade `Heroi` com atributos base, raça, profissão, habilidades, status de combate
-- Sistema de gacha com soft-pity em curva cúbica por banner *(removido em 0.5.0)*
-- Geração procedural de heróis (raça, profissão, atributos, habilidades)
-- Torre infinita com tipos de andar variados e bosses em andares 5/10/25
-- Combate automático por turnos
-- Party de até 5 heróis
-- Listagem paginada com botões Discord (25 por página)
-- Autocomplete para nomes de heróis
-- Token do bot via variável de ambiente (`LEGENDSAWAKEN_TOKEN`)
-- Seed data de habilidades em JSON
-- `RaridadeConfig` — caps, stats base e ganhos por level centralizados (SOLID)
+- Comando `/ver_heroi` aprimorado para aceitar nome do herói como parâmetro com autocomplete.
+- Exibição detalhada das habilidades do herói, incluindo nomes e níveis, no embed do comando `/ver_heroi`.
+- Cálculo dos bônus de atributos agora inclui corretamente os bônus das habilidades multiplicados pelo nível de cada habilidade.
+- Criação e cadastro das habilidades iniciais do jogo para uso pelos heróis.
+
+---
+
+## [1.0.1] - 2025-07-20
+
+### Adicionado
+- Sistema de invocação com rolagens simples e múltiplas (x1, x11).
+- Implementação da lógica de pity por banner com reinício imediato após obter herói 4★.
+- Comando `/roll` atualizado para aceitar seleção via dropdown de banners disponíveis.
+- Exibição de progresso do pity no embed do resultado de invocação.
+- Ícone ✨ adicionado ao lado do nome de heróis 4★ no resultado das rolagens.
+
+### Corrigido
+- Reset do contador de pity agora ocorre corretamente após obtenção de herói 4★ (não ao fim da rolagem múltipla).
+- Corrigido erro de interação falha ao selecionar banner no menu suspenso.
+
+---
+
+## [1.0.0] - 2025-07-16
+
+### Adicionado
+- Definição de escopo e objetivos do projeto.
+- Estrutura modular baseada em Clean Architecture com influência de DDD.
+- Camadas organizadas: `Domain`, `Application`, `Infrastructure`, `Bot`, `Data`, `Tests`.
+- Configuração inicial de bot Discord com `Discord.Net`.
+- Projeto `LegendsAwaken.sln` criado no Visual Studio 2022.
+- Integração com SQLite via `Microsoft.EntityFrameworkCore.Sqlite`.
+- Repositório público criado no GitHub com README detalhado.
+- Estrutura de comandos básicos iniciada.
+- Suporte a variáveis de ambiente para configuração de token do Discord.
+- Base de dados com tabelas iniciais (`Heroi`, `Usuario`, etc.).
+- Estrutura de arquivos `.json` no projeto `LegendsAwaken.Data`.
+
+### Corrigido
+- Ajustes em conflitos de DLL durante build (lock de arquivo).
+- Correções na configuração do bot no Discord Developer Portal (comandos slash visíveis).
