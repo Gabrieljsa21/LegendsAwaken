@@ -81,7 +81,7 @@ public class RecruitmentServiceTests
     public async Task ProcessarMarcoTorreAsync_Desbloqueia_QuandoHeroiEDoMarco()
     {
         var usuarioId = Guid.NewGuid();
-        var heroiId   = new Guid("a1000000-0000-0000-0000-000000000004"); // IdKaen do FragmentoSeed
+        var heroiId   = Guid.NewGuid();
         var config    = new HeroiConfig { Id = heroiId, Nome = "Kaen" };
         var unlock    = new HeroiUnlockConfig { HeroiId = heroiId, TipoUnlock = TipoUnlock.MarcoTorre, AndarMarco = 10 };
         HeroiDesbloqueado? salvo = null;
@@ -99,5 +99,59 @@ public class RecruitmentServiceTests
         Assert.NotNull(resultado);
         Assert.True(resultado!.Sucesso);
         Assert.NotNull(salvo);
+    }
+
+    [Fact]
+    public async Task ProcessarMarcoTorreAsync_RetornaNull_QuandoNenhumHeroiCorresponde()
+    {
+        var usuarioId = Guid.NewGuid();
+        var heroiId   = Guid.NewGuid();
+        var config = new HeroiConfig { Id = heroiId, Nome = "Grom" };
+        var unlock = new HeroiUnlockConfig { HeroiId = heroiId, TipoUnlock = TipoUnlock.MarcoTorre, AndarMarco = 25 };
+
+        _heroiConfigRepo.Setup(r => r.ListarTodosAsync()).ReturnsAsync([config]);
+        _heroiConfigRepo.Setup(r => r.ObterUnlockConfigAsync(heroiId)).ReturnsAsync(unlock);
+
+        var service = CreateService();
+        var resultado = await service.ProcessarMarcoTorreAsync(usuarioId, 10); // wrong floor
+
+        Assert.Null(resultado);
+    }
+
+    [Fact]
+    public async Task DesbloquearPorCondicaoAsync_Sucesso_QuandoHeroiExisteENaoDesbloqueado()
+    {
+        var usuarioId = Guid.NewGuid();
+        var heroiId   = Guid.NewGuid();
+        var config = new HeroiConfig { Id = heroiId, Nome = "Nyra" };
+        HeroiDesbloqueado? salvo = null;
+
+        _desbloqueadoRepo.Setup(r => r.JaDesbloqueadoAsync(usuarioId, heroiId)).ReturnsAsync(false);
+        _heroiConfigRepo.Setup(r => r.ObterPorIdAsync(heroiId)).ReturnsAsync(config);
+        _desbloqueadoRepo.Setup(r => r.SalvarAsync(It.IsAny<HeroiDesbloqueado>()))
+            .Callback<HeroiDesbloqueado>(h => salvo = h)
+            .Returns(Task.CompletedTask);
+
+        var service = CreateService();
+        var resultado = await service.DesbloquearPorCondicaoAsync(usuarioId, heroiId);
+
+        Assert.True(resultado.Sucesso);
+        Assert.NotNull(salvo);
+        Assert.Equal(heroiId, salvo!.HeroiId);
+    }
+
+    [Fact]
+    public async Task DesbloquearPorCondicaoAsync_Falha_QuandoJaDesbloqueado()
+    {
+        var usuarioId = Guid.NewGuid();
+        var heroiId   = Guid.NewGuid();
+
+        _desbloqueadoRepo.Setup(r => r.JaDesbloqueadoAsync(usuarioId, heroiId)).ReturnsAsync(true);
+
+        var service = CreateService();
+        var resultado = await service.DesbloquearPorCondicaoAsync(usuarioId, heroiId);
+
+        Assert.False(resultado.Sucesso);
+        _desbloqueadoRepo.Verify(r => r.SalvarAsync(It.IsAny<HeroiDesbloqueado>()), Times.Never);
     }
 }

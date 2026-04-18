@@ -23,9 +23,12 @@ public class RecruitmentService(
         if (unlock is null || unlock.TipoUnlock != TipoUnlock.Fragmentos)
             return new RecruitmentResult(false, heroi, $"{heroi.Nome} não é desbloqueável por fragmentos.");
 
+        if (unlock.QuantidadeFragmentos is null)
+            return new RecruitmentResult(false, heroi, "Configuração de fragmentos inválida.");
+
         var progresso = await fragmentoRepository.ObterPorHeroiAsync(usuarioId, heroiId);
         int atual = progresso?.Quantidade ?? 0;
-        int necessario = unlock.QuantidadeFragmentos!.Value;
+        int necessario = unlock.QuantidadeFragmentos.Value;
 
         if (atual < necessario)
             return new RecruitmentResult(false, heroi, $"Fragmentos insuficientes: {atual}/{necessario}.");
