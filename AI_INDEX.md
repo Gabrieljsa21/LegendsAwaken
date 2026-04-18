@@ -1,6 +1,6 @@
 # AI_INDEX.md — LegendsAwaken Navigation Reference
 <!-- Lookup-only. Read this before opening any file. Update whenever the codebase changes. -->
-<!-- Last updated: 2026-04-17 · Phase 3A.2 complete; gacha/banner entries removed -->
+<!-- Last updated: 2026-04-18 · Phase 3A.3 complete; Sistema de Fragmentos implementado; GachaService/BannerService removidos -->
 
 ---
 
@@ -13,7 +13,7 @@
 | `LegendsAwaken.Infrastructure` | EF Core context, repositories, migrations, providers |
 | `LegendsAwaken.Bot` | Discord entry point, CommandHandler, slash command classes |
 | `LegendsAwaken.Data` | Static JSON seed data (classes, habilidades, herois_base) |
-| `LegendsAwaken.Tests` | Unit tests (placeholder — no real tests yet) |
+| `LegendsAwaken.Tests` | Unit tests — 39 testes passando (BiomeService, FragmentService, ContractService, RecruitmentService, TorreService) |
 
 ---
 
@@ -35,6 +35,11 @@
 | `OrigemBonusAtributo` | Racial, Profissao, Antecedente, Equipamento, Talento, LevelUp, Outro |
 | `SlotEquipamento` | Arma, Armadura, Acessorio |
 | `Qualidade` | Comum=1, Bom=2, Raro=3, Excepcional=4, Mestre=5 |
+| `TipoFragmento` | Normal (extensível) |
+| `TipoUnlock` | Fragmentos, MarcoTorre, CondicaoUnica |
+| `TipoContrato` | Arquetipo, Nomeado |
+| `TipoEventoAlto` | DescobertaBioma, HeroiIconicoDesbloqueado |
+| `TipoReward` | Micro, Medio, Alto |
 
 ---
 
@@ -83,6 +88,18 @@ Fields: `HabilidadeId`, `Habilidade`, `Nivel`, `XPAtual`, `XPMaximo`
 ### `Party` / `PartyHero` — `Domain/Entities/Party.cs`
 ### `Inimigo` — (in DbContext as `Set<Inimigo>()`, defined in Domain)
 
+### Entidades do Sistema de Fragmentos — `Domain/Entities/Fragmento/`
+
+| Entity | Fields chave |
+|---|---|
+| `HeroiConfig` | `Id`, `Nome`, `Profissao`, `Raridade`, `Descricao?`, `UnlockConfig` (nav) |
+| `HeroiUnlockConfig` | `HeroiId`, `TipoUnlock`, `QuantidadeFragmentos?`, `AndarMarco?` |
+| `Bioma` | `Id`, `Nome`, `AndarInicio`, `AndarFim`, `HeroPool` (nav list) |
+| `BiomHeroPool` | `BiomId`, `HeroiId`, `Peso`, `Heroi` (nav) |
+| `FragmentoProgresso` | `UsuarioId` (Guid), `HeroiId`, `Quantidade`, `UltimaAtualizacao` |
+| `Contrato` | `Id`, `UsuarioId`, `TipoContrato`, `Ativo`, `ArquetipoAlvo?` (Profissao?), `HeroiAlvoId?`, `CriadoEm`, `ExpiraEm?` |
+| `HeroiDesbloqueado` | `UsuarioId`, `HeroiId`, `DesbloqueadoEm`, `Heroi` (nav) |
+
 ### Auxiliares — `Domain/Entities/Auxiliares/HeroiAuxiliares.cs`
 `HeroiAfinidadeElemental`, `HeroiVinculo`, `HeroiTag`, `HeroiBonusAtributo`
 
@@ -96,11 +113,16 @@ Fields: `HabilidadeId`, `Habilidade`, `Nivel`, `XPAtual`, `XPMaximo`
 | `HeroiService` | Hero CRUD, skill training, equip items | `CriarHeroiAsync(...)`, `EquiparItemAsync(heroiId, itemId, userId)→string?`, `ObterHeroisPorUsuarioAsync(userId)`, `TreinarHabilidadeAsync(...)` |
 | `CraftingService` | Static recipes, resource validation, item creation | `ListarReceitas()`, `CraftarAsync(userId, receitaId)→(Item?, string?)` |
 | `CombatService` | Turn-based combat, ATB ordering, damage formula | `IniciarCombate(herois, inimigos)`, `ExecutarRound(enc)`, `CalcularDano(atk, def, skillMult, typeMult)` |
-| `TorreService` | Floor progression, XP grant on clear | `SubirAndarAsync(userId, heroisParticipantes)→SubirAndarResult` |
+| `TorreService` | Floor progression, XP grant, fragment drops, biome/marco detection | `SubirAndarAsync(userId, heroisParticipantes)→SubirAndarResult` — result inclui `Fragmentos`, `NovoBioma`, `HeroiDesbloqueado`, `RewardPayloads` |
 | `CidadeService` | City production, building construction, slot allocation | `CriarCidadeAsync`, `ColetarProducaoAsync`, `AlocarRecursoAsync(userId, heroiId, TipoResourceNode)`, `AlocarSlotPredioAsync(userId, heroiId, TipoPredio, SlotTipo)→string?`, `DesalocarHeroiAsync(userId, heroiId)→string?`, `ConstruirPredioAsync(userId, TipoPredio)→string?`, `ObterSlotsPorPredioAsync(construcaoId)` |
 | `ArenaService` | Training sessions and wave challenges | `TreinarAsync(userId, heroiId)→TreinoResult`, `DesafioOndasAsync(userId, List<Heroi>)→(DesafioResult?, string?)` |
 | `PredioConfig` | Static config for all buildings (slots, costs, production) | `Slots[(TipoPredio,Nivel)]→SlotDefinicao`, `CustosConstrucao[TipoPredio]→ConstrucaoCusto`, `RecursoProducao[TipoPredio]→string?` |
 | `ResourceNodeConfig` | Static config for ResourceNode base rates and profession bonuses | `BaseRates[TipoResourceNode]→(recurso,basePorHora)`, `ProfissaoBonus[(node,profissao)]→double` |
+| `BiomeService` | Biome mapping, new biome detection, marco detection | `ObterBiomaParaAndarAsync(andar)`, `EBiomaNovoAsync(andar)`, `EAndarDeMarco(andar)` |
+| `FragmentService` | Fragment drops, contract multiplier, progress upsert | `ProcessarDropAsync(userId, andar)→List<FragmentDropResult>`, `AdicionarFragmentosAsync(...)`, `ObterMultiplicadorAsync(userId, heroiId)` |
+| `RecruitmentService` | 3 unlock paths | `TentarRecrutarPorFragmentosAsync(userId, heroiId)→RecruitmentResult`, `ProcessarMarcoTorreAsync(userId, andar)`, `DesbloquearPorCondicaoAsync(userId, heroiId)` |
+| `ContractService` | Archetype + named contracts | `AtivarContratoArquetipoAsync(userId, profissao)`, `AtivarContratoNomeadoAsync(userId, heroiId, duracao?)`, `ExpirarContratosVencidosAsync()` |
+| `RewardDistributionService` | 3-tier reward payload factory | `GerarMicroPico(drop)`, `GerarPicoMedio(heroi)`, `GerarPicoAlto(tipo, bioma?, heroi?)` |
 | `GeracaoDeDadosService` | DB seed — tables + base data | `CriarTabelasAsync()`, `PopularDadosBaseAsync()` |
 | `HabilidadeService` | Skill data access | `ObterTodasAsync()` |
 | `UsuarioService` | User creation/lookup | |
@@ -114,6 +136,7 @@ Fields: `HabilidadeId`, `Habilidade`, `Nivel`, `XPAtual`, `XPMaximo`
 - `HeroiLevelUpService.BonusRacial` — `IReadOnlyDictionary<Raca, AtributosBase>` (+50 to focus attribute per race)
 - `HeroiLevelUpService.MultiplicadorXpRacial` — `IReadOnlyDictionary<Raca, double>` (Humano=1.10, others=1.0)
 - `CraftingService.Receitas` — 5 static recipes (espada-ferro, arco-simples, armadura-couro, anel-arcano, amuleto-agilidade)
+- `ContractConfig` — `Application/DTOs/ContractConfig.cs`: `ChanceDropBase=0.30`, `BonusArquetipo=0.30`, `BonusNomeado=0.50`
 
 ---
 
@@ -143,6 +166,11 @@ Fields: `HabilidadeId`, `Habilidade`, `Nivel`, `XPAtual`, `XPMaximo`
 | `IUsuarioRepository` | `UsuarioRepository` | `Infrastructure/Repositories/UsuarioRepository.cs` |
 | `IHabilidadeRepository` | `HabilidadeRepository` | `Infrastructure/Repositories/HabilidadeRepository.cs` |
 | `IPartyRepository` | `PartyRepository` | `Infrastructure/Repositories/PartyRepository.cs` |
+| `IHeroiConfigRepository` | `HeroiConfigRepository` | `Infrastructure/Repositories/HeroiConfigRepository.cs` — `ObterPorIdAsync`, `ListarTodosAsync`, `ObterUnlockConfigAsync` |
+| `IHeroiDesbloqueadoRepository` | `HeroiDesbloqueadoRepository` | `Infrastructure/Repositories/HeroiDesbloqueadoRepository.cs` — `JaDesbloqueadoAsync`, `SalvarAsync`, `ListarPorUsuarioAsync` |
+| `IFragmentoRepository` | `FragmentoRepository` | `Infrastructure/Repositories/FragmentoRepository.cs` — `ObterPorHeroiAsync`, `UpsertAsync` (TOCTOU-safe) |
+| `IBiomaRepository` | `BiomaRepository` | `Infrastructure/Repositories/BiomaRepository.cs` — `ObterParaAndarAsync`, `ListarTodosAsync` |
+| `IContratoRepository` | `ContratoRepository` | `Infrastructure/Repositories/ContratoRepository.cs` — `ObterAtivoAsync(userId, tipo)`, `SalvarAsync`, `DesativarAsync`, `ListarAtivosVencidosAsync` |
 
 `HeroiRepository.ObterPorIdAsync` and `ObterPorUsuarioIdAsync` include `BonusAtributos`.  
 `ItemRepository` includes `Bonus` on all queries.
@@ -167,6 +195,13 @@ Fields: `HabilidadeId`, `Habilidade`, `Nivel`, `XPAtual`, `XPMaximo`
 | `PartyHeroes` | `PartyHero` |
 | `Itens` | `Item` |
 | `ItemBonus` | `ItemBonus` |
+| `HeroisConfig` | `HeroiConfig` |
+| `HeroisUnlockConfig` | `HeroiUnlockConfig` |
+| `Biomas` | `Bioma` |
+| `BiomHeroPools` | `BiomHeroPool` |
+| `FragmentosProgresso` | `FragmentoProgresso` |
+| `Contratos` | `Contrato` |
+| `HeroisDesbloqueados` | `HeroiDesbloqueado` |
 
 EF OwnsOne: `Heroi → AtributosBase`, `Heroi → Status`, `Heroi → Equipamentos`, `Heroi → Treinamento`, `Inimigo → Atributos`, `Cidade → Recursos`
 
@@ -180,6 +215,8 @@ EF OwnsOne: `Heroi → AtributosBase`, `Heroi → Status`, `Heroi → Equipament
 | `20260411035328_CidadeRefactor` | 2026-04-11 | City/worker model refactor |
 | `20260416195336_CraftingV1` | 2026-04-16 | Equipamentos string→Guid FKs; ItemId on HeroiBonusAtributo; Itens + ItemBonus tables |
 | `CidadeSlotModel3A2` | 2026-04-16 | Confianca/Humor/Lore on Heroi; ResourceNode on PersonagemTrabalhador; TipoPredio on Construcao; SlotOcupacoes table |
+| `FragmentoSystem` (timestamp ~20260417) | 2026-04-17 | HeroisConfig, HeroisUnlockConfig, Biomas, BiomHeroPools, FragmentosProgresso, Contratos, HeroisDesbloqueados |
+| `FragmentoSystemIndexes` (timestamp ~20260418) | 2026-04-18 | Partial unique indexes: FragmentosProgresso(UsuarioId+HeroiId), Contratos(UsuarioId+TipoContrato WHERE Ativo=1) |
 
 ---
 
@@ -190,8 +227,11 @@ DI registration for all repositories and services. Builds `CommandHandler` with 
 Guild ID: hardcoded `1388541192806989834` (TODO: move to appsettings).
 
 ### `CommandHandler.cs`
-Handles `SlashCommandExecuted`, `ButtonExecuted`, `AutocompleteExecuted`.  
-Constructor injects: `HeroiService`, `GeracaoDeDadosService`, `UsuarioService`, `RacaService`, `AtributoBonusService`, `CombatService`, `PartyService`, `CidadeService`, `CraftingService`, `ArenaService`.
+Handles `SlashCommandExecuted`, `ButtonExecuted`, **`SelectMenuExecuted`**, `AutocompleteExecuted`.  
+Constructor injects: `HeroiService`, `GeracaoDeDadosService`, `UsuarioService`, `RacaService`, `AtributoBonusService`, `CombatService`, `PartyService`, `CidadeService`, `CraftingService`, `ArenaService`, + fragment system: `IHeroiConfigRepository`, `IHeroiDesbloqueadoRepository`, `IFragmentoRepository`, `RecruitmentService`, `BiomeService`, `ContractService`, `IContratoRepository`, `ITorreRepository`.
+
+### `Bot/Helpers/DiscordIdHelper.cs`
+`ToGuid(ulong discordId) → Guid` — deterministic, little-endian via `BinaryPrimitives.WriteUInt64LittleEndian`. Used everywhere Discord `ulong` must map to internal `Guid UsuarioId`.
 
 ### Slash commands → Command classes
 
@@ -206,6 +246,9 @@ Constructor injects: `HeroiService`, `GeracaoDeDadosService`, `UsuarioService`, 
 | `/crafting` | `CraftingCommand` | `Commands/CraftingCommand.cs` |
 | `/heroi_equipar` | (inline in CommandHandler) | `CommandHandler.cs` |
 | `/arena` | `ArenaCommand` | `Commands/ArenaCommand.cs` |
+| `/colecao` | `ColecaoCommand` | `Commands/ColecaoCommand.cs` — coleção de heróis; button `colecao_recrutar` → recrutar por fragmentos; `MostrarAsync` para delegação |
+| `/bioma` | `BiomaCommand` | `Commands/BiomaCommand.cs` — bioma atual com pools de drop |
+| `/contrato` | `ContratoCommand` | `Commands/ContratoCommand.cs` — contratos ativos; select menu `contrato_arquetipo`; button `contrato_remover_nomeado`; `MostrarAsync` para delegação |
 
 ---
 
@@ -215,7 +258,12 @@ Constructor injects: `HeroiService`, `GeracaoDeDadosService`, `UsuarioService`, 
 |---|---|
 | `Application/Helpers/NomeGenerator.cs` | Procedural hero name generation |
 | `Bot/Helpers/EmbedHelper.cs` | Discord embed utilities |
+| `Bot/Helpers/DiscordIdHelper.cs` | `ToGuid(ulong)` — Discord ID → Guid (little-endian, deterministic) |
 | `Infrastructure/SeedData/HabilidadesSeed.cs` | Seed data for habilidades |
+| `Infrastructure/SeedData/FragmentoSeed.cs` | Seed data for HeroisConfig, Biomas, BiomHeroPools, HeroisUnlockConfig |
+| `Bot/Panels/ColecaoPanel.cs` | Static panel builder for `/colecao` |
+| `Bot/Panels/BiomaPanel.cs` | Static panel builder for `/bioma` |
+| `Bot/Panels/ContratoPanel.cs` | Static panel builder for `/contrato` |
 
 ---
 
@@ -259,4 +307,5 @@ Constructor injects: `HeroiService`, `GeracaoDeDadosService`, `UsuarioService`, 
 | Fase 2 — Protótipo da Cidade | ✅ Complete |
 | Fase 3A.1 — Vertical Slice | ✅ Complete (build 0w/0e) |
 | Fase 3A.2 — Consolidação do Core | ✅ Complete (build 0w/0e) — backend + bot layer |
+| Fase 3A.3 — Sistema de Fragmentos | ✅ Complete (build 0w/0e, 39 tests) — gacha substituído por fragmentos/biomas/contratos |
 | Fase 3B+ | Not started |

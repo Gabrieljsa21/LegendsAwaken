@@ -7,31 +7,35 @@
 
 ## 1. Visão Geral
 
-O jogador é um **Mestre** que invoca heróis via gacha, envia grupos para escalar uma Torre infinita e gerencia uma **Cidade** que cresce conforme sua coleção de heróis evolui. O loop central é: **invocar → alocar → progredir**.
+O jogador é um **Mestre** que coleciona heróis de forma determinística — por fragmentos, conquistas e contratos — enquanto escala uma Torre infinita e gerencia uma **Cidade** que cresce conforme sua coleção evolui. O loop central é: **progredir → coletar fragmentos → recrutar → alocar**.
 
 ---
 
 ## 2. Loop de Jogo
 
 ```
-[INVOCAR]  → Gacha gera heróis novos
+[PROGREDIR] → Sobe andares da Torre, enfrenta biomas, conquista marcos
     ↓
-[ALOCAR]   → Heróis são designados à Torre ou a um prédio da Cidade
+[FRAGMENTOS] → Drops de fragmentos de heróis ao limpar andares (30% chance)
     ↓
-[PRODUZIR] → Cidade gera recursos/XP passivamente enquanto o jogador está offline
+[ALOCAR]     → Heróis são designados à Torre ou a um prédio da Cidade
     ↓
-[COMBATER] → Party sobe andares da Torre, ganha recompensas
+[PRODUZIR]   → Cidade gera recursos/XP passivamente enquanto o jogador está offline
     ↓
-[MELHORAR] → Recursos da cidade financiam upgrades de prédios e equipamentos
+[RECRUTAR]   → Acumula fragmentos, bate marcos ou cumpre condições para desbloquear heróis
+    ↓
+[MELHORAR]   → Recursos da cidade financiam upgrades de prédios e equipamentos
     ↓
  (volta ao início)
 ```
 
 ---
 
-## 3. Sistema de Gacha (Reformulado)
+## 3. Sistema de Fragmentos (Aquisição de Heróis)
 
-### 3.1. Modelo Híbrido
+> O sistema de gacha foi substituído por aquisição determinística. Nenhum RNG de raridade — o jogador sabe exatamente o que precisa para obter cada herói.
+
+### 3.1. Modelo de Raridade
 
 | Raridade | Tipo | Arte | Identidade |
 |---|---|---|---|
@@ -41,20 +45,40 @@ O jogador é um **Mestre** que invoca heróis via gacha, envia grupos para escal
 | 2★ | Procedural | Ícone por classe | Genérico |
 | 1★ | Procedural | Ícone por classe | Genérico |
 
-### 3.2. Soft-pity (já implementado)
-- Curva cúbica a partir do pity configurado por banner.
-- Reset ao obter 4★ ou superior.
+### 3.2. Três Caminhos de Desbloqueio
 
-### 3.3. Banners
-- **Banner Padrão:** pool fixo de todos os personagens nomeados + procedurais.
-- **Banner de Evento:** destaca personagens 5★ específicos com rate-up.
-- **Banner de Profissão:** aumenta chance de personagens de uma profissão específica (útil para quem precisa de um Ferreiro, por exemplo).
+Cada herói tem exatamente **um** caminho de desbloqueio, definido em `HeroiUnlockConfig`:
 
-### 3.4. Arte dos Personagens Fixos
+| Tipo | Como funciona | Exemplo |
+|---|---|---|
+| **Fragmentos** | Acumular N fragmentos do herói via drops na Torre (bioma específico) | 30 fragmentos de Grom → Grom desbloqueado |
+| **Marco da Torre** | Atingir um andar específico desbloqueado automaticamente | Andar 10 → Seraph desbloqueado |
+| **Condição Única** | Ação especial fora da Torre (missão, conquista, etc.) | A definir por herói |
+
+### 3.3. Fragmentos e Biomas
+
+A Torre é dividida em **biomas** (faixas de andares). Cada bioma tem um pool de heróis associado. Ao limpar um andar (30% de chance), o jogador recebe fragmento(s) de um herói do bioma atual.
+
+- Peso de drop por herói configurável por bioma (`BiomHeroPool.Peso`)
+- Quantidade de fragmentos: `base × multiplicador de contrato` (arredondado para cima)
+- `/bioma` — exibe o bioma atual, quais heróis dropam e suas chances relativas
+
+### 3.4. Contratos (substituem banners)
+
+Contratos são bônus de drop ativados pelo jogador, sem prazo de validade.
+
+| Tipo | Bônus | Notas |
+|---|---|---|
+| **Arquétipo** | +30% fragmentos de heróis da profissão escolhida | 1 ativo por vez; substituível |
+| **Nomeado** | +50% fragmentos de herói específico | Requer ≥1 fragmento já coletado; 1 ativo por vez |
+
+- `/contrato` — exibe contrato ativo e permite trocar ou remover
+
+### 3.5. Arte dos Personagens Fixos
 - Gerada por IA (Midjourney / DALL-E) com prompt padronizado por classe e raça.
-- URL da imagem salva no banco e exibida no embed do pull.
+- URL da imagem salva no banco e exibida nos painéis de coleção.
 
-### 3.5. Pool Inicial de Personagens Fixos
+### 3.6. Pool Inicial de Personagens Fixos
 
 #### 5★ — Lendários
 
@@ -74,6 +98,14 @@ O jogador é um **Mestre** que invoca heróis via gacha, envia grupos para escal
 | **Mira** | Alquimista | Humano | Fogo | Edward Elric (FMA) | Prodígio da alquimia que transformou o laboratório da cidade em algo que nenhum mestre esperava. Teimosa. Brilhante. |
 | **Grom** | Mineiro | Anão | Terra | Anões clássicos do fantasy | Nunca abandona uma veia de minério. Nunca. Dizem que ele encontra metal onde outros só veem pedra comum. |
 | **Hana** | Cozinheiro / Agricultor | Humano | Natureza | Soma (Shokugeki no Soma) | A culinária dela tem efeitos que nenhuma poção replica. O time rende 20% a mais depois do almoço dela. |
+
+### 3.7. Painéis Discord Implementados
+
+| Comando | Painel | O que mostra |
+|---|---|---|
+| `/colecao` | ColecaoPanel | Lista de todos os heróis com estado (✅ desbloqueado / 🔒 fragmentos / 🔒 marco / ❓ condição); botão de recrutar quando pronto |
+| `/bioma` | BiomaPanel | Bioma atual, heróis que dropam nele, pesos; atalhos para coleção e contratos |
+| `/contrato` | ContratoPanel | Contratos ativos (arquétipo + nomeado); select menu para trocar arquétipo |
 
 ---
 

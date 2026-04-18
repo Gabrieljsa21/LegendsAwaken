@@ -14,20 +14,39 @@ Tarefas granulares organizadas por área. Acompanhe o progresso macro no `ROADMA
 
 ---
 
-## Gacha
+## ~~Gacha~~ → substituído pelo Sistema de Fragmentos (Fase 3A.3)
 
-- [x] Sistema de invocação (x1 e x11)
-- [x] Soft-pity com curva cúbica por banner
-- [x] Banners configuráveis
+> `GachaService` e `BannerService` foram removidos. Os itens abaixo são históricos.
+
+- [x] Sistema de invocação (x1 e x11) — *legado*
+- [x] Soft-pity com curva cúbica por banner — *legado*
+- [x] Banners configuráveis — *substituídos por Contratos*
 - [x] Geração procedural de heróis
-- [x] Dropdown de seleção de banner
-- [x] Distribuição de raças por raridade (1★/2★ = humano; 3★ = 10% não-humano; 4★ = 25%)
+- [x] Dropdown de seleção de banner — *substituído por `/bioma` e `/contrato`*
+- [x] Distribuição de raças por raridade — *lógica preservada na geração procedural*
 - [x] Distribuição uniforme entre raças não-humanas
-- [x] Campo `ImageUrl` na entidade `Heroi` (campo existe; exibição no embed pendente)
+- [x] Campo `ImageUrl` na entidade `Heroi`
 - [x] Campo `Lore` na entidade `Heroi` (para personagens fixos)
-- [x] Cadastrar pool de personagens fixos 5★/4★ no seed (9 personagens via `GeracaoDeDadosService`, idempotente)
-- [ ] Exibir arte no embed do pull quando disponível
-- [ ] Banner de Profissão (rate-up por profissão)
+- [x] Cadastrar pool de personagens fixos 5★/4★ no seed (9 personagens, idempotente)
+- ~~Exibir arte no embed do pull~~ *(descartado — exibição via `/colecao`)*
+- ~~Banner de Profissão~~ *(substituído por Contrato de Arquétipo)*
+
+## Sistema de Fragmentos ✅ concluído (Fase 3A.3)
+
+- [x] Entidades: `HeroiConfig`, `Bioma`, `BiomHeroPool`, `HeroiUnlockConfig`, `FragmentoProgresso`, `Contrato`, `HeroiDesbloqueado`
+- [x] Repositórios: `IHeroiConfigRepository`, `IHeroiDesbloqueadoRepository`, `IFragmentoRepository`, `IBiomaRepository`, `IContratoRepository`
+- [x] Migration + seed: 9 heróis com unlock config, 5 biomas com pools de drop
+- [x] `BiomeService` — mapeamento andar→bioma, detecção de bioma novo e marco da Torre
+- [x] `FragmentService` — drops pesados por bioma com multiplicador de contrato
+- [x] `RecruitmentService` — 3 caminhos: fragmentos, marco da Torre, condição única
+- [x] `ContractService` — arquétipo (+30%) e nomeado (+50%); expiração automática
+- [x] `RewardDistributionService` — payloads Micro/Médio/Alto por tipo de evento
+- [x] `TorreService` estendido com drops e desbloqueio de herói por marco
+- [x] `/colecao` — painel de coleção com progresso, barra, recrutar
+- [x] `/bioma` — bioma atual com heróis e pesos de drop
+- [x] `/contrato` — contratos ativos com select menu de arquétipo
+- [x] `DiscordIdHelper.ToGuid(ulong)` — conversão determinística Discord ID → Guid
+- [x] 39 testes unitários passando
 
 ---
 
@@ -397,16 +416,16 @@ Infraestrutura compartilhada entre os dois sistemas. `HeroSnapshot` e `HeroLockS
 ## Qualidade de Código — Fase Q (prioridade antes da 3B)
 
 **Fase Q (fazer primeiro):**
-- [ ] `Random.Shared` no `GachaService`
-- [ ] `ILogger<T>` substituindo `Console.WriteLine` nos serviços
+- ~~`Random.Shared` no `GachaService`~~ *(GachaService removido)*
+- [ ] `ILogger<T>` substituindo `Console.WriteLine` nos serviços (parcial — CommandHandler já usa logging estruturado)
 - [ ] Guild ID movido para `appsettings.json`
 - [ ] Caminho do banco via variável de ambiente ou relativo
 - [ ] **Guard clauses centralizadas** — padrão único para herói em missão / alocado / inativo / equipado
-- [ ] Testes unitários: GachaService (pity, raridade, distribuição de raças)
+- ~~Testes unitários: GachaService~~ *(removido)*
 - [ ] Testes unitários: HeroiLevelUpService (grants, totais, caps)
 - [ ] Testes unitários: CombatService (turnos, dano, crit)
 - [ ] Testes unitários: Produção passiva da cidade
-- [ ] **Testes de integração**: fluxo completo gacha → alocar → produzir → evoluir (SQLite in-memory)
+- [ ] **Testes de integração**: fragmentos → recrutar → alocar → evoluir (SQLite in-memory)
 
 **Carry-over (Fase 3.5):**
 - [x] Token via variável de ambiente

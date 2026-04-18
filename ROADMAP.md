@@ -79,10 +79,10 @@
 ## Fase 3A.2 — Consolidação do Core ✅ concluída
 **Objetivo:** aprofundar os sistemas core. Cidade com modelo de slots, gacha completo, arena.
 
-### Gacha
+### Gacha (substituído na 3A.3)
 - [x] Campo `Lore` na entidade `Heroi`
 - [x] Pool de personagens fixos 5★/4★ cadastrada no seed (9 personagens, idempotente)
-- [ ] Arte exibida no embed do pull
+- ~~Arte exibida no embed do pull~~ *(descartado — exibição migrou para `/colecao`)*
 
 ### Cidade — Modelo de Slots
 - [x] Campo `Confianca` (0–100) na entidade `Heroi` (default 0)
@@ -127,15 +127,50 @@
 
 ---
 
+## Fase 3A.3 — Sistema de Fragmentos ✅ concluída
+**Objetivo:** substituir gacha por aquisição determinística de heróis via fragmentos, biomas, marcos e contratos.
+
+> Big Bang: `GachaService` e `BannerService` removidos. Sistema de fragmentos implementado do zero.
+
+### Domínio e Repositórios
+- [x] Entidades: `HeroiConfig`, `Bioma`, `BiomHeroPool`, `HeroiUnlockConfig`, `FragmentoProgresso`, `Contrato`, `HeroiDesbloqueado`
+- [x] Interfaces de repositório: `IHeroiConfigRepository`, `IHeroiDesbloqueadoRepository`, `IFragmentoRepository`, `IBiomaRepository`, `IContratoRepository`
+- [x] Implementações EF Core + migration + seed (9 heróis com unlock config; 5 biomas com pools)
+
+### Serviços (Application)
+- [x] `BiomeService` — mapeamento andar→bioma, detecção de bioma novo e marco
+- [x] `FragmentService` — drops pesados por bioma, multiplicador de contrato, upsert de progresso
+- [x] `RecruitmentService` — 3 caminhos: fragmentos, marco da Torre, condição única
+- [x] `ContractService` — contratos arquétipo (+30%) e nomeado (+50%); expiração automática
+- [x] `RewardDistributionService` — factory de payloads Micro/Médio/Alto por tipo de evento
+
+### Extensão da Torre
+- [x] `TorreService.SubirAndarAsync` estendido: drop de fragmentos, detecção de bioma novo, desbloqueio de herói por marco
+- [x] `SubirAndarResult` ampliado com `Fragmentos`, `NovoBioma`, `HeroiDesbloqueado`, `RewardPayloads`
+
+### Bot — Painéis Discord
+- [x] `/colecao` — coleção completa com estado por herói, barra de progresso, botão de recrutar
+- [x] `/bioma` — bioma atual com heróis disponíveis e pesos
+- [x] `/contrato` — contratos ativos com select menu de arquétipo e botão de remover nomeado
+- [x] `DiscordIdHelper.ToGuid(ulong)` — conversão determinística Discord ID → Guid
+
+### Testes
+- [x] 39 testes passando (BiomeService, FragmentService, ContractService, RecruitmentService, TorreService extensão)
+
+**Sinal de saída:** ✅ gacha eliminado; 3 caminhos de recrutamento funcionais; painéis `/colecao` `/bioma` `/contrato` operacionais; build 0w/0e.
+
+---
+
 ## Fase Q — Fundações de Qualidade
 **Objetivo:** fechar a dívida técnica da 3A antes de construir a 3B sobre ela.
 
-- [ ] `Random.Shared` no `GachaService` (thread-safety em chamadas Discord concorrentes)
-- [ ] `ILogger<T>` substituindo `Console.WriteLine` nos serviços
+- ~~`Random.Shared` no `GachaService`~~ *(GachaService removido na 3A.3)*
+- [ ] `ILogger<T>` substituindo `Console.WriteLine` nos serviços (parcial — CommandHandler já usa logging estruturado)
 - [ ] Guild ID e caminho do banco em `appsettings.json` / variável de ambiente
 - [ ] Guard clauses centralizadas: padrão único para herói em missão / alocado / inativo / equipado
-- [ ] Testes unitários: GachaService, HeroiLevelUpService, CombatService, CidadeService
-- [ ] Teste de integração: gacha → alocar → produzir → evoluir (SQLite in-memory)
+- [ ] Testes unitários: HeroiLevelUpService (grants, totais, caps), CombatService (turnos, dano, crit), CidadeService
+- ~~Testes unitários: GachaService~~ *(removido)*
+- [ ] Teste de integração: fragmentos → recrutar → alocar → evoluir (SQLite in-memory)
 
 **Sinal de saída:** build verde com cobertura nos serviços core; sem valores hardcoded de ambiente; sem `Random` solto.
 
@@ -334,7 +369,7 @@ Complementar à Torre e Arena — nunca substituto. Implementar após 3B-Merc (c
 - [ ] **Nível do Mestre** — progride com atividade global; desbloqueia bônus passivos e identidade de conta
 - [ ] **Bônus de Composição de Party** — 3 da mesma raça → +10% XP; full arqueiros → +crit; party balanceada → bônus misto
 - [ ] **Traço fixo na ascensão 4★** — jogador escolhe 1 traço permanente (ex: Incansável, Pragmático)
-- [ ] Personagens fixos via fragmentos específicos (ex: `Fragmento de Nyra`)
+- [x] Personagens fixos via fragmentos específicos — ✅ implementado na Fase 3A.3
 
 **Sinal de saída:** economia com pressão real; heróis excedentes têm destino; Torre tem replay value; missões e relíquias funcionam; mercado P2P ativo; empréstimo de heróis e treino entre jogadores operacionais.
 
