@@ -671,7 +671,109 @@ InheritanceRate = 0.10 → 0.40  (nunca 100% — evita clones)
 
 ---
 
-## 11. Referência Rápida de Fórmulas
+## 11. Sistema de Fragmentos — Matemática
+
+> Implementado na Fase 3A.3. Substitui o gacha por aquisição determinística.
+
+### 11.1 Drop de Fragmentos
+
+```
+DropOcorre = Random(0, 1) < ChanceDropBase
+
+ChanceDropBase = 0.30   (constante em ContractConfig)
+```
+
+Ao limpar um andar da Torre, há 30% de chance de drop. Não há pity acumulativo — a chance é estática por design para evitar garantias implícitas.
+
+### 11.2 Seleção de Herói por Peso
+
+```
+HeroiSelecionado = SelecionarPorPeso(pool_do_bioma)
+
+Algoritmo:
+  totalPeso = Σ(BiomHeroPool.Peso)
+  if totalPeso <= 0: retorna pool[0]   ← guard obrigatório
+
+  rolagem = Random(0.0, totalPeso)
+  acumulado = 0
+  para cada entry em pool:
+    acumulado += entry.Peso
+    if rolagem <= acumulado: retorna entry
+  retorna pool[^1]   ← fallback de floating-point drift
+```
+
+Pesos são absolutos (ex: 10, 5, 2) — a chance de um herói é `Peso / totalPeso`. Heróis mais raros recebem peso menor.
+
+### 11.3 Multiplicador de Contrato
+
+```
+Multiplicador = 1.0
+             + (ArquetipoBonus se contrato ativo de arquétipo E profissão combina)
+             + (NomeadoBonus  se contrato ativo nomeado E heroiId combina)
+
+ArquetipoBonus = 0.30
+NomeadoBonus   = 0.50
+
+Multiplicador máximo teórico = 1.80 (ambos ativos e compatíveis)
+```
+
+Os bônus são **aditivos** entre si (não multiplicativos), evitando explosão de fragmentos com dois contratos simultâneos.
+
+### 11.4 Quantidade de Fragmentos por Drop
+
+```
+QuantidadeFinal = Ceiling(QuantidadeBase × Multiplicador)
+
+QuantidadeBase = 1   (padrão; configurável por pool futuramente)
+```
+
+`Math.Ceiling` garante que qualquer bônus de contrato (mesmo 0.01) resulte em pelo menos 1 fragmento extra — o jogador sempre percebe o benefício do contrato.
+
+### 11.5 Desbloqueio por Fragmentos
+
+```
+Desbloqueio ocorre quando:
+  FragmentoProgresso.Quantidade >= HeroiUnlockConfig.QuantidadeFragmentos
+```
+
+Threshold definido por herói na seed. Exemplos de calibração:
+
+| Herói | Raridade | Threshold | Drops estimados |
+|---|---|---|---|
+| Hana (Agricultor) | 4★ | 20 | ~67 andares no bioma |
+| Grom (Mineiro) | 4★ | 30 | ~100 andares no bioma |
+| Aldric (Guerreiro) | 5★ | 50 | ~167 andares no bioma |
+
+*Estimativa assume drop 30%, sem contrato, herói único no pool.*
+
+### 11.6 Biomas e Mapeamento de Andares
+
+```
+BiomaPara(andar) = biomas.FirstOrDefault(b => b.AndarInicio <= andar && b.AndarFim >= andar)
+EBiomaNovo(andar) = andar == bioma.AndarInicio && andar > 1
+EAndarDeMarco(andar) = existe HeroiUnlockConfig com TipoUnlock=MarcoTorre e AndarMarco == andar
+```
+
+Biomas são faixas fixas de andares definidas no seed. A detecção de bioma novo ocorre no andar de entrada (`AndarInicio`), disparando o payload de reward `TipoEventoAlto.DescobertaBioma`.
+
+### 11.7 Contratos — Invariantes
+
+```
+Por usuário:
+  MAX 1 contrato ativo de tipo Arquetipo
+  MAX 1 contrato ativo de tipo Nomeado
+
+Pré-condição para Nomeado:
+  FragmentoProgresso.Quantidade >= 1   ← exige ter visto o herói pelo menos uma vez
+
+Ativação de Arquétipo:
+  Desativa o anterior (sem confirmação) → salva novo
+  As duas operações devem ocorrer na mesma transação DB   ← ponto de atenção de qualidade
+```
+
+---
+
+## 12. Referência Rápida de Fórmulas
 
 | Sistema | Fórmula |
 |---|---|
@@ -685,3 +787,6 @@ InheritanceRate = 0.10 → 0.40  (nunca 100% — evita clones)
 | Chance de evento na Torre | `base × fatorAndar × (1 - overclearBonus)` |
 | Burst cap | `MaxHit ≤ 0.65 × HP_max_alvo` |
 | Anti-snowball | `CatchUp = 1 / (1 + WealthGap)` |
+| Drop de fragmento | `Random(0,1) < 0.30` por andar limpo |
+| Quantidade de fragmentos | `Ceiling(QuantidadeBase × (1.0 + ΣContratoBonus))` |
+| Multiplicador de contrato | `1.0 + 0.30 (arquétipo) + 0.50 (nomeado)` — aditivo |

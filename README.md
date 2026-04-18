@@ -1,34 +1,58 @@
 # Legends Awaken
 
-Bot RPG para Discord escrito em C#. O jogador assume o papel de **Mestre** que invoca heróis via gacha, gerencia uma cidade e sobe andares de uma torre infinita.
+Bot RPG para Discord escrito em C#. O jogador assume o papel de **Mestre** que coleciona heróis de forma determinística — por fragmentos, conquistas e contratos — gerencia uma cidade e escala uma torre infinita.
 
 ---
 
 ## Funcionalidades
 
 ### Implementadas
-- Sistema de gacha com soft-pity (curva cúbica) e banners configuráveis
+
+**Aquisição de Heróis (Sistema de Fragmentos)**
+- Drops de fragmentos ao limpar andares da Torre (30% de chance, ponderados por bioma)
+- 3 caminhos de desbloqueio: acúmulo de fragmentos, marcos da Torre, condição única
+- Contratos de drop: arquétipo (+30% fragmentos da profissão) e nomeado (+50% de herói específico)
+- `/colecao` — painel de coleção com progresso por herói e botão de recrutar
+- `/bioma` — bioma atual com heróis disponíveis e pesos de drop
+- `/contrato` — contratos ativos com select menu de arquétipo
+
+**Heróis e Progressão**
 - Geração procedural de heróis (raça, profissão, atributos, habilidades)
-- Distribuição de raças por raridade (1★/2★ = humano; 3★ = 10% não-humano; 4★ = 25%)
-- `RaridadeConfig` centralizado — caps, stats base e ganhos por nível sem números mágicos
-- Torre infinita com tipos de andar variados e bosses escalonados (andares 5/10/25)
-- Combate automático por turnos
+- `RaridadeConfig` centralizado — caps (20/40/60/80/100), stats base e ganhos por nível sem números mágicos
+- Stats base por raridade e bônus racial (+50 no atributo foco) aplicados na criação
+- Curva de XP: `XP_next = B_r × nível` por raridade
+- Level-up com distribuição de pontos, verificação de cap e bloqueio ao atingir o teto
+- Grant de catch-up na ascensão — herói ascendido fica idêntico a um nativo da nova raridade
+
+**Torre**
+- Torre infinita com 6 tipos de andar (Subjugação, Fuga, Escolta, Defesa, Armadilha, Evento)
+- Bosses escalonados nos andares 5/10/25 com multiplicadores de XP e Ouro
+- Ouro por andar: `5 + Numero×3` × boss_mult
+- Drops de fragmentos integrados ao progresso da Torre; detecção automática de bioma novo e heróis de marco
+
+**Combate**
+- Combate automático por turnos com ATB (iniciativa por Agilidade)
+- Fórmula: `ATK × SkillMult × (1 - DEF/(DEF+1000+Level×50)) × TypeMult`; crit 1.5×; burst cap 65%
 - Party de até 5 heróis com gestão via slash commands
-- Sistema de cidade: produção passiva por profissão, alocação/desalocação de heróis, coleta com cap de 24h
-- Listagem e visualização de heróis com paginação e autocomplete
 
-### Em construção (Fase 3A)
-- `HeroiLevelUpService`: lógica de caps (20/40/60/80/100), ganhos por level-up e grant de catch-up na ascensão implementados — curva de XP e comandos de level-up pendentes (BLOQUEADOR P0)
+**Cidade**
+- Produção passiva com cap de 24h
+- ResourceNodes (Campo/Floresta/Mina/Prado) — tier 1 de produção por profissão
+- Dois tipos de slot por prédio: Responsabilidade (gate por Confiança + atributo) e Operação
+- Humor da Cidade = média dos heróis alocados × multiplicador de produção
+- `/cidade ver`, `/cidade coletar`, `/cidade alocar_recurso`, `/cidade alocar_predio`, `/cidade construir`
 
-### Planejadas (design no GDD)
-- Aplicação de stats base por raridade e bônus raciais (+50 no atributo foco) na criação do herói
-- Ascensão por fragmentos de arquétipo (1★ → 5★ para qualquer herói)
-- Relíquias (drops de boss, 3 slots por herói, removíveis e transferíveis)
-- Crafting com check de qualidade (Forja, Ateliê, Laboratório)
-- Sistema de missões com Guilda de 15 ranks (Ferro → Oricalco)
-- Arena: treino acelerado, desafios de ondas, ranking de prestígio
-- Confiança e Humor dos heróis com política autônoma da cidade
-- Apelidos e arte customizada por herói
+**Crafting e Equipamentos**
+- 5 receitas estáticas (espada, arco, armadura, anel, amuleto)
+- Check de qualidade: `skill_craft + bônus_prédio + roll(1..20)` via Responsável da Forja
+- `/crafting listar`, `/crafting fazer`, `/heroi_equipar`
+
+**Arena**
+- `/treinar` — XP em burst (3× XpParaProximoNivel), 4h cooldown, custo Ouro + Comida
+- `/arena desafio` — desafio de ondas com cooldown 24h, top-5 heróis automático
+
+**Testes**
+- 39 testes unitários: BiomeService, FragmentService, ContractService, RecruitmentService, TorreService
 
 ---
 
@@ -41,7 +65,7 @@ Bot RPG para Discord escrito em C#. O jogador assume o papel de **Mestre** que i
 | ORM | Entity Framework Core 10 |
 | Banco de dados | SQLite |
 | DI | .NET built-in DI container |
-| Testes | xUnit |
+| Testes | xUnit + Moq |
 
 ---
 
@@ -56,7 +80,7 @@ Clean Architecture + DDD organizado em 6 projetos:
 | `Infrastructure` | EF Core, repositórios, migrations, seed data |
 | `Bot` | Slash commands, handlers Discord, entry point |
 | `Data` | JSON estático (habilidades, etc.) |
-| `Tests` | Testes automatizados |
+| `Tests` | Testes automatizados (xUnit + Moq) |
 
 ---
 
@@ -84,7 +108,7 @@ Clean Architecture + DDD organizado em 6 projetos:
    dotnet restore
    ```
 
-4. Crie o banco de dados:
+4. Aplique as migrations:
    ```bash
    dotnet ef database update --project LegendsAwaken.Infrastructure --startup-project LegendsAwaken.Bot
    ```
@@ -100,7 +124,10 @@ Clean Architecture + DDD organizado em 6 projetos:
 
 | Arquivo | Conteúdo |
 |---|---|
-| `GDD.md` | Game Design Document completo — sistemas, mecânicas, balanceamento |
+| `GDD.md` | Game Design Document — sistemas, mecânicas, balanceamento |
+| `DESIGN_SISTEMAS.md` | Frameworks matemáticos de todos os sistemas |
 | `ROADMAP.md` | Fases de desenvolvimento macro |
 | `TODO.md` | Tarefas granulares por área |
+| `CHANGELOG.md` | Histórico de mudanças por versão |
+| `AI_INDEX.md` | Índice de navegação de código para AI assistants |
 | `Estrutura.md` | Estrutura de pastas do projeto |

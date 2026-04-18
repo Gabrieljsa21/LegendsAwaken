@@ -1,13 +1,15 @@
 # Legends Awaken — Análise do Projeto
 
 **Repositório:** https://github.com/Gabrieljsa21/LegendsAwaken  
-**Data da análise:** 2026-04-10 *(atualizada em 2026-04-11)*
+**Data da análise:** 2026-04-10 *(atualizada em 2026-04-18 — Fase 3A.3 concluída)*
 
 ---
 
 ## Visão Geral
 
-Legends Awaken é um **bot RPG para Discord** escrito em C#. Os jogadores assumem o papel de "Mestre" e interagem com o bot via slash commands para invocar heróis por um sistema de gacha, gerenciar parties, treinar heróis e escalar uma torre infinita de combate. Todo o estado do jogo é persistido por usuário em um banco SQLite local.
+Legends Awaken é um **bot RPG para Discord** escrito em C#. Os jogadores assumem o papel de "Mestre" e interagem com o bot via slash commands para coletar heróis de forma determinística (por fragmentos, marcos e contratos), gerenciar parties, escalar uma torre infinita e administrar uma cidade que cresce com a coleção. Todo o estado do jogo é persistido por usuário em um banco SQLite local.
+
+O sistema de gacha original foi eliminado na Fase 3A.3 e substituído por aquisição 100% determinística — o jogador sempre sabe exatamente o que precisa para obter cada herói.
 
 ---
 
@@ -21,7 +23,7 @@ Legends Awaken é um **bot RPG para Discord** escrito em C#. Os jogadores assume
 | Banco de dados | SQLite |
 | Injeção de Dependência | .NET built-in DI container |
 | Configuração | appsettings.json + variáveis de ambiente |
-| Testes | xUnit |
+| Testes | xUnit + Moq |
 
 ---
 
@@ -37,14 +39,20 @@ A arquitetura está corretamente aplicada: Domain não tem dependências externa
 
 - Clean Architecture genuinamente aplicada com separação real de camadas em 6 projetos
 - Repository Pattern implementado com interfaces no Domain e concretos EF Core na Infrastructure
-- `GachaService` implementa soft-pity com progressão em curva cúbica — feature não-trivial e tecnicamente precisa
 - `RaridadeConfig` (record imutável) centraliza cap, stats base e ganhos por level em um único lugar — zero números mágicos no sistema de progressão (SOLID)
-- Distribuição de raças por raridade: 1★/2★ = sempre humano; 3★ = 10% não-humano; 4★ = 25% não-humano; uniforme dentro do pool não-humano
-- Grant de ascensão catch-up: ao ascender, o herói recebe exatamente os pontos que faltam para equiparar a um nativo da nova raridade no mesmo nível — garante que um 1★ upado ao 5★ lv100 seja igual a um 5★ nativo
-- `TorreService` usa um padrão de tipo de andar limpo (Subjugacao/Fuga/Escolta/Defesa/Armadilha/Evento em múltiplos de 5/10/25) — claro e escalável
+- Sistema de fragmentos determinístico: nenhum RNG de raridade; cada herói tem um caminho explícito de desbloqueio
+- Drop de fragmentos ponderado por bioma com multiplicador de contrato — `FragmentService.SelecionarPorPeso` com guard `totalPeso <= 0`
+- 5 serviços novos bem delimitados com responsabilidade única (BiomeService, FragmentService, RecruitmentService, ContractService, RewardDistributionService)
+- Partial unique indexes no banco: uma entrada de progresso por `(UsuarioId, HeroiId)` e um contrato ativo por tipo por usuário — invariantes de negócio garantidos no nível do DB
+- `UpsertAsync` de fragmentos com retry em `DbUpdateException` — concorrência Discord corretamente tratada
+- Distribuição de raças por raridade uniforme dentro do pool não-humano — geração procedural continua funcionando
+- Grant de ascensão catch-up: ao ascender, o herói recebe exatamente os pontos que faltam para equiparar a um nativo da nova raridade no mesmo nível
+- `TorreService` usa padrão de tipo de andar limpo (Subjugacao/Fuga/Escolta/Defesa/Armadilha/Evento em múltiplos de 5/10/25) — claro e escalável
 - Token do bot armazenado como variável de ambiente (`LEGENDSAWAKEN_TOKEN`) — boa prática de segurança
-- `CidadeRepository` reescrito em EF Core; produção passiva com cap de 24h funcional
-- 8 slash commands com autocomplete, paginação, dropdowns e botões
+- `DiscordIdHelper.ToGuid` usa `BinaryPrimitives.WriteUInt64LittleEndian` — determinístico e platform-safe
+- `Random.Shared` usado consistentemente em toda a codebase — thread-safe em chamadas Discord concorrentes
+- 39 testes unitários cobrindo os 5 novos serviços do sistema de fragmentos e a extensão do TorreService
+- Primary constructor injection em todos os novos serviços e comandos bot — C# idiomático
 
 ---
 
@@ -55,42 +63,46 @@ A arquitetura está corretamente aplicada: Domain não tem dependências externa
 | Problema | Status | Detalhe | Correção Recomendada |
 |---|---|---|---|
 | Caminho absoluto no appsettings.json | **Pendente** | `"Data Source=E:\\..."` quebra em qualquer outra máquina | Usar `./legendsawaken.db` ou variável de ambiente |
-| `Random` não é thread-safe | **Pendente** | `GachaService` usa `new Random()` — não é thread-safe com interações Discord concorrentes | Substituir por `Random.Shared` (.NET 6+) |
-| Testes unitários vazios | **Pendente** | `UnitTest1.cs` contém apenas um `[Fact]` vazio | Adicionar testes para gacha, progressão e cidade |
+| Guild ID hardcoded | **Pendente** | `Program.cs` registra comandos a um único server ID fixo | Mover para `appsettings.json` / env var |
 
 ### Média Prioridade
 
 | Problema | Status | Detalhe | Correção Recomendada |
 |---|---|---|---|
-| `Console.WriteLine` em serviços de produção | **Pendente** | `GachaService` e outros usam `Console.WriteLine` para debug | Substituir por `ILogger<T>` injetado |
-| Guild ID hardcoded | **Pendente** | `Program.cs` registra comandos a um único server ID fixo | Mover para `appsettings.json` / env var |
-| Lógica de habilidades incompleta | **Pendente** | Em `CombatService`, ambos os branches chamam o mesmo cálculo de dano físico | Implementar handlers específicos para habilidades |
-| Comando `treinar` é stub | **Pendente** | Integração com `TreinamentoService` não implementada | Completar implementação |
+| `Console.WriteLine` em serviços legados | **Pendente** | Serviços anteriores à 3A.3 ainda usam `Console.WriteLine` | Substituir por `ILogger<T>` injetado (novos serviços já usam logging estruturado) |
+| Lógica de habilidades incompleta | **Pendente** | Em `CombatService`, ambos os branches chamam o mesmo cálculo de dano físico | Implementar handlers específicos por tipo de habilidade |
+| N+1 em `ProcessarMarcoTorreAsync` | **Pendente** | `ListarTodosAsync()` + N queries `ObterUnlockConfigAsync` por herói a cada claro de andar de marco | Adicionar `ListarHeroisDoMarcoAsync(andar)` com JOIN para eliminar N+1 |
 
 ### Baixa Prioridade
 
 | Problema | Status | Detalhe | Correção Recomendada |
 |---|---|---|---|
-| Seleção de alvo no combate | **Pendente** | Sempre ataca o primeiro inimigo | Implementar IA tática (menor HP, maior ameaça, etc.) |
+| Seleção de alvo no combate | **Pendente** | Sempre ataca o primeiro inimigo | Implementar IA tática (menor HP, maior ameaça) |
+| Testes de `RewardDistributionService` | **Pendente** | Sem cobertura de teste | Adicionar testes unitários; lançar `ArgumentOutOfRangeException` no default arm |
+| Teste probabilístico de fragmento | **Pendente** | Loop até 50 tentativas depende de `Random.Shared` | Injetar abstração de RNG para tornar testável de forma determinística |
 
 ---
 
 ## Features Notáveis
 
-- **Sistema de gacha** com banners configuráveis, tiers de raridade e mecanismo de soft-pity com curva cúbica
-- **Torre infinita** com bosses escalonados (andares 5/10/25), tipos de andar variados e estado de progressão por usuário
-- **Sistema de atributos** com base por raridade (derivado de `RaridadeConfig`) + bônus racial (+50 no atributo foco por raça não-humana) + progressão por level-up com fase de superação
+- **Sistema de fragmentos** — aquisição determinística de heróis: drops ponderados por bioma, 3 caminhos de unlock (fragmentos/marco/condição), contratos de multiplicador (+30%/+50%)
+- **Painéis Discord interativos** — `/colecao`, `/bioma`, `/contrato` com select menus e botões; `SelectMenuExecuted` e `ButtonExecuted` corretamente separados
+- **Torre infinita** com bosses escalonados (andares 5/10/25), tipos de andar variados, progressão de estado por usuário e agora integração completa com o sistema de fragmentos
+- **Sistema de atributos** com base por raridade (derivado de `RaridadeConfig`) + bônus racial (+50 no atributo foco) + progressão por level-up com fase de superação
 - **Sistema de progressão** com caps 20/40/60/80/100 por raridade e grant de catch-up na ascensão
 - **Sistema de party** (até 5 heróis) com criação, visualização e gerenciamento via slash commands
-- **Sistema de cidade** com produção passiva por profissão, alocação/desalocação de heróis, coleta com cap de 24h
+- **Sistema de cidade** com dois tiers de produção — ResourceNodes (sem slot) e Prédios (Responsabilidade + Operação), Humor da Cidade como multiplicador
+- **Crafting com check de qualidade** via Responsável da Forja (skill + prédio + dice roll)
 - **Listagem paginada** de heróis com navegação por botões Discord (25 por página)
-- **Autocomplete** para nomes de heróis e banners nos slash commands
+- **Autocomplete** para nomes de heróis nos slash commands
 - **Seed data em JSON** mantendo conteúdo estático fora do banco de dados
 
 ---
 
 ## Avaliação Geral
 
-Legends Awaken é um projeto pessoal **bem arquitetado e em desenvolvimento ativo**. O autor demonstra sólido entendimento de Clean Architecture, DDD, EF Core e Discord.Net. As escolhas arquiteturais são genuinamente boas — isolamento correto de camadas, abstração de repositório, injeção de dependência, owned entities, SOLID (RaridadeConfig sem números mágicos) e segredos via variável de ambiente estão todos corretamente implementados.
+Legends Awaken é um projeto pessoal **bem arquitetado e em desenvolvimento ativo**. O autor demonstra sólido entendimento de Clean Architecture, DDD, EF Core e Discord.Net, com entregas consistentes e incrementais em múltiplas fases.
 
-Os gaps principais são os esperados de um projeto solo em alpha: features em stub, suite de testes vazia, alguns valores hardcoded que criam problemas de portabilidade. Nenhum é um problema arquitetural — são itens de polish diretos de corrigir, todos rastreados no `TODO.md`.
+A decisão de substituir gacha por fragmentos na Fase 3A.3 foi tecnicamente bem executada: Big Bang controlado (serviços antigos removidos, novos criados do zero), invariantes de negócio garantidos no banco, concorrência Discord tratada com retry pattern, e 39 testes cobrindo os novos caminhos críticos.
+
+Os gaps principais são os esperados de um projeto solo em alpha: features em stub, cobertura parcial de testes, alguns valores hardcoded que criam problemas de portabilidade. Nenhum é um problema arquitetural — são itens de polish rastreados no `TODO.md`.
