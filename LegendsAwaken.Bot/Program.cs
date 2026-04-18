@@ -93,6 +93,7 @@ class Program
             .AddScoped<FragmentService>()
             .AddScoped<ContractService>()
             .AddScoped<RecruitmentService>()
+            .AddScoped<RewardDistributionService>()
 
             .AddSingleton(_cliente)
             .AddSingleton<IConfiguration>(configuration)
