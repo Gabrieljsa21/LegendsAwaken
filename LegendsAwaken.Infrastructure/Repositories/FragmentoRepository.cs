@@ -32,12 +32,31 @@ public class FragmentoRepository(LegendsAwakenDbContext db) : IFragmentoReposito
             existente.Quantidade = progresso.Quantidade;
             existente.AtualizadoEm = progresso.AtualizadoEm;
             db.FragmentosProgresso.Update(existente);
+            await db.SaveChangesAsync();
         }
         else
         {
-            await db.FragmentosProgresso.AddAsync(progresso);
+            try
+            {
+                db.FragmentosProgresso.Add(progresso);
+                await db.SaveChangesAsync();
+            }
+            catch (DbUpdateException)
+            {
+                db.Entry(progresso).State = EntityState.Detached;
+                var conflito = progresso.TipoFragmento == TipoFragmento.Heroi && progresso.HeroiId.HasValue
+                    ? await db.FragmentosProgresso.FirstOrDefaultAsync(f => f.UsuarioId == progresso.UsuarioId && f.HeroiId == progresso.HeroiId)
+                    : progresso.TipoFragmento == TipoFragmento.Arquetipo && progresso.Arquetipo.HasValue
+                        ? await db.FragmentosProgresso.FirstOrDefaultAsync(f => f.UsuarioId == progresso.UsuarioId && f.Arquetipo == progresso.Arquetipo)
+                        : null;
+                if (conflito is not null)
+                {
+                    conflito.Quantidade += progresso.Quantidade;
+                    conflito.AtualizadoEm = progresso.AtualizadoEm;
+                    await db.SaveChangesAsync();
+                }
+            }
         }
-        await db.SaveChangesAsync();
     }
 
     public async Task<List<FragmentoProgresso>> ListarPorUsuarioAsync(Guid usuarioId) =>

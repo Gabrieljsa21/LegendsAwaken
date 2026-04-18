@@ -20,7 +20,10 @@ public class ContratoCommand(ContractService contractService, IContratoRepositor
         var nomeadT = contratoRepository.ObterAtivoAsync(usuarioId, TipoContrato.Nomeado);
         await Task.WhenAll(arquetT, nomeadT);
 
-        var embed = ContratoPanel.CriarEmbed(arquetT.Result, nomeadT.Result);
+        var contratoArquetipo = await arquetT;
+        var contratoNomeado   = await nomeadT;
+
+        var embed = ContratoPanel.CriarEmbed(contratoArquetipo, contratoNomeado);
         var comps = ContratoPanel.CriarComponentes();
 
         await command.ModifyOriginalResponseAsync(m =>
@@ -39,7 +42,10 @@ public class ContratoCommand(ContractService contractService, IContratoRepositor
         var nomeadT = contratoRepository.ObterAtivoAsync(usuarioId, TipoContrato.Nomeado);
         await Task.WhenAll(arquetT, nomeadT);
 
-        var embed = ContratoPanel.CriarEmbed(arquetT.Result, nomeadT.Result);
+        var contratoArquetipo = await arquetT;
+        var contratoNomeado   = await nomeadT;
+
+        var embed = ContratoPanel.CriarEmbed(contratoArquetipo, contratoNomeado);
         var comps = ContratoPanel.CriarComponentes();
 
         await comp.UpdateAsync(m => { m.Embed = embed; m.Components = comps; });

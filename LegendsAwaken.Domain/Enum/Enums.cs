@@ -153,4 +153,6 @@ namespace LegendsAwaken.Domain.Enum
         HeroiIconicoDesbloqueado = 2
     }
 
+    public enum TipoReward { Micro, Medio, Alto }
+
 }

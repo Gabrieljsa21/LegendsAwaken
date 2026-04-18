@@ -94,6 +94,7 @@ namespace LegendsAwaken.Bot
         {
             _client.SlashCommandExecuted += HandleSlashCommandAsync;
             _client.ButtonExecuted += HandleButtonExecutedAsync;
+            _client.SelectMenuExecuted += HandleButtonExecutedAsync;
             _client.AutocompleteExecuted += HandleAutocompleteAsync;
             _client.Ready += OnReadyAsync;
         }
@@ -106,7 +107,7 @@ namespace LegendsAwaken.Bot
 
         private async Task HandleSlashCommandAsync(SocketSlashCommand command)
         {
-            _logger.LogInformation($"Comando recebido: /{command.CommandName} de {command.User.Username}");
+            _logger.LogInformation("Comando /{CommandName} de {Username}", command.CommandName, command.User.Username);
             await _usuarioService.ObterOuCriarAsync(command.User);
 
             try
@@ -316,7 +317,7 @@ namespace LegendsAwaken.Bot
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Erro ao processar comando /{command.CommandName}");
+                _logger.LogError(ex, "Erro ao processar comando /{CommandName}", command.CommandName);
                 await command.RespondAsync("Ocorreu um erro ao processar seu comando.", ephemeral: true);
             }
         }
@@ -658,11 +659,11 @@ namespace LegendsAwaken.Bot
                 try
                 {
                     await guild.CreateApplicationCommandAsync(cmd.Build());
-                    _logger.LogInformation($"Comando /{cmd.Name} registrado no servidor.");
+                    _logger.LogInformation("Comando /{CommandName} registrado no servidor.", cmd.Name);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, $"Erro ao registrar comando /{cmd.Name}");
+                    _logger.LogError(ex, "Erro ao registrar comando /{CommandName}", cmd.Name);
                 }
             }
         }

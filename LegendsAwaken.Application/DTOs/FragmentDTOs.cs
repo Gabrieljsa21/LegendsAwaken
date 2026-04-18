@@ -24,5 +24,3 @@ public record RewardPayload(
     TipoReward Tipo,
     Dictionary<string, string>? Campos = null
 );
-
-public enum TipoReward { Micro, Medio, Alto }
