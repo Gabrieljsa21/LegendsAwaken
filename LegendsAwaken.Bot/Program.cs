@@ -137,7 +137,15 @@ class Program
             services.GetRequiredService<PartyService>(),
             services.GetRequiredService<CidadeService>(),
             services.GetRequiredService<CraftingService>(),
-            services.GetRequiredService<ArenaService>()
+            services.GetRequiredService<ArenaService>(),
+            services.GetRequiredService<IHeroiConfigRepository>(),
+            services.GetRequiredService<IHeroiDesbloqueadoRepository>(),
+            services.GetRequiredService<IFragmentoRepository>(),
+            services.GetRequiredService<RecruitmentService>(),
+            services.GetRequiredService<BiomeService>(),
+            services.GetRequiredService<ContractService>(),
+            services.GetRequiredService<IContratoRepository>(),
+            services.GetRequiredService<ITorreRepository>()
         );
 
         // Eventos de botões para rolagem interativa

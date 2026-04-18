@@ -4,9 +4,11 @@ using Discord.WebSocket;
 using LegendsAwaken.Application.Interfaces;
 using LegendsAwaken.Application.Services;
 using LegendsAwaken.Bot.Commands;
+using LegendsAwaken.Bot.Panels;
 using LegendsAwaken.Domain.Entities.Auxiliares;
 using LegendsAwaken.Domain.Enum;
 using LegendsAwaken.Domain.Extensions;
+using LegendsAwaken.Domain.Interfaces;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Linq;
@@ -32,6 +34,14 @@ namespace LegendsAwaken.Bot
         private readonly CidadeService _cidadeService;
         private readonly CraftingService _craftingService;
         private readonly ArenaService _arenaService;
+        private readonly IHeroiConfigRepository _heroiConfigRepo;
+        private readonly IHeroiDesbloqueadoRepository _heroiDesbloqueadoRepo;
+        private readonly IFragmentoRepository _fragmentoRepo;
+        private readonly RecruitmentService _recruitmentService;
+        private readonly BiomeService _biomeService;
+        private readonly ContractService _contractService;
+        private readonly IContratoRepository _contratoRepository;
+        private readonly ITorreRepository _torreRepository;
 
         public CommandHandler(
             DiscordSocketClient client,
@@ -46,7 +56,15 @@ namespace LegendsAwaken.Bot
             PartyService partyService,
             CidadeService cidadeService,
             CraftingService craftingService,
-            ArenaService arenaService)
+            ArenaService arenaService,
+            IHeroiConfigRepository heroiConfigRepo,
+            IHeroiDesbloqueadoRepository heroiDesbloqueadoRepo,
+            IFragmentoRepository fragmentoRepo,
+            RecruitmentService recruitmentService,
+            BiomeService biomeService,
+            ContractService contractService,
+            IContratoRepository contratoRepository,
+            ITorreRepository torreRepository)
         {
             _client = client;
             _logger = logger;
@@ -61,6 +79,14 @@ namespace LegendsAwaken.Bot
             _cidadeService = cidadeService;
             _craftingService = craftingService;
             _arenaService = arenaService;
+            _heroiConfigRepo = heroiConfigRepo;
+            _heroiDesbloqueadoRepo = heroiDesbloqueadoRepo;
+            _fragmentoRepo = fragmentoRepo;
+            _recruitmentService = recruitmentService;
+            _biomeService = biomeService;
+            _contractService = contractService;
+            _contratoRepository = contratoRepository;
+            _torreRepository = torreRepository;
         }
 
         public void Initialize()
@@ -243,6 +269,19 @@ namespace LegendsAwaken.Bot
                         await new CraftingCommand(_craftingService, _heroiService).ExecutarAsync(command);
                         break;
 
+                    case "colecao":
+                        await new ColecaoCommand(_heroiConfigRepo, _heroiDesbloqueadoRepo, _fragmentoRepo, _recruitmentService)
+                            .ExecutarAsync(command);
+                        break;
+
+                    case "bioma":
+                        await new BiomaCommand(_biomeService, _torreRepository).ExecutarAsync(command);
+                        break;
+
+                    case "contrato":
+                        await new ContratoCommand(_contractService, _contratoRepository).ExecutarAsync(command);
+                        break;
+
                     case "heroi_equipar":
                         var nomeHeroiEq = command.Data.Options.FirstOrDefault(o => o.Name == "heroi")?.Value as string;
                         var itemIdStr   = command.Data.Options.FirstOrDefault(o => o.Name == "item_id")?.Value as string;
@@ -394,6 +433,77 @@ namespace LegendsAwaken.Bot
                     msg.Components = comps;
                 });
             }
+
+            // Select menu: recrutar heroi por fragmentos
+            if (comp.Data.Type == ComponentType.SelectMenu && comp.Data.CustomId == "colecao_recrutar")
+            {
+                var heroiIdStr = comp.Data.Values.FirstOrDefault();
+                if (heroiIdStr is not null && Guid.TryParse(heroiIdStr, out var heroiId))
+                    await new ColecaoCommand(_heroiConfigRepo, _heroiDesbloqueadoRepo, _fragmentoRepo, _recruitmentService)
+                        .HandleRecrutarAsync(comp, heroiId);
+                return;
+            }
+
+            // Select menu: mudar arquetipo de contrato
+            if (comp.Data.Type == ComponentType.SelectMenu && comp.Data.CustomId == "contrato_arquetipo")
+            {
+                var arquetipoStr = comp.Data.Values.FirstOrDefault();
+                if (arquetipoStr is not null && Enum.TryParse<Profissao>(arquetipoStr, out var arquetipo))
+                    await new ContratoCommand(_contractService, _contratoRepository)
+                        .HandleArquetipoAsync(comp, arquetipo);
+                return;
+            }
+
+            // Button: bioma -> ver colecao
+            if (comp.Data.CustomId == "bioma_ver_colecao")
+            {
+                var usuarioId = ToGuid(comp.User.Id);
+                var todosHerois   = await _heroiConfigRepo.ListarTodosAsync();
+                var desbloqueados = await _heroiDesbloqueadoRepo.ListarPorUsuarioAsync(usuarioId);
+                var progressos    = await _fragmentoRepo.ListarPorUsuarioAsync(usuarioId);
+                var unlockTasks   = todosHerois.Select(h => _heroiConfigRepo.ObterUnlockConfigAsync(h.Id));
+                var unlockArr     = await Task.WhenAll(unlockTasks);
+                var unlockList    = unlockArr.Where(u => u is not null).Select(u => u!).ToList();
+                var heroisProntos = todosHerois
+                    .Where(h =>
+                    {
+                        var unlock = unlockList.FirstOrDefault(u => u.HeroiId == h.Id);
+                        var prog   = progressos.FirstOrDefault(p => p.HeroiId == h.Id);
+                        return !desbloqueados.Any(d => d.HeroiId == h.Id)
+                            && unlock?.TipoUnlock == TipoUnlock.Fragmentos
+                            && prog?.Quantidade >= unlock.QuantidadeFragmentos;
+                    })
+                    .ToList();
+
+                await comp.UpdateAsync(msg =>
+                {
+                    msg.Embed      = ColecaoPanel.CriarEmbed(todosHerois, desbloqueados, progressos, unlockList);
+                    msg.Components = ColecaoPanel.CriarComponentes(heroisProntos);
+                });
+                return;
+            }
+
+            // Button: bioma -> contratos
+            if (comp.Data.CustomId == "bioma_contratos")
+            {
+                var usuarioId = ToGuid(comp.User.Id);
+                var arquetipo = await _contratoRepository.ObterAtivoAsync(usuarioId, TipoContrato.Arquetipo);
+                var nomeado   = await _contratoRepository.ObterAtivoAsync(usuarioId, TipoContrato.Nomeado);
+
+                await comp.UpdateAsync(msg =>
+                {
+                    msg.Embed      = ContratoPanel.CriarEmbed(arquetipo, nomeado);
+                    msg.Components = ContratoPanel.CriarComponentes();
+                });
+                return;
+            }
+        }
+
+        private static Guid ToGuid(ulong discordId)
+        {
+            var bytes = new byte[16];
+            BitConverter.GetBytes(discordId).CopyTo(bytes, 0);
+            return new Guid(bytes);
         }
 
 
@@ -550,7 +660,19 @@ namespace LegendsAwaken.Bot
                         .WithName("item_id")
                         .WithDescription("ID do item (obtido ao craftar)")
                         .WithRequired(true)
-                        .WithType(ApplicationCommandOptionType.String))
+                        .WithType(ApplicationCommandOptionType.String)),
+
+                new SlashCommandBuilder()
+                    .WithName("colecao")
+                    .WithDescription("Ver sua colecao de herois e progresso de fragmentos"),
+
+                new SlashCommandBuilder()
+                    .WithName("bioma")
+                    .WithDescription("Ver o bioma atual da Torre com herois disponiveis e contratos"),
+
+                new SlashCommandBuilder()
+                    .WithName("contrato")
+                    .WithDescription("Gerenciar contratos de drop: arquetipo e foco nomeado")
             };
 
             foreach (var cmd in commands)
