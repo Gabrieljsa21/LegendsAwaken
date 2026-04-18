@@ -17,6 +17,7 @@ public class ContractService(
         if (ativo is not null)
             await contratoRepository.DesativarAsync(ativo.Id);
 
+        var agora = DateTime.UtcNow;
         var contrato = new Contrato
         {
             Id        = Guid.NewGuid(),
@@ -25,7 +26,7 @@ public class ContractService(
             Arquetipo = arquetipo,
             Ativo     = true,
             ExpiraEm  = null,
-            CriadoEm  = DateTime.UtcNow
+            CriadoEm  = agora
         };
 
         await contratoRepository.SalvarAsync(contrato);
@@ -48,6 +49,7 @@ public class ContractService(
         if (ativo is not null)
             await contratoRepository.DesativarAsync(ativo.Id);
 
+        var agora = DateTime.UtcNow;
         var duracaoEfetiva = duracao ?? ContractConfig.DuracaoPadraoNomeado;
         var contrato = new Contrato
         {
@@ -56,8 +58,8 @@ public class ContractService(
             Tipo      = TipoContrato.Nomeado,
             HeroiId   = heroiId,
             Ativo     = true,
-            ExpiraEm  = DateTime.UtcNow.Add(duracaoEfetiva),
-            CriadoEm  = DateTime.UtcNow
+            ExpiraEm  = agora.Add(duracaoEfetiva),
+            CriadoEm  = agora
         };
 
         await contratoRepository.SalvarAsync(contrato);

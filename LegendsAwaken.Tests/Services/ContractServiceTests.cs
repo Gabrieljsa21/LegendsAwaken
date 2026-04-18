@@ -54,6 +54,22 @@ public class ContractServiceTests
         var resultado = await service.AtivarContratoNomeadoAsync(usuarioId, heroiId);
 
         Assert.False(resultado.Sucesso);
+        Assert.Contains("fragmento", resultado.Mensagem, StringComparison.OrdinalIgnoreCase);
+        _contratoRepo.Verify(r => r.SalvarAsync(It.IsAny<Contrato>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task AtivarContratoNomeadoAsync_FalhaQuandoHeroiNaoEncontrado()
+    {
+        var usuarioId = Guid.NewGuid();
+        var heroiId   = Guid.NewGuid();
+
+        _heroiConfigRepo.Setup(r => r.ObterPorIdAsync(heroiId)).ReturnsAsync((HeroiConfig?)null);
+
+        var service = CreateService();
+        var resultado = await service.AtivarContratoNomeadoAsync(usuarioId, heroiId);
+
+        Assert.False(resultado.Sucesso);
         _contratoRepo.Verify(r => r.SalvarAsync(It.IsAny<Contrato>()), Times.Never);
     }
 
@@ -80,5 +96,22 @@ public class ContractServiceTests
         Assert.NotNull(salvo);
         Assert.Equal(heroiId, salvo!.HeroiId);
         Assert.NotNull(salvo.ExpiraEm);
+    }
+
+    [Fact]
+    public async Task ExpirarContratosVencidosAsync_DesativaTodosVencidos()
+    {
+        var contrato1 = new Contrato { Id = Guid.NewGuid(), Ativo = true };
+        var contrato2 = new Contrato { Id = Guid.NewGuid(), Ativo = true };
+
+        _contratoRepo.Setup(r => r.ListarAtivosVencidosAsync(It.IsAny<DateTime>()))
+            .ReturnsAsync([contrato1, contrato2]);
+        _contratoRepo.Setup(r => r.DesativarAsync(It.IsAny<Guid>())).Returns(Task.CompletedTask);
+
+        var service = CreateService();
+        await service.ExpirarContratosVencidosAsync();
+
+        _contratoRepo.Verify(r => r.DesativarAsync(contrato1.Id), Times.Once);
+        _contratoRepo.Verify(r => r.DesativarAsync(contrato2.Id), Times.Once);
     }
 }
