@@ -19,6 +19,7 @@
 		<PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="10.0.5" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.5" />
 		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.4.0" />
+		<PackageReference Include="Moq" Version="4.20.72" />
 		<PackageReference Include="xunit" Version="2.9.3" />
 		<PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
 		  <PrivateAssets>all</PrivateAssets>
@@ -33,6 +34,8 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\LegendsAwaken.Bot\LegendsAwaken.Bot.csproj" />
+		<ProjectReference Include="..\LegendsAwaken.Application\LegendsAwaken.Application.csproj" />
+		<ProjectReference Include="..\LegendsAwaken.Domain\LegendsAwaken.Domain.csproj" />
 	</ItemGroup>
 
 </Project>

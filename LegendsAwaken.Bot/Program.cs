@@ -89,6 +89,7 @@ class Program
             .AddScoped<PartyService>()
             .AddScoped<CraftingService>()
             .AddScoped<ArenaService>()
+            .AddScoped<BiomeService>()
 
             .AddSingleton(_cliente)
             .AddSingleton<IConfiguration>(configuration)
