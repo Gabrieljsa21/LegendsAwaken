@@ -229,11 +229,15 @@ namespace LegendsAwaken.Infrastructure
             modelBuilder.Entity<HeroiDesbloqueado>()
                 .HasKey(h => new { h.UsuarioId, h.HeroiId });
 
-            // FragmentoProgresso — performance indexes
+            // FragmentoProgresso — unique indexes to enforce logical key per user
             modelBuilder.Entity<FragmentoProgresso>()
-                .HasIndex(f => new { f.UsuarioId, f.HeroiId });
+                .HasIndex(f => new { f.UsuarioId, f.HeroiId })
+                .IsUnique()
+                .HasFilter("\"HeroiId\" IS NOT NULL");
             modelBuilder.Entity<FragmentoProgresso>()
-                .HasIndex(f => new { f.UsuarioId, f.Arquetipo });
+                .HasIndex(f => new { f.UsuarioId, f.Arquetipo })
+                .IsUnique()
+                .HasFilter("\"Arquetipo\" IS NOT NULL");
 
             // Contrato — unique index: 1 active per type per user
             modelBuilder.Entity<Contrato>()

@@ -62,6 +62,7 @@ public static class FragmentoSeed
         new() { Id = new Guid("c1000000-0000-0000-0000-000000000004"), BiomeId = IdBiomaRuinas,    HeroiId = IdNyra,   Raridade = Raridade.Estrela4, DropWeight = 70, EHeroPrincipal = false },
         new() { Id = new Guid("c1000000-0000-0000-0000-000000000005"), BiomeId = IdBiomaVulcanico, HeroiId = IdAldric, Raridade = Raridade.Estrela5, DropWeight = 20, EHeroPrincipal = true  },
         new() { Id = new Guid("c1000000-0000-0000-0000-000000000006"), BiomeId = IdBiomaVulcanico, HeroiId = IdMira,   Raridade = Raridade.Estrela4, DropWeight = 45, EHeroPrincipal = false },
-        new() { Id = new Guid("c1000000-0000-0000-0000-000000000007"), BiomeId = IdBiomaVulcanico, HeroiId = IdGrom,   Raridade = Raridade.Estrela4, DropWeight = 35, EHeroPrincipal = false },
+        new() { Id = new Guid("c1000000-0000-0000-0000-000000000007"), BiomeId = IdBiomaVulcanico, HeroiId = IdGrom,     Raridade = Raridade.Estrela4, DropWeight = 35, EHeroPrincipal = false },
+        new() { Id = new Guid("c1000000-0000-0000-0000-000000000008"), BiomeId = IdBiomaVulcanico, HeroiId = IdThorvald, Raridade = Raridade.Estrela5, DropWeight = 10, EHeroPrincipal = false },
     ];
 }

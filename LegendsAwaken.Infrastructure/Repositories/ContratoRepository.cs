@@ -34,6 +34,7 @@ public class ContratoRepository(LegendsAwakenDbContext db) : IContratoRepository
 
     public async Task<List<Contrato>> ListarAtivosVencidosAsync(DateTime agora) =>
         await db.Contratos
+            .Include(c => c.Heroi)
             .Where(c => c.Ativo && c.ExpiraEm.HasValue && c.ExpiraEm.Value <= agora)
             .ToListAsync();
 }

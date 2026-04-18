@@ -21,9 +21,22 @@ public class FragmentoRepository(LegendsAwakenDbContext db) : IFragmentoReposito
 
     public async Task UpsertAsync(FragmentoProgresso progresso)
     {
-        var existe = await db.FragmentosProgresso.AnyAsync(f => f.Id == progresso.Id);
-        if (existe) db.FragmentosProgresso.Update(progresso);
-        else await db.FragmentosProgresso.AddAsync(progresso);
+        FragmentoProgresso? existente = progresso.TipoFragmento == TipoFragmento.Heroi && progresso.HeroiId.HasValue
+            ? await db.FragmentosProgresso.FirstOrDefaultAsync(f => f.UsuarioId == progresso.UsuarioId && f.HeroiId == progresso.HeroiId)
+            : progresso.TipoFragmento == TipoFragmento.Arquetipo && progresso.Arquetipo.HasValue
+                ? await db.FragmentosProgresso.FirstOrDefaultAsync(f => f.UsuarioId == progresso.UsuarioId && f.Arquetipo == progresso.Arquetipo)
+                : null;
+
+        if (existente is not null)
+        {
+            existente.Quantidade = progresso.Quantidade;
+            existente.AtualizadoEm = progresso.AtualizadoEm;
+            db.FragmentosProgresso.Update(existente);
+        }
+        else
+        {
+            await db.FragmentosProgresso.AddAsync(progresso);
+        }
         await db.SaveChangesAsync();
     }
 

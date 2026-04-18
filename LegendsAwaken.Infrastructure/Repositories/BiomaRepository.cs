@@ -21,5 +21,9 @@ public class BiomaRepository(LegendsAwakenDbContext db) : IBiomaRepository
             .ToListAsync();
 
     public async Task<List<Bioma>> ListarTodosAsync() =>
-        await db.Biomas.OrderBy(b => b.AndarInicio).ToListAsync();
+        await db.Biomas
+            .Include(b => b.Pool)
+            .ThenInclude(p => p.Heroi)
+            .OrderBy(b => b.AndarInicio)
+            .ToListAsync();
 }
