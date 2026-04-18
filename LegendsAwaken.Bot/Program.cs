@@ -60,7 +60,8 @@ class Program
 
             // Repositórios
             .AddScoped<ICidadeRepository, CidadeRepository>()
-            .AddScoped<ITorreRepository, TorreRepository>()
+            .AddScoped<ITorreRepository>(sp =>
+                new TorreRepository(configuration.GetConnectionString("DefaultConnection")!))
             .AddScoped<IHeroiRepository, HeroiRepository>()
             .AddScoped<IUsuarioRepository, UsuarioRepository>()
             .AddScoped<IHabilidadeRepository, HabilidadeRepository>()
