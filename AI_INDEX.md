@@ -288,6 +288,7 @@ Constructor injects: `HeroiService`, `GeracaoDeDadosService`, `UsuarioService`, 
 
 | File | Contents |
 |---|---|
+| `docs/COMMANDS.md` | Referência completa de todos os 12 slash commands — parâmetros, valores, interações de painel |
 | `GDD.md` | Full game design document (19 sections) |
 | `DESIGN_SISTEMAS.md` | Math frameworks — XP curve, Power Score, combat, CDI, economy (§1–§11) |
 | `ROADMAP.md` | Phase-by-phase plan; Fase 3A.1 ✅ complete |

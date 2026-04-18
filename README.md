@@ -129,5 +129,6 @@ Clean Architecture + DDD organizado em 6 projetos:
 | `ROADMAP.md` | Fases de desenvolvimento macro |
 | `TODO.md` | Tarefas granulares por área |
 | `CHANGELOG.md` | Histórico de mudanças por versão |
+| `docs/COMMANDS.md` | Referência completa dos 12 slash commands — parâmetros, valores, interações |
 | `AI_INDEX.md` | Índice de navegação de código para AI assistants |
 | `Estrutura.md` | Estrutura de pastas do projeto |
