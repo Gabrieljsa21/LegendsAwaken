@@ -18,10 +18,10 @@ public static class BiomaPanel
 
         var heroPrincipal = pool.FirstOrDefault(p => p.EHeroPrincipal);
         if (heroPrincipal is not null)
-            builder.AddField("Heroi Principal", heroPrincipal.Heroi.Nome, inline: false);
+            builder.AddField("Heroi Principal", heroPrincipal.Heroi?.Nome ?? "(desconhecido)", inline: false);
 
         var secundarios = pool
-            .Where(p => !p.EHeroPrincipal)
+            .Where(p => !p.EHeroPrincipal && p.Heroi is not null)
             .Select(p => p.Heroi.Nome);
 
         if (secundarios.Any())

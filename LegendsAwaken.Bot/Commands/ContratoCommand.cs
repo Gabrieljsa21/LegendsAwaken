@@ -1,5 +1,6 @@
 using Discord.WebSocket;
 using LegendsAwaken.Application.Services;
+using LegendsAwaken.Bot.Helpers;
 using LegendsAwaken.Bot.Panels;
 using LegendsAwaken.Domain.Enum;
 using LegendsAwaken.Domain.Interfaces;
@@ -13,12 +14,13 @@ public class ContratoCommand(ContractService contractService, IContratoRepositor
     public async Task ExecutarAsync(SocketSlashCommand command)
     {
         await command.DeferAsync();
-        var usuarioId = ToGuid(command.User.Id);
+        var usuarioId = DiscordIdHelper.ToGuid(command.User.Id);
 
-        var arquetipo = await contratoRepository.ObterAtivoAsync(usuarioId, TipoContrato.Arquetipo);
-        var nomeado   = await contratoRepository.ObterAtivoAsync(usuarioId, TipoContrato.Nomeado);
+        var arquetT = contratoRepository.ObterAtivoAsync(usuarioId, TipoContrato.Arquetipo);
+        var nomeadT = contratoRepository.ObterAtivoAsync(usuarioId, TipoContrato.Nomeado);
+        await Task.WhenAll(arquetT, nomeadT);
 
-        var embed = ContratoPanel.CriarEmbed(arquetipo, nomeado);
+        var embed = ContratoPanel.CriarEmbed(arquetT.Result, nomeadT.Result);
         var comps = ContratoPanel.CriarComponentes();
 
         await command.ModifyOriginalResponseAsync(m =>
@@ -28,18 +30,26 @@ public class ContratoCommand(ContractService contractService, IContratoRepositor
         });
     }
 
+    public async Task MostrarAsync(SocketMessageComponent comp)
+    {
+        await comp.DeferAsync();
+        var usuarioId = DiscordIdHelper.ToGuid(comp.User.Id);
+
+        var arquetT = contratoRepository.ObterAtivoAsync(usuarioId, TipoContrato.Arquetipo);
+        var nomeadT = contratoRepository.ObterAtivoAsync(usuarioId, TipoContrato.Nomeado);
+        await Task.WhenAll(arquetT, nomeadT);
+
+        var embed = ContratoPanel.CriarEmbed(arquetT.Result, nomeadT.Result);
+        var comps = ContratoPanel.CriarComponentes();
+
+        await comp.UpdateAsync(m => { m.Embed = embed; m.Components = comps; });
+    }
+
     public async Task HandleArquetipoAsync(SocketMessageComponent interaction, Profissao arquetipo)
     {
         await interaction.DeferAsync(ephemeral: true);
-        var usuarioId = ToGuid(interaction.User.Id);
+        var usuarioId = DiscordIdHelper.ToGuid(interaction.User.Id);
         await contractService.AtivarContratoArquetipoAsync(usuarioId, arquetipo);
         await interaction.FollowupAsync($"Contrato de arquetipo **{arquetipo}** ativado.", ephemeral: true);
-    }
-
-    private static Guid ToGuid(ulong discordId)
-    {
-        var bytes = new byte[16];
-        BitConverter.GetBytes(discordId).CopyTo(bytes, 0);
-        return new Guid(bytes);
     }
 }

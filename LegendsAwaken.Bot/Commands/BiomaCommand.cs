@@ -1,8 +1,8 @@
 using Discord.WebSocket;
 using LegendsAwaken.Application.Services;
+using LegendsAwaken.Bot.Helpers;
 using LegendsAwaken.Bot.Panels;
 using LegendsAwaken.Domain.Interfaces;
-using System;
 using System.Threading.Tasks;
 
 namespace LegendsAwaken.Bot.Commands;
@@ -12,7 +12,7 @@ public class BiomaCommand(BiomeService biomeService, ITorreRepository torreRepos
     public async Task ExecutarAsync(SocketSlashCommand command)
     {
         await command.DeferAsync();
-        var usuarioId = ToGuid(command.User.Id);
+        var usuarioId = DiscordIdHelper.ToGuid(command.User.Id);
 
         var andar = await torreRepository.ObterAndarPorUsuarioAsync(usuarioId);
         int andarAtual = andar?.Numero ?? 1;
@@ -35,10 +35,4 @@ public class BiomaCommand(BiomeService biomeService, ITorreRepository torreRepos
         });
     }
 
-    private static Guid ToGuid(ulong discordId)
-    {
-        var bytes = new byte[16];
-        BitConverter.GetBytes(discordId).CopyTo(bytes, 0);
-        return new Guid(bytes);
-    }
 }

@@ -4,6 +4,7 @@ using Discord.WebSocket;
 using LegendsAwaken.Application.Interfaces;
 using LegendsAwaken.Application.Services;
 using LegendsAwaken.Bot.Commands;
+using LegendsAwaken.Bot.Helpers;
 using LegendsAwaken.Bot.Panels;
 using LegendsAwaken.Domain.Entities.Auxiliares;
 using LegendsAwaken.Domain.Enum;
@@ -457,53 +458,30 @@ namespace LegendsAwaken.Bot
             // Button: bioma -> ver colecao
             if (comp.Data.CustomId == "bioma_ver_colecao")
             {
-                var usuarioId = ToGuid(comp.User.Id);
-                var todosHerois   = await _heroiConfigRepo.ListarTodosAsync();
-                var desbloqueados = await _heroiDesbloqueadoRepo.ListarPorUsuarioAsync(usuarioId);
-                var progressos    = await _fragmentoRepo.ListarPorUsuarioAsync(usuarioId);
-                var unlockTasks   = todosHerois.Select(h => _heroiConfigRepo.ObterUnlockConfigAsync(h.Id));
-                var unlockArr     = await Task.WhenAll(unlockTasks);
-                var unlockList    = unlockArr.Where(u => u is not null).Select(u => u!).ToList();
-                var heroisProntos = todosHerois
-                    .Where(h =>
-                    {
-                        var unlock = unlockList.FirstOrDefault(u => u.HeroiId == h.Id);
-                        var prog   = progressos.FirstOrDefault(p => p.HeroiId == h.Id);
-                        return !desbloqueados.Any(d => d.HeroiId == h.Id)
-                            && unlock?.TipoUnlock == TipoUnlock.Fragmentos
-                            && prog?.Quantidade >= unlock.QuantidadeFragmentos;
-                    })
-                    .ToList();
-
-                await comp.UpdateAsync(msg =>
-                {
-                    msg.Embed      = ColecaoPanel.CriarEmbed(todosHerois, desbloqueados, progressos, unlockList);
-                    msg.Components = ColecaoPanel.CriarComponentes(heroisProntos);
-                });
+                await new ColecaoCommand(_heroiConfigRepo, _heroiDesbloqueadoRepo, _fragmentoRepo, _recruitmentService)
+                    .MostrarAsync(comp);
                 return;
             }
 
             // Button: bioma -> contratos
             if (comp.Data.CustomId == "bioma_contratos")
             {
-                var usuarioId = ToGuid(comp.User.Id);
-                var arquetipo = await _contratoRepository.ObterAtivoAsync(usuarioId, TipoContrato.Arquetipo);
-                var nomeado   = await _contratoRepository.ObterAtivoAsync(usuarioId, TipoContrato.Nomeado);
-
-                await comp.UpdateAsync(msg =>
-                {
-                    msg.Embed      = ContratoPanel.CriarEmbed(arquetipo, nomeado);
-                    msg.Components = ContratoPanel.CriarComponentes();
-                });
+                await new ContratoCommand(_contractService, _contratoRepository)
+                    .MostrarAsync(comp);
                 return;
             }
-        }
 
-        private static Guid ToGuid(ulong discordId)
-        {
-            var bytes = new byte[16];
-            BitConverter.GetBytes(discordId).CopyTo(bytes, 0);
-            return new Guid(bytes);
+            // Button: remover foco nomeado
+            if (comp.Data.CustomId == "contrato_remover_nomeado")
+            {
+                await comp.DeferAsync(ephemeral: true);
+                var usuarioId = DiscordIdHelper.ToGuid(comp.User.Id);
+                var nomeado = await _contratoRepository.ObterAtivoAsync(usuarioId, LegendsAwaken.Domain.Enum.TipoContrato.Nomeado);
+                if (nomeado is not null)
+                    await _contratoRepository.DesativarAsync(nomeado.Id);
+                await comp.FollowupAsync(nomeado is not null ? "Foco nomeado removido." : "Nenhum foco nomeado ativo.", ephemeral: true);
+                return;
+            }
         }
 
 

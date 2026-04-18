@@ -71,6 +71,7 @@ public static class ColecaoPanel
     {
         if (maximo == 0) return string.Empty;
         int preenchido = (int)Math.Round((double)atual / maximo * 10);
+        preenchido = Math.Min(10, preenchido);
         return $"[{new string('#', preenchido).PadRight(10, '.')}]";
     }
 }
