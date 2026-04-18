@@ -31,16 +31,17 @@ public class FragmentService(
 
         await AdicionarFragmentosAsync(usuarioId, TipoFragmento.Heroi, heroiSelecionado.HeroiId, quantidadeFinal);
 
-        var progresso = await fragmentoRepository.ObterPorHeroiAsync(usuarioId, heroiSelecionado.HeroiId);
+        var progresso = await fragmentoRepository.ObterPorHeroiAsync(usuarioId, heroiSelecionado.HeroiId)
+            ?? throw new InvalidOperationException($"FragmentoProgresso not found after upsert for hero {heroiSelecionado.HeroiId}");
 
         return
         [
             new FragmentDropResult(
                 heroiSelecionado.HeroiId,
-                heroiSelecionado.Heroi.Nome,
+                heroiSelecionado.Heroi?.Nome ?? heroiSelecionado.HeroiId.ToString(),
                 TipoFragmento.Heroi,
                 quantidadeFinal,
-                progresso?.Quantidade ?? quantidadeFinal)
+                progresso.Quantidade)
         ];
     }
 
@@ -91,6 +92,7 @@ public class FragmentService(
     private static BiomHeroPool? SelecionarPorPeso(List<BiomHeroPool> pool)
     {
         int totalPeso  = pool.Sum(p => p.DropWeight);
+        if (totalPeso <= 0) return pool.Count > 0 ? pool[0] : null;
         int roll       = Random.Shared.Next(totalPeso);
         int acumulado  = 0;
         foreach (var item in pool)
