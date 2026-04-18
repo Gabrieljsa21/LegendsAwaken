@@ -91,6 +91,7 @@ class Program
             .AddScoped<ArenaService>()
             .AddScoped<BiomeService>()
             .AddScoped<FragmentService>()
+            .AddScoped<ContractService>()
 
             .AddSingleton(_cliente)
             .AddSingleton<IConfiguration>(configuration)
