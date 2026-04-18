@@ -1,19 +1,27 @@
+using LegendsAwaken.Application.DTOs;
 using LegendsAwaken.Domain.Entities;
+using LegendsAwaken.Domain.Entities.Fragmento;
 using LegendsAwaken.Domain.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using TipoEventoAlto = LegendsAwaken.Domain.Enum.TipoEventoAlto;
 
 namespace LegendsAwaken.Application.Services
 {
     /// <summary>
-    /// Resultado de SubirAndarAsync. Contém o XP concedido e os level-ups por herói.
+    /// Resultado de SubirAndarAsync. Contém o XP concedido, level-ups por herói,
+    /// fragmentos dropados, novo bioma detectado, herói desbloqueado e payloads de UI.
     /// </summary>
     public record SubirAndarResult(
         bool Sucesso,
         int XpConcedido,
         int OuroGanho,
-        IReadOnlyDictionary<string, int> NiveisGanhosPorHeroi
+        IReadOnlyDictionary<string, int> NiveisGanhosPorHeroi,
+        IReadOnlyList<FragmentDropResult> Fragmentos,
+        Bioma? NovoBioma,
+        HeroiConfig? HeroiDesbloqueado,
+        IReadOnlyList<RewardPayload> RewardPayloads
     );
 
     public class TorreService
@@ -21,15 +29,27 @@ namespace LegendsAwaken.Application.Services
         private readonly ITorreRepository _torreRepository;
         private readonly IHeroiRepository _heroiRepository;
         private readonly HeroiLevelUpService _levelUpService;
+        private readonly FragmentService _fragmentService;
+        private readonly BiomeService _biomeService;
+        private readonly RecruitmentService _recruitmentService;
+        private readonly RewardDistributionService _rewardService;
 
         public TorreService(
             ITorreRepository torreRepository,
             IHeroiRepository heroiRepository,
-            HeroiLevelUpService levelUpService)
+            HeroiLevelUpService levelUpService,
+            FragmentService fragmentService,
+            BiomeService biomeService,
+            RecruitmentService recruitmentService,
+            RewardDistributionService rewardService)
         {
             _torreRepository = torreRepository;
             _heroiRepository = heroiRepository;
             _levelUpService = levelUpService;
+            _fragmentService = fragmentService;
+            _biomeService = biomeService;
+            _recruitmentService = recruitmentService;
+            _rewardService = rewardService;
         }
 
         public async Task<TorreAndar?> ObterAndarAtualAsync(Guid usuarioId)
@@ -52,7 +72,11 @@ namespace LegendsAwaken.Application.Services
                     Sucesso: false,
                     XpConcedido: 0,
                     OuroGanho: 0,
-                    NiveisGanhosPorHeroi: new Dictionary<string, int>());
+                    NiveisGanhosPorHeroi: new Dictionary<string, int>(),
+                    Fragmentos: [],
+                    NovoBioma: null,
+                    HeroiDesbloqueado: null,
+                    RewardPayloads: []);
 
             int xpConcedido = CalcularXpDoAndar(andarAtual);
             int ouroConcedido = CalcularOuroDoAndar(andarAtual);
@@ -78,11 +102,43 @@ namespace LegendsAwaken.Application.Services
 
             await _torreRepository.AdicionarAsync(proximoAndar);
 
+            // Extensão 1: drop de fragmentos (acontece no andar que foi vencido)
+            var drops = await _fragmentService.ProcessarDropAsync(usuarioId, andarAtual.Numero);
+            var rewardPayloads = new List<RewardPayload>();
+
+            foreach (var drop in drops)
+                rewardPayloads.Add(_rewardService.GerarMicroPico(drop));
+
+            // Extensão 2: detecção de bioma novo (para o próximo andar)
+            Bioma? novoBioma = null;
+            if (await _biomeService.EBiomaNovoAsync(proximoAndar.Numero))
+            {
+                novoBioma = await _biomeService.ObterBiomaPorAndarAsync(proximoAndar.Numero);
+                if (novoBioma is not null)
+                    rewardPayloads.Add(_rewardService.GerarPicoAlto(TipoEventoAlto.DescobertaBioma, novoBioma));
+            }
+
+            // Marco da Torre: verificar unlock de herói icônico
+            HeroiConfig? heroiDesbloqueado = null;
+            if (_biomeService.EAndarDeMarco(proximoAndar.Numero))
+            {
+                var recrutamento = await _recruitmentService.ProcessarMarcoTorreAsync(usuarioId, proximoAndar.Numero);
+                if (recrutamento?.Sucesso == true && recrutamento.Heroi is not null)
+                {
+                    heroiDesbloqueado = recrutamento.Heroi;
+                    rewardPayloads.Add(_rewardService.GerarPicoAlto(TipoEventoAlto.HeroiIconicoDesbloqueado, heroi: recrutamento.Heroi));
+                }
+            }
+
             return new SubirAndarResult(
                 Sucesso: true,
                 XpConcedido: xpConcedido,
                 OuroGanho: ouroConcedido,
-                NiveisGanhosPorHeroi: niveisGanhos);
+                NiveisGanhosPorHeroi: niveisGanhos,
+                Fragmentos: drops,
+                NovoBioma: novoBioma,
+                HeroiDesbloqueado: heroiDesbloqueado,
+                RewardPayloads: rewardPayloads);
         }
 
         /// <summary>
