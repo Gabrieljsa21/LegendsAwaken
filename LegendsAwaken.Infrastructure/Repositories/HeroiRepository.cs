@@ -31,6 +31,7 @@ namespace LegendsAwaken.Infrastructure.Repositories
         {
             return await _dbContext.Herois
                 .AsNoTracking()
+                .AsSplitQuery()
                 .Include(h => h.Habilidades)
                     .ThenInclude(hh => hh.Habilidade)
                         .ThenInclude(h => h.HabilidadeBonusAtributos)
@@ -43,6 +44,7 @@ namespace LegendsAwaken.Infrastructure.Repositories
         {
             return await _dbContext.Herois
                 .AsNoTracking()
+                .AsSplitQuery()
                 .Include(h => h.Habilidades)
                     .ThenInclude(hh => hh.Habilidade)
                         .ThenInclude(h => h.HabilidadeBonusAtributos)
@@ -69,7 +71,11 @@ namespace LegendsAwaken.Infrastructure.Repositories
         {
             try
             {
-                _dbContext.Herois.Update(heroi);
+                // Clear stale tracked entities before attaching to avoid identity conflicts
+                // when the same Habilidade (shared by multiple heroes) is already tracked
+                _dbContext.ChangeTracker.Clear();
+                _dbContext.Herois.Attach(heroi);
+                _dbContext.Entry(heroi).State = EntityState.Modified;
                 await _dbContext.SaveChangesAsync();
             }
             catch (Exception ex)

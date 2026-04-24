@@ -1,6 +1,6 @@
 # AI_INDEX.md — LegendsAwaken Navigation Reference
 <!-- Lookup-only. Read this before opening any file. Update whenever the codebase changes. -->
-<!-- Last updated: 2026-04-18 · Phase 3A.3 complete; Sistema de Fragmentos implementado; GachaService/BannerService removidos -->
+<!-- Last updated: 2026-04-24 · Phase 3B.3 + 3B.4 MVP complete; Torre Modo Operação + Sistema de Sustento implementados -->
 
 ---
 
@@ -40,13 +40,17 @@
 | `TipoContrato` | Arquetipo, Nomeado |
 | `TipoEventoAlto` | DescobertaBioma, HeroiIconicoDesbloqueado |
 | `TipoReward` | Micro, Medio, Alto |
+| `ObjetivoOperacao` | FarmRecurso, ExploracaoLeve |
+| `PerfilRisco` | Seguro, Balanceado, Agressivo |
+| `StatusOperacao` | Ativa, Concluida, Expirada |
+| `EstadoSustento` | Ativo, Instavel, Degradado, Inativo |
 
 ---
 
 ## Entities
 
 ### `Heroi` — `Domain/Entities/Heroi.cs`
-Fields: `Id`, `UsuarioId`, `Nome`, `Raridade`, `Raca`, `Profissao?`, `Antecedente?`, `Nivel`, `XP`, `AtributosBase`, `AtributosDistribuidos`, `PontosAtributosDisponiveis`, `BonusAtributos` (List<HeroiBonusAtributo>), `Status` (StatusCombate), `Habilidades` (List<HeroiHabilidade>), `Equipamentos`, `Treinamento?`, `Funcao?`, `EstaAtivo`, `ImagemUrl?`, `Confianca` (int, default 0), `Humor` (int, default 50), `Lore?`, `Vitorias`, `Derrotas`, `AndaresConquistados`, `Lealdade`, `Historia?`, `Personalidade?`, `AfinidadeElemental`, `VinculosHeroicos`, `Tags`  
+Fields: `Id`, `UsuarioId`, `Nome`, `Raridade`, `Raca`, `Profissao?`, `Antecedente?`, `Nivel`, `XP`, `AtributosBase`, `AtributosDistribuidos`, `PontosAtributosDisponiveis`, `BonusAtributos` (List<HeroiBonusAtributo>), `Status` (StatusCombate), `Habilidades` (List<HeroiHabilidade>), `Equipamentos`, `Treinamento?`, `Funcao?`, `EstaAtivo`, `EstadoSustento` (EstadoSustento, default Ativo), `ImagemUrl?`, `Confianca` (int, default 0), `Humor` (int, default 50), `Lore?`, `Vitorias`, `Derrotas`, `AndaresConquistados`, `Lealdade`, `Historia?`, `Personalidade?`, `AfinidadeElemental`, `VinculosHeroicos`, `Tags`  
 Key method: `ObterAtributosTotais(AtributosBase bonusExterno)` — sums Base + Distribuidos + BonusAtributos + habilidade bonuses + bonusExterno
 
 ### `AtributosBase` — `Domain/Entities/AtributosBase.cs`
@@ -66,7 +70,7 @@ Fields: `Id`, `ArmaId?` (Guid), `ArmaduraId?` (Guid), `AcessorioId?` (Guid)
 Owned by `Heroi` (EF OwnsOne)
 
 ### `Cidade` / `Recursos` / `Construcao` / `PersonagemTrabalhador` — `Domain/Entities/Cidade.cs`
-`Cidade`: `Id`, `UsuarioId`, `Nome`, `Nivel`, `Populacao`, `CapacidadeMaxima`, `Recursos`, `Construcoes`, `Trabalhadores`, `UltimaColeta`  
+`Cidade`: `Id`, `UsuarioId`, `Nome`, `Nivel`, `Populacao`, `CapacidadeMaxima`, `Recursos`, `Construcoes`, `Trabalhadores`, `UltimaColeta`, `UltimoSustentoEm` (DateTime, default UtcNow)  
 `Recursos`: `Comida`, `Madeira`, `Pedra`, `Ouro`, `Erva` + `Adicionar(int qtd, string tipo)`  
 `Construcao` gained: `TipoPredio TipoPredio`  
 `PersonagemTrabalhador` gained: `TipoResourceNode? ResourceNode` (null = legacy)
@@ -100,6 +104,10 @@ Fields: `HabilidadeId`, `Habilidade`, `Nivel`, `XPAtual`, `XPMaximo`
 | `Contrato` | `Id`, `UsuarioId`, `TipoContrato`, `Ativo`, `ArquetipoAlvo?` (Profissao?), `HeroiAlvoId?`, `CriadoEm`, `ExpiraEm?` |
 | `HeroiDesbloqueado` | `UsuarioId`, `HeroiId`, `DesbloqueadoEm`, `Heroi` (nav) |
 
+### `TorreOperacao` — `Domain/Entities/TorreOperacao.cs`
+Fields: `Id`, `UsuarioId`, `AndarNumero`, `ObjetivoOperacao`, `PerfilRisco`, `StatusOperacao`, `IniciadoEm`, `DuracaoHoras`, `ResultadoOuro?`, `ResultadoRecursoNome?`, `ResultadoRecursoQtd?`, `ConcluidoEm?`  
+Managed by raw SQLite in `TorreOperacaoRepository.EnsureTableAsync()` — not tracked by EF Core.
+
 ### Auxiliares — `Domain/Entities/Auxiliares/HeroiAuxiliares.cs`
 `HeroiAfinidadeElemental`, `HeroiVinculo`, `HeroiTag`, `HeroiBonusAtributo`
 
@@ -123,6 +131,8 @@ Fields: `HabilidadeId`, `Habilidade`, `Nivel`, `XPAtual`, `XPMaximo`
 | `RecruitmentService` | 3 unlock paths | `TentarRecrutarPorFragmentosAsync(userId, heroiId)→RecruitmentResult`, `ProcessarMarcoTorreAsync(userId, andar)`, `DesbloquearPorCondicaoAsync(userId, heroiId)` |
 | `ContractService` | Archetype + named contracts | `AtivarContratoArquetipoAsync(userId, profissao)`, `AtivarContratoNomeadoAsync(userId, heroiId, duracao?)`, `ExpirarContratosVencidosAsync()` |
 | `RewardDistributionService` | 3-tier reward payload factory | `GerarMicroPico(drop)`, `GerarPicoMedio(heroi)`, `GerarPicoAlto(tipo, bioma?, heroi?)` |
+| `TorreOperacaoService` | Torre Modo Operação — async farm por andar | `IniciarAsync(userId, andar, objetivo, risco)`, `VerificarPendenteAsync(userId)` (auto-conclui expirado), `ColetarAsync(userId, opId)` (credita ouro), `CancelarAsync(userId, opId)` |
+| `SustentoService` | City-level food consumption + hero state | `ProcessarAsync(ulong userId)` (poll on every command), `ToggleInativoAsync(Guid heroiId)`, `ObterResumo(Cidade, herois) → static (consumoPorHora, horasRestantes, estado)` |
 | `GeracaoDeDadosService` | DB seed — tables + base data | `CriarTabelasAsync()`, `PopularDadosBaseAsync()` |
 | `HabilidadeService` | Skill data access | `ObterTodasAsync()` |
 | `UsuarioService` | User creation/lookup | |
@@ -171,6 +181,7 @@ Fields: `HabilidadeId`, `Habilidade`, `Nivel`, `XPAtual`, `XPMaximo`
 | `IFragmentoRepository` | `FragmentoRepository` | `Infrastructure/Repositories/FragmentoRepository.cs` — `ObterPorHeroiAsync`, `UpsertAsync` (TOCTOU-safe) |
 | `IBiomaRepository` | `BiomaRepository` | `Infrastructure/Repositories/BiomaRepository.cs` — `ObterParaAndarAsync`, `ListarTodosAsync` |
 | `IContratoRepository` | `ContratoRepository` | `Infrastructure/Repositories/ContratoRepository.cs` — `ObterAtivoAsync(userId, tipo)`, `SalvarAsync`, `DesativarAsync`, `ListarAtivosVencidosAsync` |
+| `ITorreOperacaoRepository` | `TorreOperacaoRepository` | `Infrastructure/Repositories/TorreOperacaoRepository.cs` — raw SQLite; `EnsureTableAsync()`, `SalvarAsync`, `ObterAtivaAsync(userId)`, `AtualizarAsync`, `ObterPorIdAsync` |
 
 `HeroiRepository.ObterPorIdAsync` and `ObterPorUsuarioIdAsync` include `BonusAtributos`.  
 `ItemRepository` includes `Bonus` on all queries.
@@ -217,6 +228,7 @@ EF OwnsOne: `Heroi → AtributosBase`, `Heroi → Status`, `Heroi → Equipament
 | `CidadeSlotModel3A2` | 2026-04-16 | Confianca/Humor/Lore on Heroi; ResourceNode on PersonagemTrabalhador; TipoPredio on Construcao; SlotOcupacoes table |
 | `FragmentoSystem` (timestamp ~20260417) | 2026-04-17 | HeroisConfig, HeroisUnlockConfig, Biomas, BiomHeroPools, FragmentosProgresso, Contratos, HeroisDesbloqueados |
 | `FragmentoSystemIndexes` (timestamp ~20260418) | 2026-04-18 | Partial unique indexes: FragmentosProgresso(UsuarioId+HeroiId), Contratos(UsuarioId+TipoContrato WHERE Ativo=1) |
+| `20260423200000_SustentoSystem` | 2026-04-23 | `ADD COLUMN EstadoSustento INTEGER DEFAULT 0` em Herois; `ADD COLUMN UltimoSustentoEm TEXT` em Cidades; inclui `.Designer.cs` |
 
 ---
 
@@ -228,7 +240,8 @@ Guild ID: hardcoded `1388541192806989834` (TODO: move to appsettings).
 
 ### `CommandHandler.cs`
 Handles `SlashCommandExecuted`, `ButtonExecuted`, **`SelectMenuExecuted`**, `AutocompleteExecuted`.  
-Constructor injects: `HeroiService`, `GeracaoDeDadosService`, `UsuarioService`, `RacaService`, `AtributoBonusService`, `CombatService`, `PartyService`, `CidadeService`, `CraftingService`, `ArenaService`, + fragment system: `IHeroiConfigRepository`, `IHeroiDesbloqueadoRepository`, `IFragmentoRepository`, `RecruitmentService`, `BiomeService`, `ContractService`, `IContratoRepository`, `ITorreRepository`.
+Constructor injects: `HeroiService`, `GeracaoDeDadosService`, `UsuarioService`, `RacaService`, `AtributoBonusService`, `CombatService`, `PartyService`, `CidadeService`, `CraftingService`, `ArenaService`, fragment system: `IHeroiConfigRepository`, `IHeroiDesbloqueadoRepository`, `IFragmentoRepository`, `RecruitmentService`, `BiomeService`, `ContractService`, `IContratoRepository`, `ITorreRepository`, + `TorreOperacaoService`, `SustentoService`.  
+`SustentoService.ProcessarAsync(userId)` called at the top of every `HandleSlashCommandAsync` after `ObterOuCriarAsync`.
 
 ### `Bot/Helpers/DiscordIdHelper.cs`
 `ToGuid(ulong discordId) → Guid` — deterministic, little-endian via `BinaryPrimitives.WriteUInt64LittleEndian`. Used everywhere Discord `ulong` must map to internal `Guid UsuarioId`.
@@ -249,6 +262,8 @@ Constructor injects: `HeroiService`, `GeracaoDeDadosService`, `UsuarioService`, 
 | `/colecao` | `ColecaoCommand` | `Commands/ColecaoCommand.cs` — coleção de heróis; button `colecao_recrutar` → recrutar por fragmentos; `MostrarAsync` para delegação |
 | `/bioma` | `BiomaCommand` | `Commands/BiomaCommand.cs` — bioma atual com pools de drop |
 | `/contrato` | `ContratoCommand` | `Commands/ContratoCommand.cs` — contratos ativos; select menu `contrato_arquetipo`; button `contrato_remover_nomeado`; `MostrarAsync` para delegação |
+| `/herois` | `HeroisCommand` | `Commands/HeroisCommand.cs` — lista com ícones de sustento (`✅⚠️🔴💤`); detalhe com campo Sustento + botão toggle `herois_toggle_inativo\|{id}`; `HandleToggleInativoAsync` |
+| `/torre` (Modo Operação) | `TorreCommand` | `Commands/TorreCommand.cs` — `HandleModoOperacaoAsync`, `HandleOpAndarAsync`, `HandleOpObjetivoAsync`, `HandleOpRiscoAsync`, `HandleOpColetarAsync`, `HandleOpCancelarAtivoAsync`, `HandleOpCancelarAsync`; poll em `ExecutarAsync` |
 
 ---
 
@@ -264,6 +279,8 @@ Constructor injects: `HeroiService`, `GeracaoDeDadosService`, `UsuarioService`, 
 | `Bot/Panels/ColecaoPanel.cs` | Static panel builder for `/colecao` |
 | `Bot/Panels/BiomaPanel.cs` | Static panel builder for `/bioma` |
 | `Bot/Panels/ContratoPanel.cs` | Static panel builder for `/contrato` |
+| `Bot/Panels/HeroisPanel.cs` | Panel builder for `/herois` — list with sustento icons, detail with Sustento field + toggle button, `CriarComponentesDetalhe(Heroi)` |
+| `Bot/Panels/TorreModoOperacaoPanel.cs` | Panel builder for Torre Modo Operação — 4-step flow (andar→objetivo→risco→confirmação); status ativo, coleta, cancelamento |
 
 ---
 
@@ -309,4 +326,6 @@ Constructor injects: `HeroiService`, `GeracaoDeDadosService`, `UsuarioService`, 
 | Fase 3A.1 — Vertical Slice | ✅ Complete (build 0w/0e) |
 | Fase 3A.2 — Consolidação do Core | ✅ Complete (build 0w/0e) — backend + bot layer |
 | Fase 3A.3 — Sistema de Fragmentos | ✅ Complete (build 0w/0e, 39 tests) — gacha substituído por fragmentos/biomas/contratos |
-| Fase 3B+ | Not started |
+| Fase 3B.3 — Torre Modo Operação | ✅ Complete (v3.1.0) — TorreOperacao entity, TorreOperacaoService, TorreModoOperacaoPanel, roteamento no CommandHandler |
+| Fase 3B.4 — Sustento MVP | ✅ Complete (v3.2.0) — EstadoSustento enum+campo, SustentoService (poll+toggle+resumo), ícones HeroisPanel, linha CidadePanel, migration SustentoSystem |
+| Fase 3B (restante) | 3B-1 Inventário, 3B-2 Conversão, 3B-5 Guilda/Missões, 3B-6 Relíquias, 3B-7 Prédios, Market, Mercenários, Treinamento — não iniciados |

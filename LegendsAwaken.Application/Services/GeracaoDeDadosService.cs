@@ -2,6 +2,7 @@ using LegendsAwaken.Domain.Entities;
 using LegendsAwaken.Domain.Entities.Auxiliares;
 using LegendsAwaken.Domain.Enum;
 using LegendsAwaken.Domain.Factories;
+using LegendsAwaken.Domain.Interfaces;
 using LegendsAwaken.Infrastructure;
 using LegendsAwaken.Infrastructure.Repositories;
 using LegendsAwaken.Infrastructure.SeedData;
@@ -19,6 +20,7 @@ namespace LegendsAwaken.Application.Services
     {
         private readonly string _connectionString;
         private readonly LegendsAwakenDbContext _db;
+        private readonly ITorreOperacaoRepository _torreOpRepo;
 
         /// <summary>
         /// Inicializa uma nova instância do <see cref="GeracaoDeDadosService"/>.
@@ -26,9 +28,10 @@ namespace LegendsAwaken.Application.Services
         /// <param name="configuration">Configuração da aplicação contendo a connection string.</param>
         /// <param name="db">Contexto do banco de dados.</param>
 
-        public GeracaoDeDadosService(IConfiguration configuration, LegendsAwakenDbContext db)
+        public GeracaoDeDadosService(IConfiguration configuration, LegendsAwakenDbContext db, ITorreOperacaoRepository torreOpRepo)
         {
             _db = db;
+            _torreOpRepo = torreOpRepo;
             var connection = _db.Database.GetDbConnection();
             var path = new SqliteConnectionStringBuilder(connection.ConnectionString).DataSource;
 
@@ -45,6 +48,7 @@ namespace LegendsAwaken.Application.Services
         public async Task CriarTabelasAsync()
         {
             await _db.Database.MigrateAsync();
+            await _torreOpRepo.EnsureTableAsync();
             await ListarTabelasAsync();
         }
 

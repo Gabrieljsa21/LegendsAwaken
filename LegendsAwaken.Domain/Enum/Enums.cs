@@ -155,4 +155,12 @@ namespace LegendsAwaken.Domain.Enum
 
     public enum TipoReward { Micro, Medio, Alto }
 
+    public enum ObjetivoOperacao { FarmRecurso, ExploracaoLeve }
+
+    public enum PerfilRisco { Seguro, Balanceado, Agressivo }
+
+    public enum StatusOperacao { Ativa, Concluida, Expirada }
+
+    public enum EstadoSustento { Ativo, Instavel, Degradado, Inativo }
+
 }

@@ -149,19 +149,19 @@ Fórmulas definidas em `GDD.md §5.0` e `DESIGN_SISTEMAS.md §3`.
 - [ ] Fragmentos de personagens fixos como drop raro
 - [x] `/treinar` funcional via Arena (XP acelerado)
 
-## Torre — Modo Operação (Fase 3B-3)
+## Torre — Modo Operação ✅ MVP concluído (Fase 3B-3 — v3.1.0)
 
-Andar concluído passa a ter dois modos: Exploração (primeira vez) e Operação (farm automático após conclusão).
+Entidade `TorreOperacao`, `TorreOperacaoService`, painel `TorreModoOperacaoPanel` (4 etapas), botão `🏭 Modo Operação` no `TorrePanel`.
 
-- [ ] Estado `AndarConcluido` por usuário + andar
-- [ ] `/torre operar <andar>` — inicia operação automática em andar concluído
-- [ ] Definir grupo, objetivo (farm recurso / exploração leve) e perfil de risco (seguro / balanceado / agressivo)
-- [ ] Recursos exclusivos por andar (ex: andar 12 → Essência Corrompida; andar 18 → Cristal Arcano)
-- [ ] Combate automático durante operação; resumo periódico consolidado
-- [ ] Eventos de interrupção: jogador recebe notificação com decisão (2 min para responder)
-- [ ] Líder decide automaticamente se jogador não responder (baseado no perfil do líder)
-- [ ] `/torre recuar` — aborta operação com coleta parcial, sem penalidade pesada
-- [ ] Sistema de notificação inteligente (só notifica evento importante, fim de operação, risco alto)
+- [ ] Estado `AndarConcluido` por usuário + andar *(não exigido no MVP)*
+- [x] `TorreModoOperacaoPanel` — flow: Select Menu de andar → objetivo (FarmRecurso / ExploracaoLeve) → perfil de risco (Seguro / Balanceado / Agressivo) → confirmação
+- [x] `TorreOperacaoService.IniciarAsync`, `VerificarPendenteAsync` (auto-conclui expirado), `ColetarAsync` (credita ouro), `CancelarAsync`
+- [x] Fórmula de ouro: `andar × 3 × horas × mult` (Seguro=0.8, Balanceado=1.0, Agressivo=1.5)
+- [x] Recursos exclusivos por andar: Fragmento Rústico (≥5), Essência Corrompida (≥12), Cristal Arcano (≥18), Núcleo Sombrio (≥25)
+- [x] Poll de operação pendente em `TorreCommand.ExecutarAsync`
+- [ ] Eventos de interrupção com decisão do jogador *(deferido)*
+- [ ] Líder decide automaticamente se jogador não responder *(deferido)*
+- [ ] Sistema de notificação inteligente *(deferido)*
 
 ## Torre — Design Avançado (Fase 3C)
 
@@ -252,18 +252,23 @@ Rework determinístico da cidade: sem auto-alocação, sem IA. Cada prédio tem 
 
 ---
 
-## Sistema de Sustento (Fase 3B-4)
+## Sistema de Sustento ✅ MVP concluído (Fase 3B-4 — v3.2.0)
 
-- [ ] Campo `EstadoSustento` na entidade `Heroi` (enum: Ativo / Instável / Degradado / Inativo)
-- [ ] Consumo de Comida por herói: `Consumo = Base × Raridade × (1 + Nivel / 100)`
-- [ ] Consumo maior por classe (Guerreiro/Tanque > Mago/Suporte)
-- [ ] Limite de Moradia: prédio Alojamento define capacidade; sem moradia → redução de moral + aumento de custo
-- [ ] Estado **Ativo**: totalmente sustentado; 100% eficiência
-- [ ] Estado **Instável**: falta parcial de recursos; penalidade de -% atributos e -% ganho de XP
-- [ ] Estado **Degradado**: falta crítica; habilidades desativadas; risco de deserção temporária
-- [ ] Estado **Inativo** (manual): jogador desativa herói para reduzir custo; herói não participa de atividades
-- [ ] Consome automaticamente da produção de Comida da Fazenda
-- [ ] Feedback claro no `/cidade ver` sobre heróis em risco de sustento
+`EstadoSustento` enum, campos em `Heroi` e `Cidade`, migration `SustentoSystem`, `SustentoService`, ícones no `HeroisPanel`, linha no `CidadePanel`, toggle via botão.
+
+- [x] Campo `EstadoSustento` na entidade `Heroi` (enum: Ativo / Instavel / Degradado / Inativo)
+- [x] Campo `UltimoSustentoEm` em `Cidade`; migration `20260423200000_SustentoSystem`
+- [x] `SustentoService.ProcessarAsync(ulong)` — deduz Comida acumulada (flat 1/h por herói ativo, cap 24h), recalcula estado
+- [x] `SustentoService.ToggleInativoAsync(Guid)` — alterna Inativo ↔ Ativo; herói Inativo não consome Comida
+- [x] `SustentoService.ObterResumo(static)` — consumo/hora e horas restantes para exibição
+- [x] `HeroisPanel`: ícone de estado (`✅⚠️🔴💤`) em cada herói; campo "Sustento" no detalhe; botão "Pausar / Ativar Sustento"
+- [x] `CidadePanel`: linha de sustento abaixo do Humor — `✅ X 🌾/h | Estoque: Y | ~Z.Zh restantes`
+- [x] `CommandHandler`: `ProcessarAsync` chamado em todo slash command; routing `herois_toggle_inativo`
+- [ ] Consumo variável: `Base × Raridade × (1 + Nivel/100)` *(flat no MVP)*
+- [ ] Consumo maior por classe (Guerreiro/Tanque > Mago/Suporte) *(deferido)*
+- [ ] Limite de Moradia via prédio Alojamento *(deferido)*
+- [ ] Estado **Instável**: penalidades de -% atributos e -% XP *(informativo apenas no MVP)*
+- [ ] Estado **Degradado**: habilidades desativadas; risco de deserção *(informativo apenas no MVP)*
 
 ---
 

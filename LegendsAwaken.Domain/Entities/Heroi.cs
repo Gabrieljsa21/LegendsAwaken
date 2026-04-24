@@ -35,6 +35,7 @@ namespace LegendsAwaken.Domain.Entities
 
         // Metadados
         public bool EstaAtivo { get; set; } = true;
+        public EstadoSustento EstadoSustento { get; set; } = EstadoSustento.Ativo;
         public string? ImagemUrl { get; set; }
         public int Confianca { get; set; } = 0;
         public int Humor { get; set; } = 50;

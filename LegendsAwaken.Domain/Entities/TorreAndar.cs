@@ -18,6 +18,8 @@ namespace LegendsAwaken.Domain.Entities
         public string? RecompensaTipo { get; set; }
         public int RecompensaQuantidade { get; set; }
 
+        public int NivelDificuldade { get; set; }
+
         public bool ObjetivoCumprido { get; set; }
 
         public DateTime CriadoEm { get; set; } = DateTime.UtcNow;

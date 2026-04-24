@@ -61,18 +61,18 @@ namespace LegendsAwaken.Application.Services
             if (slotExistente != null)
                 throw new InvalidOperationException("Herói já está alocado em um prédio.");
 
-            cidade.Trabalhadores.Add(new PersonagemTrabalhador
+            var trabalhador = new PersonagemTrabalhador
             {
                 HeroiId = heroiId,
                 InicioTrabalho = DateTime.UtcNow,
                 ResourceNode = node
-            });
-            await _cidadeRepository.AtualizarAsync(cidade);
+            };
+            await _cidadeRepository.AdicionarTrabalhadorAsync(cidade.Id, trabalhador);
         }
 
         // ── Building slot allocation ─────────────────────────────────────────────
 
-        public async Task<string?> AlocarSlotPredioAsync(ulong usuarioId, Guid heroiId, TipoPredio tipoPredio, SlotTipo slotTipo)
+        public async Task<string?> AlocarSlotPredioAsync(ulong usuarioId, Guid heroiId, Guid construcaoId, SlotTipo slotTipo)
         {
             var cidade = await _cidadeRepository.ObterPorProprietarioIdAsync(usuarioId);
             if (cidade == null) return "Cidade não encontrada.";
@@ -85,11 +85,11 @@ namespace LegendsAwaken.Application.Services
             if (slotExistente != null)
                 return "Herói já está alocado em um prédio.";
 
-            var construcao = cidade.Construcoes.FirstOrDefault(c => c.TipoPredio == tipoPredio);
+            var construcao = cidade.Construcoes.FirstOrDefault(c => c.Id == construcaoId);
             if (construcao == null)
-                return $"Prédio '{tipoPredio}' não construído.";
+                return "Prédio não encontrado.";
 
-            if (!PredioConfig.Slots.TryGetValue((tipoPredio, construcao.Nivel), out var def))
+            if (!PredioConfig.Slots.TryGetValue((construcao.TipoPredio, construcao.Nivel), out var def))
                 return "Configuração de slots não encontrada.";
 
             var slotsOcupados = await _slotRepository.ObterPorConstrucaoAsync(construcao.Id);
@@ -138,8 +138,7 @@ namespace LegendsAwaken.Application.Services
             var trabalhador = cidade.Trabalhadores.FirstOrDefault(t => t.HeroiId == heroiId);
             if (trabalhador != null)
             {
-                cidade.Trabalhadores.Remove(trabalhador);
-                await _cidadeRepository.AtualizarAsync(cidade);
+                await _cidadeRepository.RemoverTrabalhadorAsync(trabalhador.Id);
                 return null;
             }
 

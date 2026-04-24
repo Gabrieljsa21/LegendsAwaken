@@ -137,6 +137,37 @@ namespace LegendsAwaken.Application.Services
             return await _heroiRepository.ObterPorUsuarioIdAsync(usuarioId);
         }
 
+        public async Task<List<Item>> ObterItensAsync(ulong usuarioId)
+            => await _itemRepository.ObterPorProprietarioAsync(usuarioId);
+
+        public async Task<string?> DesequiparItemAsync(Guid itemId, ulong usuarioId)
+        {
+            var item = await _itemRepository.ObterPorIdAsync(itemId);
+            if (item == null) return "Item não encontrado.";
+            if (item.ProprietarioId != usuarioId) return "Este item não pertence a você.";
+            if (!item.EstaEquipado || !item.HeroiEquipadoId.HasValue) return "Este item não está equipado.";
+
+            var heroi = await _heroiRepository.ObterPorIdAsync(item.HeroiEquipadoId.Value);
+            if (heroi == null) return "Herói não encontrado.";
+
+            heroi.BonusAtributos.RemoveAll(b => b.ItemId == itemId);
+
+            switch (item.Slot)
+            {
+                case SlotEquipamento.Arma:      heroi.Equipamentos.ArmaId      = null; break;
+                case SlotEquipamento.Armadura:  heroi.Equipamentos.ArmaduraId  = null; break;
+                case SlotEquipamento.Acessorio: heroi.Equipamentos.AcessorioId = null; break;
+            }
+
+            item.EstaEquipado    = false;
+            item.HeroiEquipadoId = null;
+            heroi.DataAlteracao  = DateTime.UtcNow;
+
+            await _heroiRepository.AtualizarAsync(heroi);
+            await _itemRepository.AtualizarAsync(item);
+            return null;
+        }
+
         /// <summary>
         /// Equips an item on a hero. Removes old equipment bonuses from HeroiBonusAtributo,
         /// adds new ones, updates Equipamentos slot FK, and persists both hero and item.

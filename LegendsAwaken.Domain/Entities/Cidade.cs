@@ -20,6 +20,7 @@ namespace LegendsAwaken.Domain.Entities
         public List<PersonagemTrabalhador> Trabalhadores { get; set; } = new();
 
         public DateTime UltimaColeta { get; set; } = DateTime.UtcNow;
+        public DateTime UltimoSustentoEm { get; set; } = DateTime.UtcNow;
         public DateTime DataCriacao { get; set; } = DateTime.UtcNow;
         public DateTime DataAlteracao { get; set; } = DateTime.UtcNow;
     }

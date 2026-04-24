@@ -43,6 +43,9 @@ namespace LegendsAwaken.Bot
         private readonly ContractService _contractService;
         private readonly IContratoRepository _contratoRepository;
         private readonly ITorreRepository _torreRepository;
+        private readonly TorreService _torreService;
+        private readonly TorreOperacaoService _torreOperacaoService;
+        private readonly SustentoService _sustentoService;
 
         public CommandHandler(
             DiscordSocketClient client,
@@ -65,7 +68,10 @@ namespace LegendsAwaken.Bot
             BiomeService biomeService,
             ContractService contractService,
             IContratoRepository contratoRepository,
-            ITorreRepository torreRepository)
+            ITorreRepository torreRepository,
+            TorreService torreService,
+            TorreOperacaoService torreOperacaoService,
+            SustentoService sustentoService)
         {
             _client = client;
             _logger = logger;
@@ -88,14 +94,17 @@ namespace LegendsAwaken.Bot
             _contractService = contractService;
             _contratoRepository = contratoRepository;
             _torreRepository = torreRepository;
+            _torreService = torreService;
+            _torreOperacaoService = torreOperacaoService;
+            _sustentoService = sustentoService;
         }
 
         public void Initialize()
         {
-            _client.SlashCommandExecuted += HandleSlashCommandAsync;
-            _client.ButtonExecuted += HandleButtonExecutedAsync;
-            _client.SelectMenuExecuted += HandleButtonExecutedAsync;
-            _client.AutocompleteExecuted += HandleAutocompleteAsync;
+            _client.SlashCommandExecuted += cmd  => { _ = HandleSlashCommandAsync(cmd);  return Task.CompletedTask; };
+            _client.ButtonExecuted       += comp => { _ = HandleButtonExecutedAsync(comp); return Task.CompletedTask; };
+            _client.SelectMenuExecuted   += comp => { _ = HandleButtonExecutedAsync(comp); return Task.CompletedTask; };
+            _client.AutocompleteExecuted += auto => { _ = HandleAutocompleteAsync(auto);  return Task.CompletedTask; };
             _client.Ready += OnReadyAsync;
         }
 
@@ -109,6 +118,7 @@ namespace LegendsAwaken.Bot
         {
             _logger.LogInformation("Comando /{CommandName} de {Username}", command.CommandName, command.User.Username);
             await _usuarioService.ObterOuCriarAsync(command.User);
+            await _sustentoService.ProcessarAsync(command.User.Id);
 
             try
             {
@@ -147,23 +157,17 @@ namespace LegendsAwaken.Bot
                         await new ArenaCommand(_arenaService, _heroiService).ExecutarAsync(command);
                         break;
 
+                    case "torre":
                     case "subir_andar":
-                        await new CombatCommand(_heroiService, _combatService).ExecutarAsync(command);
+                        await new TorreCommand(_torreService, _heroiService, _biomeService, _torreOperacaoService, _logger).ExecutarAsync(command);
                         break;
 
-                    case "ver_heroi":
-                        var nomeHeroi = command.Data.Options.FirstOrDefault(o => o.Name == "nome")?.Value as string ?? string.Empty;
-                        var verHeroiCmd = new VerHeroiCommand(_heroiService);
-                        await verHeroiCmd.ExecutarAsync(command, nomeHeroi);
-                        break;
-
-                    case "listar_herois":
-                        var listarCmd = new ListarHeroisCommand(_heroiService);
-                        await listarCmd.ExecutarAsync(command);
+                    case "herois":
+                        await new HeroisCommand(_heroiService, _sustentoService, _logger).ExecutarAsync(command);
                         break;
 
                     case "cidade":
-                        await new CidadeCommand(_cidadeService, _heroiService).ExecutarAsync(command);
+                        await new CidadeCommand(_cidadeService, _heroiService, _logger).ExecutarAsync(command);
                         break;
 
                     case "grupo":
@@ -284,30 +288,8 @@ namespace LegendsAwaken.Bot
                         await new ContratoCommand(_contractService, _contratoRepository).ExecutarAsync(command);
                         break;
 
-                    case "heroi_equipar":
-                        var nomeHeroiEq = command.Data.Options.FirstOrDefault(o => o.Name == "heroi")?.Value as string;
-                        var itemIdStr   = command.Data.Options.FirstOrDefault(o => o.Name == "item_id")?.Value as string;
-                        if (string.IsNullOrWhiteSpace(nomeHeroiEq) || string.IsNullOrWhiteSpace(itemIdStr))
-                        {
-                            await command.RespondAsync("Informe o heroi e o ID do item.", ephemeral: true);
-                            break;
-                        }
-                        if (!Guid.TryParse(itemIdStr, out var itemGuid))
-                        {
-                            await command.RespondAsync("ID do item invalido.", ephemeral: true);
-                            break;
-                        }
-                        var heroisEq = await _heroiService.ObterHeroisPorUsuarioAsync(command.User.Id);
-                        var heroiEq = heroisEq.FirstOrDefault(h => h.Nome.Equals(nomeHeroiEq, StringComparison.OrdinalIgnoreCase));
-                        if (heroiEq == null)
-                        {
-                            await command.RespondAsync($"Heroi '{nomeHeroiEq}' nao encontrado.", ephemeral: true);
-                            break;
-                        }
-                        var erroEquipar = await _heroiService.EquiparItemAsync(heroiEq.Id, itemGuid, command.User.Id);
-                        await command.RespondAsync(
-                            erroEquipar == null ? $"Item equipado em **{heroiEq.Nome}** com sucesso!" : $"Erro: {erroEquipar}",
-                            ephemeral: true);
+                    case "inventario":
+                        await new InventarioCommand(_heroiService, _logger).ExecutarAsync(command);
                         break;
 
                     default:
@@ -359,81 +341,68 @@ namespace LegendsAwaken.Bot
                 await auto.RespondAsync(sugestoes);
             }
 
-            else if ((auto.Data.CommandName == "cidade") && auto.Data.Options.Any(o => o.Name == "heroi"))
-            {
-                var userId = auto.User.Id;
-                var query = auto.Data.Options.FirstOrDefault(o => o.Name == "heroi")?.Value as string ?? "";
-                var herois = await _heroiService.ObterHeroisPorUsuarioAsync(userId);
-                var sugestoes = herois
-                    .Where(h => h.Nome.StartsWith(query, StringComparison.OrdinalIgnoreCase))
-                    .Select(h => new AutocompleteResult(h.Nome, h.Nome))
-                    .Take(25);
-                await auto.RespondAsync(sugestoes);
-            }
-
-            else if (auto.Data.CommandName == "heroi_equipar" && auto.Data.Options.Any(o => o.Name == "heroi"))
-            {
-                var userId = auto.User.Id;
-                var query = auto.Data.Options.First(o => o.Name == "heroi").Value as string ?? "";
-                var herois = await _heroiService.ObterHeroisPorUsuarioAsync(userId);
-                var sugestoes = herois
-                    .Where(h => h.Nome.StartsWith(query, StringComparison.OrdinalIgnoreCase))
-                    .Select(h => new AutocompleteResult(h.Nome, h.Nome))
-                    .Take(25);
-                await auto.RespondAsync(sugestoes);
-            }
-
-            else if (auto.Data.CommandName == "ver_heroi" && auto.Data.Options.First().Name == "nome")
-            {
-                var userId = auto.User.Id;
-
-                var query = auto.Data.Options.First().Value as string ?? string.Empty;
-
-                // Buscar heróis do usuário que começam com o texto digitado
-                var herois = await _heroiService.ObterHeroisPorUsuarioAsync(userId);
-
-                var sugestões = herois
-                    .Where(h => h.Nome.StartsWith(query, StringComparison.OrdinalIgnoreCase))
-                    .Select(h => new AutocompleteResult(h.Nome, h.Nome))
-                    .Take(25);
-
-                await auto.RespondAsync(sugestões);
-            }
         }
 
 
         public async Task HandleButtonExecutedAsync(SocketMessageComponent comp)
         {
+            _logger.LogInformation("[Interação] CustomId={CustomId} Tipo={Tipo} User={User}",
+                comp.Data.CustomId, comp.Data.Type, comp.User.Username);
+
             var parts = comp.Data.CustomId.Split('|');
 
-            // ————— Paginação do listar_herois —————
-            if (parts[0] == "listar" && parts.Length == 3)
+            // ————— Inventário buttons/select menus —————
+            if (parts[0].StartsWith("inventario_"))
             {
-                // parts = [ "listar", "<page>", "<raridade?>" ]
-                int page = int.Parse(parts[1]);
-                int? raridade = string.IsNullOrEmpty(parts[2]) || parts[2] == "0" ? null : (int?)int.Parse(parts[2]);
-
-                var todos = await _heroiService.ObterHeroisPorUsuarioAsync(comp.User.Id);
-
-                var filtrados = todos
-                    .Where(h => raridade == null || (int)h.Raridade == raridade)
-                    .ToList();
-
-                var builder = new ListarHeroisCommand(_heroiService);
-                var embed = builder.BuildEmbed(filtrados, page);
-
-                int pageCount = (int)Math.Ceiling(filtrados.Count / (double)ListarHeroisCommand.PageSize);
-
-                var comps = new ComponentBuilder()
-                    .WithButton("◀️", $"listar|{page - 1}|{(raridade ?? 0)}", ButtonStyle.Secondary, disabled: page <= 1)
-                    .WithButton("▶️", $"listar|{page + 1}|{(raridade ?? 0)}", ButtonStyle.Secondary, disabled: page >= pageCount)
-                    .Build();
-
-                await comp.UpdateAsync(msg =>
+                var inventarioCmd = new InventarioCommand(_heroiService, _logger);
+                try
                 {
-                    msg.Embed = embed;
-                    msg.Components = comps;
-                });
+                    if (comp.Data.Type == ComponentType.SelectMenu && parts[0] == "inventario_item")
+                        { await inventarioCmd.HandleGerenciarItemAsync(comp); return; }
+
+                    if (parts[0] == "inventario_iniciar_equipar" && parts.Length >= 2 && Guid.TryParse(parts[1], out var itemEquiparId))
+                        { await inventarioCmd.HandleIniciarEquiparAsync(comp, itemEquiparId); return; }
+
+                    if (comp.Data.Type == ComponentType.SelectMenu && parts[0] == "inventario_equipar_heroi" && parts.Length >= 2 && Guid.TryParse(parts[1], out var itemEqHeroiId))
+                        { await inventarioCmd.HandleEquiparHeroiAsync(comp, itemEqHeroiId); return; }
+
+                    if (parts[0] == "inventario_desequipar" && parts.Length >= 2 && Guid.TryParse(parts[1], out var itemDesequiparId))
+                        { await inventarioCmd.HandleDesequiparAsync(comp, itemDesequiparId); return; }
+
+                    if (parts[0] == "inventario_atualizar")
+                        { await inventarioCmd.HandleAtualizarAsync(comp); return; }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "[Inventario] Exceção não tratada. CustomId={CustomId} User={User}",
+                        comp.Data.CustomId, comp.User.Username);
+                    try { await comp.FollowupAsync("❌ Erro interno. Tente novamente.", ephemeral: true); } catch { }
+                }
+                return;
+            }
+
+            // ————— Heróis buttons/select menus —————
+            if (parts[0] == "herois_ver" || parts[0] == "herois_atualizar" || parts[0] == "herois_toggle_inativo")
+            {
+                var heroisCmd = new HeroisCommand(_heroiService, _sustentoService, _logger);
+                try
+                {
+                    if (comp.Data.Type == ComponentType.SelectMenu && parts[0] == "herois_ver")
+                        { await heroisCmd.HandleVerDetalhesAsync(comp); return; }
+
+                    if (parts[0] == "herois_atualizar")
+                        { await heroisCmd.HandleAtualizarAsync(comp); return; }
+
+                    if (parts[0] == "herois_toggle_inativo" && parts.Length >= 2 && Guid.TryParse(parts[1], out var toggleHeroiId))
+                        { await heroisCmd.HandleToggleInativoAsync(comp, toggleHeroiId); return; }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "[Herois] Exceção não tratada. CustomId={CustomId} User={User}",
+                        comp.Data.CustomId, comp.User.Username);
+                    try { await comp.FollowupAsync("❌ Erro interno. Tente novamente.", ephemeral: true); } catch { }
+                }
+                return;
             }
 
             // Select menu: recrutar heroi por fragmentos
@@ -483,6 +452,114 @@ namespace LegendsAwaken.Bot
                 await comp.FollowupAsync(nomeado is not null ? "Foco nomeado removido." : "Nenhum foco nomeado ativo.", ephemeral: true);
                 return;
             }
+
+            // ————— Torre Modo Operação buttons/select menus —————
+            if (parts[0] == "torre_modo_operacao" || parts[0].StartsWith("torre_op_"))
+            {
+                var torreCmd = new TorreCommand(_torreService, _heroiService, _biomeService, _torreOperacaoService, _logger);
+                try
+                {
+                    if (parts[0] == "torre_modo_operacao")
+                        { await torreCmd.HandleModoOperacaoAsync(comp); return; }
+
+                    if (comp.Data.Type == ComponentType.SelectMenu && parts[0] == "torre_op_andar")
+                        { await torreCmd.HandleOpAndarAsync(comp); return; }
+
+                    if (parts[0] == "torre_op_objetivo" && parts.Length >= 3 && int.TryParse(parts[1], out var opAndarObj))
+                        { await torreCmd.HandleOpObjetivoAsync(comp, opAndarObj, parts[2]); return; }
+
+                    if (parts[0] == "torre_op_risco" && parts.Length >= 4 && int.TryParse(parts[1], out var opAndarRisco))
+                        { await torreCmd.HandleOpRiscoAsync(comp, opAndarRisco, parts[2], parts[3]); return; }
+
+                    if (parts[0] == "torre_op_coletar")
+                        { await torreCmd.HandleOpColetarAsync(comp); return; }
+
+                    if (parts[0] == "torre_op_cancelar_ativo")
+                        { await torreCmd.HandleOpCancelarAtivoAsync(comp); return; }
+
+                    if (parts[0] == "torre_op_cancelar")
+                        { await torreCmd.HandleOpCancelarAsync(comp); return; }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "[TorreOp] Exceção não tratada. CustomId={CustomId} User={User}",
+                        comp.Data.CustomId, comp.User.Username);
+                    try { await comp.FollowupAsync("❌ Erro interno. Tente novamente.", ephemeral: true); } catch { }
+                }
+                return;
+            }
+
+            // ————— Torre buttons —————
+            if (parts[0] == "torre_atualizar")
+            {
+                await new TorreCommand(_torreService, _heroiService, _biomeService, _torreOperacaoService, _logger).HandleAtualizarAsync(comp);
+                return;
+            }
+
+            if (parts[0] == "torre_avancar")
+            {
+                try
+                {
+                    await new TorreCommand(_torreService, _heroiService, _biomeService, _torreOperacaoService, _logger).HandleAvancarAsync(comp);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "[Torre] Exceção não tratada. CustomId={CustomId} User={User}", comp.Data.CustomId, comp.User.Username);
+                    try { await comp.FollowupAsync("❌ Erro interno. Tente novamente.", ephemeral: true); } catch { }
+                }
+                return;
+            }
+
+            // ————— Cidade buttons/select menus —————
+            if (parts[0].StartsWith("cidade_"))
+            {
+                var cidadeCmd = new CidadeCommand(_cidadeService, _heroiService, _logger);
+                try
+                {
+                    if (parts[0] == "cidade_coletar")
+                        { await cidadeCmd.HandleColetarAsync(comp); return; }
+
+                    if (parts[0] == "cidade_alocar_node")
+                        { await cidadeCmd.HandleAlocarNodeAsync(comp); return; }
+
+                    if (parts[0] == "cidade_alocar_heroi_para_node")
+                        { await cidadeCmd.HandleHeroiParaNodeAsync(comp); return; }
+
+                    if (parts[0] == "cidade_node_para_heroi" && parts.Length >= 2 && Guid.TryParse(parts[1], out var heroiNodeId))
+                        { await cidadeCmd.HandleNodeParaHeroiAsync(comp, heroiNodeId); return; }
+
+                    if (parts[0] == "cidade_alocar_predio")
+                        { await cidadeCmd.HandleAlocarPredioAsync(comp); return; }
+
+                    if (parts[0] == "cidade_alocar_heroi_para_predio")
+                        { await cidadeCmd.HandleHeroiParaPredioAsync(comp); return; }
+
+                    if (parts[0] == "cidade_predio_para_heroi" && parts.Length >= 2 && Guid.TryParse(parts[1], out var heroiPredioId))
+                        { await cidadeCmd.HandlePredioParaHeroiAsync(comp, heroiPredioId); return; }
+
+                    if (parts[0] == "cidade_desalocar")
+                        { await cidadeCmd.HandleDesalocarAsync(comp); return; }
+
+                    if (parts[0] == "cidade_desalocar_heroi")
+                        { await cidadeCmd.HandleDesalocarHeroiAsync(comp); return; }
+
+                    if (parts[0] == "cidade_construir")
+                        { await cidadeCmd.HandleConstruirAsync(comp); return; }
+
+                    if (parts[0] == "cidade_construir_predio")
+                        { await cidadeCmd.HandleConstruirPredioAsync(comp); return; }
+
+                    if (parts[0] == "cidade_atualizar")
+                        { await cidadeCmd.HandleAtualizarAsync(comp); return; }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "[Cidade] Exceção não tratada. CustomId={CustomId} User={User}",
+                        comp.Data.CustomId, comp.User.Username);
+                    try { await comp.FollowupAsync("❌ Erro interno. Tente novamente.", ephemeral: true); } catch { }
+                }
+                return;
+            }
         }
 
 
@@ -515,75 +592,16 @@ namespace LegendsAwaken.Bot
                         .AddChoice("desafio", "desafio")),
 
                 new SlashCommandBuilder()
-                    .WithName("subir_andar")
-                    .WithDescription("Inicia um combate automático contra os inimigos do próximo andar"),
+                    .WithName("torre")
+                    .WithDescription("Abre o painel da Torre — veja seu andar atual e avance"),
 
                 new SlashCommandBuilder()
-                    .WithName("ver_heroi")
-                    .WithDescription("Ver detalhes de um herói")
-                    .AddOption(new SlashCommandOptionBuilder()
-                        .WithName("nome")
-                        .WithDescription("Nome do herói")
-                        .WithRequired(true)
-                        .WithType(ApplicationCommandOptionType.String)
-                        .WithAutocomplete(true)),
-
-                new SlashCommandBuilder()
-                    .WithName("listar_herois")
-                    .WithDescription("Mostra seus heróis, com paginação e filtros")
-                    .AddOption(new SlashCommandOptionBuilder()
-                        .WithName("raridade")
-                        .WithDescription("Filtrar por raridade")
-                        .WithType(ApplicationCommandOptionType.Integer)
-                        .WithRequired(false)),
+                    .WithName("herois")
+                    .WithDescription("Abre o painel com seus heróis"),
 
                 new SlashCommandBuilder()
                     .WithName("cidade")
-                    .WithDescription("Gerencia sua cidade")
-                    .AddOption(new SlashCommandOptionBuilder()
-                        .WithName("acao")
-                        .WithDescription("O que deseja fazer")
-                        .WithRequired(true)
-                        .WithType(ApplicationCommandOptionType.String)
-                        .AddChoice("ver", "ver")
-                        .AddChoice("coletar", "coletar")
-                        .AddChoice("construir", "construir")
-                        .AddChoice("alocar_recurso", "alocar_recurso")
-                        .AddChoice("alocar_predio", "alocar_predio")
-                        .AddChoice("desalocar", "desalocar"))
-                    .AddOption(new SlashCommandOptionBuilder()
-                        .WithName("heroi")
-                        .WithDescription("Nome do herói")
-                        .WithRequired(false)
-                        .WithType(ApplicationCommandOptionType.String)
-                        .WithAutocomplete(true))
-                    .AddOption(new SlashCommandOptionBuilder()
-                        .WithName("predio")
-                        .WithDescription("Prédio (construir / alocar_predio): Fazenda, Serraria, Mina, Forja, Arena, Guilda")
-                        .WithRequired(false)
-                        .WithType(ApplicationCommandOptionType.String)
-                        .AddChoice("Fazenda",  "Fazenda")
-                        .AddChoice("Serraria", "Serraria")
-                        .AddChoice("Mina",     "Mina")
-                        .AddChoice("Forja",    "Forja")
-                        .AddChoice("Arena",    "Arena")
-                        .AddChoice("Guilda",   "Guilda"))
-                    .AddOption(new SlashCommandOptionBuilder()
-                        .WithName("node")
-                        .WithDescription("Node de recurso (alocar_recurso): Campo, Floresta, Mina, Prado")
-                        .WithRequired(false)
-                        .WithType(ApplicationCommandOptionType.String)
-                        .AddChoice("Campo",    "Campo")
-                        .AddChoice("Floresta", "Floresta")
-                        .AddChoice("Mina",     "Mina")
-                        .AddChoice("Prado",    "Prado"))
-                    .AddOption(new SlashCommandOptionBuilder()
-                        .WithName("slot_tipo")
-                        .WithDescription("Tipo de slot (alocar_predio): Responsabilidade ou Operacao")
-                        .WithRequired(false)
-                        .WithType(ApplicationCommandOptionType.String)
-                        .AddChoice("Responsabilidade", "Responsabilidade")
-                        .AddChoice("Operacao", "Operacao")),
+                    .WithDescription("Abre o painel da sua cidade"),
 
                 new SlashCommandBuilder()
                     .WithName("grupo")
@@ -627,19 +645,8 @@ namespace LegendsAwaken.Bot
                         .WithType(ApplicationCommandOptionType.String)),
 
                 new SlashCommandBuilder()
-                    .WithName("heroi_equipar")
-                    .WithDescription("Equipa um item craftado em um heroi")
-                    .AddOption(new SlashCommandOptionBuilder()
-                        .WithName("heroi")
-                        .WithDescription("Nome do heroi")
-                        .WithRequired(true)
-                        .WithType(ApplicationCommandOptionType.String)
-                        .WithAutocomplete(true))
-                    .AddOption(new SlashCommandOptionBuilder()
-                        .WithName("item_id")
-                        .WithDescription("ID do item (obtido ao craftar)")
-                        .WithRequired(true)
-                        .WithType(ApplicationCommandOptionType.String)),
+                    .WithName("inventario")
+                    .WithDescription("Abre o painel do seu inventário de itens"),
 
                 new SlashCommandBuilder()
                     .WithName("colecao")

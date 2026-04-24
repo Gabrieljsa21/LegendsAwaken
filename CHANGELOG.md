@@ -6,6 +6,63 @@ O formato segue o padrão [Keep a Changelog](https://keepachangelog.com/pt-BR/1.
 
 ---
 
+## [3.2.0] - 2026-04-24 · Fase 3B.4 — Sistema de Sustento (MVP)
+
+### Adicionado
+**Domínio**
+- Enum `EstadoSustento` (Ativo, Instavel, Degradado, Inativo) em `Enums.cs`
+- Campo `EstadoSustento EstadoSustento` (default `Ativo`) em `Heroi`
+- Campo `DateTime UltimoSustentoEm` (default `UtcNow`) em `Cidade`
+
+**Infrastructure**
+- Migration `20260423200000_SustentoSystem` — `ADD COLUMN EstadoSustento INTEGER DEFAULT 0` em `Herois`; `ADD COLUMN UltimoSustentoEm TEXT` em `Cidades`
+- Designer file `20260423200000_SustentoSystem.Designer.cs` com snapshot do modelo
+
+**Application**
+- `SustentoService.ProcessarAsync(ulong)` — deduz Comida acumulada desde último tick (cap 24 h), recalcula e persiste `EstadoSustento` de todos os heróis ativos
+- `SustentoService.ToggleInativoAsync(Guid)` — alterna `Inativo ↔ Ativo` (herói pausado não consome Comida)
+- `SustentoService.ObterResumo(static)` — calcula consumo/hora e horas restantes para exibição no painel
+
+**Bot**
+- `HeroisPanel` — ícone de estado (`✅⚠️🔴💤`) em cada herói na lista e campo "Sustento" no embed de detalhe; `CriarComponentesDetalhe` com botão "Pausar / Ativar Sustento"
+- `HeroisCommand.HandleToggleInativoAsync` — toggle + `UpdateAsync` no embed de detalhe (ephemeral)
+- `CidadePanel` — linha de sustento abaixo do Humor: `✅ 3 🌾/h | Estoque: 120 | ~40.0h restantes`
+- `CommandHandler` — `ProcessarAsync` chamado em todo slash command; routing `herois_toggle_inativo|{id}`
+- `Program.cs` — registra e injeta `SustentoService`
+
+### Decisões de MVP (vs. spec completa)
+- Consumo flat: 1 Comida/hora por herói ativo (sem escala por raridade ou classe — reservado para 3B.4 completo)
+- Estados são informativos: sem penalidades de atributo/XP ainda
+- Moradia (Alojamento) não implementada neste MVP
+
+---
+
+## [3.1.0] - 2026-04-23 · Fase 3B.3 — Torre — Modo Operação
+
+### Adicionado
+**Domínio**
+- Entidade `TorreOperacao` — `Id`, `UsuarioId`, `AndarNumero`, `ObjetivoOperacao`, `PerfilRisco`, `StatusOperacao`, `IniciadoEm`, `DuracaoHoras`, `ResultadoOuro?`, `ResultadoRecursoNome?`, `ResultadoRecursoQtd?`, `ConcluidoEm?`
+- Enums: `ObjetivoOperacao` (FarmRecurso, ExploracaoLeve), `PerfilRisco` (Seguro, Balanceado, Agressivo), `StatusOperacao` (Ativa, Concluida, Expirada)
+- Interface `ITorreOperacaoRepository`
+
+**Infrastructure**
+- `TorreOperacaoRepository` — raw SQLite (`EnsureTableAsync`, CREATE TABLE IF NOT EXISTS `TorreOperacoes`)
+
+**Application**
+- `TorreOperacaoService` — `IniciarAsync`, `VerificarPendenteAsync` (auto-conclui se expirado), `ColetarAsync` (credita ouro), `CancelarAsync`
+- `GeracaoDeDadosService.CriarTabelasAsync` — chama `_torreOpRepo.EnsureTableAsync()`
+- Fórmula de ouro: `andar × 3 × horas × mult` (Seguro=0.8, Balanceado=1.0, Agressivo=1.5)
+- Recursos exclusivos por andar: Fragmento Rústico (≥5), Essência Corrompida (≥12), Cristal Arcano (≥18), Núcleo Sombrio (≥25)
+
+**Bot**
+- `TorreModoOperacaoPanel` — flow em 4 etapas: Select Menu de andar → objetivo → perfil de risco → confirmação; painéis de status ativo, coleta e notificação
+- `TorrePanel` — botão `🏭 Modo Operação` adicionado
+- `TorreCommand` — `HandleModoOperacaoAsync`, `HandleOpAndarAsync`, `HandleOpObjetivoAsync`, `HandleOpRiscoAsync`, `HandleOpColetarAsync`, `HandleOpCancelarAtivoAsync`, `HandleOpCancelarAsync`; poll de operação pendente em `ExecutarAsync`
+- `CommandHandler` — routing do bloco `torre_modo_operacao` e `torre_op_*`; injeção de `TorreOperacaoService`
+- `Program.cs` — registra `ITorreOperacaoRepository` e `TorreOperacaoService`
+
+---
+
 ## [3.0.0] - 2026-04-18 · Fase 3A.3 — Sistema de Fragmentos
 
 > **Breaking change:** sistema de gacha removido integralmente. Aquisição de heróis agora é 100% determinística.

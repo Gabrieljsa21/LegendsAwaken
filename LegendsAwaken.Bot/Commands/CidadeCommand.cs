@@ -1,356 +1,536 @@
 using Discord;
 using Discord.WebSocket;
 using LegendsAwaken.Application.Services;
+using LegendsAwaken.Bot.Panels;
+using LegendsAwaken.Domain.Entities;
 using LegendsAwaken.Domain.Enum;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
-namespace LegendsAwaken.Bot.Commands
+namespace LegendsAwaken.Bot.Commands;
+
+public class CidadeCommand(CidadeService cidadeService, HeroiService heroiService, ILogger? logger = null)
 {
-    public class CidadeCommand
+    private void Log(string msg)                       => logger?.LogInformation("[Cidade] {Msg}", msg);
+    private void LogWarn(string msg)                   => logger?.LogWarning("[Cidade] {Msg}", msg);
+    private void LogErr(Exception ex, string ctx)      => logger?.LogError(ex, "[Cidade] ERRO em {Ctx}", ctx);
+
+    // ── /cidade — painel público ─────────────────────────────────────────────────
+
+    public async Task ExecutarAsync(SocketSlashCommand command)
     {
-        private readonly CidadeService _cidadeService;
-        private readonly HeroiService _heroiService;
+        Log($"/cidade — user={command.User.Username}");
+        await command.DeferAsync();
+        var (embed, comps) = await BuildPanelAsync(command.User.Id);
+        await command.ModifyOriginalResponseAsync(m => { m.Embed = embed; m.Components = comps; });
+        Log("Painel público enviado");
+    }
 
-        public CidadeCommand(CidadeService cidadeService, HeroiService heroiService)
+    // ── Coletar ──────────────────────────────────────────────────────────────────
+
+    public async Task HandleColetarAsync(SocketMessageComponent comp)
+    {
+        Log($"Coletar — user={comp.User.Username}");
+        await comp.DeferAsync(ephemeral: true);
+
+        if (await cidadeService.ObterCidadePorUsuarioAsync(comp.User.Id) == null)
         {
-            _cidadeService = cidadeService;
-            _heroiService = heroiService;
+            LogWarn("Cidade não encontrada ao coletar");
+            await comp.FollowupAsync("Você ainda não tem uma cidade.", ephemeral: true);
+            return;
         }
 
-        public async Task ExecutarAsync(SocketSlashCommand command)
-        {
-            var acao       = (string)command.Data.Options.First(o => o.Name == "acao").Value;
-            var nomeHeroi  = command.Data.Options.FirstOrDefault(o => o.Name == "heroi")?.Value as string;
-            var nomePredio = command.Data.Options.FirstOrDefault(o => o.Name == "predio")?.Value as string;
-            var nomeSlot   = command.Data.Options.FirstOrDefault(o => o.Name == "slot_tipo")?.Value as string;
-            var nomeNode   = command.Data.Options.FirstOrDefault(o => o.Name == "node")?.Value as string;
+        var (_, produzido) = await cidadeService.ColetarProducaoAsync(comp.User.Id);
+        var total = produzido.Comida + produzido.Madeira + produzido.Pedra + produzido.Erva + produzido.Ouro;
+        Log($"Coleta: total={total}");
 
-            switch (acao)
-            {
-                case "ver":
-                    await VerAsync(command);
-                    break;
-                case "coletar":
-                    await ColetarAsync(command);
-                    break;
-                case "alocar":
-                    // Backward-compat: alocar without node defaults to Campo
-                    await AlocarRecursoAsync(command, nomeHeroi, "Campo");
-                    break;
-                case "alocar_recurso":
-                    await AlocarRecursoAsync(command, nomeHeroi, nomeNode);
-                    break;
-                case "alocar_predio":
-                    await AlocarPredioAsync(command, nomeHeroi, nomePredio, nomeSlot);
-                    break;
-                case "desalocar":
-                    await DesalocarAsync(command, nomeHeroi);
-                    break;
-                case "construir":
-                    await ConstruirAsync(command, nomePredio);
-                    break;
-                default:
-                    await command.RespondAsync("Ação inválida.", ephemeral: true);
-                    break;
-            }
+        if (total == 0)
+        {
+            await comp.FollowupAsync("Nenhuma produção para coletar. Aloque heróis ou aguarde mais tempo.", ephemeral: true);
+            return;
         }
 
-        // ── /cidade ver ─────────────────────────────────────────────────────────────
-
-        private async Task VerAsync(SocketSlashCommand command)
+        var linhas = new[]
         {
-            var cidade = await _cidadeService.ObterCidadePorUsuarioAsync(command.User.Id)
-                         ?? await _cidadeService.CriarCidadeAsync("Minha Cidade", command.User.Id);
+            produzido.Comida  > 0 ? $"🌾 Comida: +{produzido.Comida}"   : null,
+            produzido.Madeira > 0 ? $"🪵 Madeira: +{produzido.Madeira}" : null,
+            produzido.Pedra   > 0 ? $"⛏️ Pedra: +{produzido.Pedra}"     : null,
+            produzido.Erva    > 0 ? $"🌿 Erva: +{produzido.Erva}"       : null,
+            produzido.Ouro    > 0 ? $"💰 Ouro: +{produzido.Ouro}"       : null,
+        }.Where(l => l != null);
 
-            var herois    = await _heroiService.ObterHeroisPorUsuarioAsync(command.User.Id);
-            var heroiPorId = herois.ToDictionary(h => h.Id);
+        await comp.FollowupAsync($"✅ **Coleta realizada!**\n{string.Join("\n", linhas)}", ephemeral: true);
+    }
 
-            var sb = new StringBuilder();
+    // ── Alocar em Node de Recurso ─────────────────────────────────────────────────
 
-            // Recursos
-            sb.AppendLine("**Recursos:**");
-            sb.AppendLine($"🌾 Comida: {cidade.Recursos.Comida}");
-            sb.AppendLine($"🪵 Madeira: {cidade.Recursos.Madeira}");
-            sb.AppendLine($"⛏️ Pedra: {cidade.Recursos.Pedra}");
-            sb.AppendLine($"🌿 Erva: {cidade.Recursos.Erva}");
-            sb.AppendLine($"💰 Ouro: {cidade.Recursos.Ouro}");
+    public async Task HandleAlocarNodeAsync(SocketMessageComponent comp)
+    {
+        Log($"AlocarNode (botão) — user={comp.User.Username}");
+        await comp.DeferAsync(ephemeral: true);
 
-            // Coletores (ResourceNode workers)
-            var coletores = cidade.Trabalhadores.Where(t => t.ResourceNode.HasValue).ToList();
-            sb.AppendLine();
-            sb.AppendLine("**Coletores:**");
-            if (coletores.Any())
+        var herois   = await heroiService.ObterHeroisPorUsuarioAsync(comp.User.Id);
+        var cidade   = await cidadeService.ObterCidadePorUsuarioAsync(comp.User.Id);
+        var alocados = cidade?.Trabalhadores.Select(t => t.HeroiId).ToHashSet() ?? [];
+
+        var disponiveis = herois.Where(h => !alocados.Contains(h.Id)).ToList();
+        Log($"AlocarNode: {herois.Count} heróis, {disponiveis.Count} disponíveis");
+
+        if (!disponiveis.Any())
+        {
+            await comp.FollowupAsync("Nenhum herói disponível para alocar.", ephemeral: true);
+            return;
+        }
+
+        var select = new SelectMenuBuilder()
+            .WithCustomId("cidade_alocar_heroi_para_node")
+            .WithPlaceholder("Escolha o herói...")
+            .WithMinValues(1).WithMaxValues(1);
+
+        foreach (var h in disponiveis.Take(25))
+            select.AddOption(h.Nome, h.Id.ToString());
+
+        await comp.FollowupAsync(
+            "Escolha o herói para coletar recursos:",
+            components: new ComponentBuilder().WithSelectMenu(select).Build(),
+            ephemeral: true);
+        Log("AlocarNode: select de herói enviado");
+    }
+
+    public async Task HandleHeroiParaNodeAsync(SocketMessageComponent comp)
+    {
+        var heroiIdStr = comp.Data.Values.FirstOrDefault();
+        Log($"HeroiParaNode — heroiId={heroiIdStr} user={comp.User.Username}");
+
+        if (heroiIdStr == null || !Guid.TryParse(heroiIdStr, out _))
+        {
+            LogWarn($"HeroiParaNode: heroiId inválido '{heroiIdStr}'");
+            await comp.UpdateAsync(m => { m.Content = "Herói inválido."; m.Components = null; });
+            return;
+        }
+
+        var select = new SelectMenuBuilder()
+            .WithCustomId($"cidade_node_para_heroi|{heroiIdStr}")
+            .WithPlaceholder("Escolha o node de recurso...")
+            .WithMinValues(1).WithMaxValues(1);
+
+        foreach (var node in Enum.GetValues<TipoResourceNode>())
+        {
+            if (!ResourceNodeConfig.BaseRates.TryGetValue(node, out var rate)) continue;
+            select.AddOption($"{node} ({rate.basePorHora} {rate.recurso}/h)", node.ToString());
+        }
+
+        await comp.UpdateAsync(m =>
+        {
+            m.Content    = "Escolha o node de recurso:";
+            m.Components = new ComponentBuilder().WithSelectMenu(select).Build();
+        });
+        Log("HeroiParaNode: select de node enviado");
+    }
+
+    public async Task HandleNodeParaHeroiAsync(SocketMessageComponent comp, Guid heroiId)
+    {
+        var nodeStr = comp.Data.Values.FirstOrDefault();
+        Log($"NodeParaHeroi — heroiId={heroiId} node={nodeStr} user={comp.User.Username}");
+
+        if (nodeStr == null || !Enum.TryParse<TipoResourceNode>(nodeStr, out var node))
+        {
+            LogWarn($"NodeParaHeroi: node inválido '{nodeStr}'");
+            await comp.UpdateAsync(m => { m.Content = "Node inválido."; m.Components = null; });
+            return;
+        }
+
+        try
+        {
+            Log($"NodeParaHeroi: chamando AlocarRecursoAsync({node})");
+            await cidadeService.AlocarRecursoAsync(comp.User.Id, heroiId, node);
+            var heroi = await heroiService.ObterHeroiPorIdAsync(heroiId);
+            var nomeHeroi = heroi?.Nome ?? heroiId.ToString();
+            ResourceNodeConfig.BaseRates.TryGetValue(node, out var rate);
+            var taxaStr = rate != default ? $" — {rate.basePorHora} {rate.recurso}/h" : "";
+            var msg = $"✅ **{nomeHeroi}** alocado em **{node}**{taxaStr}!";
+            Log($"NodeParaHeroi: sucesso — {msg}");
+            await comp.UpdateAsync(m => { m.Content = msg; m.Components = null; });
+        }
+        catch (InvalidOperationException ex)
+        {
+            LogWarn($"NodeParaHeroi: regra de negócio — {ex.Message}");
+            await comp.UpdateAsync(m => { m.Content = $"❌ {ex.Message}"; m.Components = null; });
+        }
+        catch (Exception ex)
+        {
+            LogErr(ex, $"NodeParaHeroi heroiId={heroiId} node={node}");
+            await comp.UpdateAsync(m => { m.Content = "❌ Erro interno ao alocar. Veja o log."; m.Components = null; });
+        }
+    }
+
+    // ── Alocar em Prédio ──────────────────────────────────────────────────────────
+
+    public async Task HandleAlocarPredioAsync(SocketMessageComponent comp)
+    {
+        Log($"AlocarPredio (botão) — user={comp.User.Username}");
+        await comp.DeferAsync(ephemeral: true);
+
+        var cidade = await cidadeService.ObterCidadePorUsuarioAsync(comp.User.Id);
+        if (cidade == null || !cidade.Construcoes.Any())
+        {
+            LogWarn("AlocarPredio: sem prédios");
+            await comp.FollowupAsync("Você não tem prédios construídos.", ephemeral: true);
+            return;
+        }
+
+        var herois      = await heroiService.ObterHeroisPorUsuarioAsync(comp.User.Id);
+        var alocados    = cidade.Trabalhadores.Select(t => t.HeroiId).ToHashSet();
+        var disponiveis = herois.Where(h => !alocados.Contains(h.Id)).ToList();
+        Log($"AlocarPredio: {disponiveis.Count} heróis disponíveis");
+
+        if (!disponiveis.Any())
+        {
+            await comp.FollowupAsync("Nenhum herói disponível para alocar.", ephemeral: true);
+            return;
+        }
+
+        var select = new SelectMenuBuilder()
+            .WithCustomId("cidade_alocar_heroi_para_predio")
+            .WithPlaceholder("Escolha o herói...")
+            .WithMinValues(1).WithMaxValues(1);
+
+        foreach (var h in disponiveis.Take(25))
+            select.AddOption(h.Nome, h.Id.ToString());
+
+        await comp.FollowupAsync(
+            "Escolha o herói para alocar em um prédio:",
+            components: new ComponentBuilder().WithSelectMenu(select).Build(),
+            ephemeral: true);
+        Log("AlocarPredio: select de herói enviado");
+    }
+
+    public async Task HandleHeroiParaPredioAsync(SocketMessageComponent comp)
+    {
+        var heroiIdStr = comp.Data.Values.FirstOrDefault();
+        Log($"HeroiParaPredio — heroiId={heroiIdStr} user={comp.User.Username}");
+
+        if (heroiIdStr == null || !Guid.TryParse(heroiIdStr, out _))
+        {
+            LogWarn($"HeroiParaPredio: heroiId inválido '{heroiIdStr}'");
+            await comp.UpdateAsync(m => { m.Content = "Herói inválido."; m.Components = null; });
+            return;
+        }
+
+        var cidade = await cidadeService.ObterCidadePorUsuarioAsync(comp.User.Id);
+        if (cidade == null || !cidade.Construcoes.Any())
+        {
+            LogWarn("HeroiParaPredio: sem prédios");
+            await comp.UpdateAsync(m => { m.Content = "Nenhum prédio disponível."; m.Components = null; });
+            return;
+        }
+
+        var select = new SelectMenuBuilder()
+            .WithCustomId($"cidade_predio_para_heroi|{heroiIdStr}")
+            .WithPlaceholder("Escolha o prédio e tipo de slot...")
+            .WithMinValues(1).WithMaxValues(1);
+
+        foreach (var c in cidade.Construcoes)
+        {
+            if (!PredioConfig.Slots.TryGetValue((c.TipoPredio, c.Nivel), out var def)) continue;
+            if (def.NumResponsabilidade > 0)
+                select.AddOption($"{c.Nome} — Responsável", $"{c.Id}|Responsabilidade");
+            if (def.NumOperacao > 0)
+                select.AddOption($"{c.Nome} — Operador", $"{c.Id}|Operacao");
+        }
+
+        if (select.Options.Count == 0)
+        {
+            LogWarn("HeroiParaPredio: sem slots disponíveis");
+            await comp.UpdateAsync(m => { m.Content = "Nenhum slot disponível nos prédios."; m.Components = null; });
+            return;
+        }
+
+        Log($"HeroiParaPredio: {select.Options.Count} opções de slot");
+        await comp.UpdateAsync(m =>
+        {
+            m.Content    = "Escolha o prédio e tipo de alocação:";
+            m.Components = new ComponentBuilder().WithSelectMenu(select).Build();
+        });
+    }
+
+    public async Task HandlePredioParaHeroiAsync(SocketMessageComponent comp, Guid heroiId)
+    {
+        var valorStr = comp.Data.Values.FirstOrDefault();
+        Log($"PredioParaHeroi — heroiId={heroiId} valor={valorStr} user={comp.User.Username}");
+
+        if (valorStr == null)
+        {
+            LogWarn("PredioParaHeroi: valor nulo");
+            await comp.UpdateAsync(m => { m.Content = "Seleção inválida."; m.Components = null; });
+            return;
+        }
+
+        var partes = valorStr.Split('|');
+        if (partes.Length != 2 ||
+            !Guid.TryParse(partes[0], out var construcaoId) ||
+            !Enum.TryParse<SlotTipo>(partes[1], out var slotTipo))
+        {
+            LogWarn($"PredioParaHeroi: parse falhou '{valorStr}'");
+            await comp.UpdateAsync(m => { m.Content = "Seleção inválida."; m.Components = null; });
+            return;
+        }
+
+        try
+        {
+            Log($"PredioParaHeroi: chamando AlocarSlotPredioAsync({construcaoId}, {slotTipo})");
+            var erro = await cidadeService.AlocarSlotPredioAsync(comp.User.Id, heroiId, construcaoId, slotTipo);
+            Log($"PredioParaHeroi: resultado={erro ?? "OK"}");
+
+            string msg;
+            if (erro == null)
             {
-                foreach (var t in coletores)
-                {
-                    if (!heroiPorId.TryGetValue(t.HeroiId, out var h)) continue;
-                    var node = t.ResourceNode!.Value;
-                    if (!ResourceNodeConfig.BaseRates.TryGetValue(node, out var rate)) continue;
-                    double bonus = h.Profissao.HasValue &&
-                        ResourceNodeConfig.ProfissaoBonus.TryGetValue((node, h.Profissao.Value), out var b) ? b : 0.0;
-                    double porHora = rate.basePorHora * (1.0 + bonus);
-                    sb.AppendLine($"• {h.Nome} → {node} ({porHora:F1} {rate.recurso}/h)");
-                }
+                var heroi    = await heroiService.ObterHeroiPorIdAsync(heroiId);
+                var nomeHeroi = heroi?.Nome ?? heroiId.ToString();
+                var cidade    = await cidadeService.ObterCidadePorUsuarioAsync(comp.User.Id);
+                var nomePredio = cidade?.Construcoes.FirstOrDefault(c => c.Id == construcaoId)?.Nome ?? construcaoId.ToString();
+                var tipoSlot   = slotTipo == SlotTipo.Responsabilidade ? "Responsável" : "Operador";
+                msg = $"✅ **{nomeHeroi}** alocado em **{nomePredio}** como **{tipoSlot}**!";
             }
             else
             {
-                sb.AppendLine("*Nenhum coletor. Use `/cidade alocar_recurso` para designar heróis.*");
+                msg = $"❌ {erro}";
             }
 
-            // Prédios
-            sb.AppendLine();
-            if (cidade.Construcoes.Any())
-            {
-                sb.AppendLine("**Prédios:**");
-                foreach (var c in cidade.Construcoes.OrderBy(c => c.Nome))
-                {
-                    if (!PredioConfig.Slots.TryGetValue((c.TipoPredio, c.Nivel), out var def)) continue;
-                    var slots  = await _cidadeService.ObterSlotsPorPredioAsync(c.Id);
-                    var resp   = slots.Count(s => s.SlotTipo == SlotTipo.Responsabilidade);
-                    var op     = slots.Count(s => s.SlotTipo == SlotTipo.Operacao);
-                    var slotInfo = $"Resp {resp}/{def.NumResponsabilidade}";
-                    if (def.NumOperacao > 0) slotInfo += $" | Op {op}/{def.NumOperacao}";
-                    var prodInfo = def.BaseProdPorHora > 0
-                        ? $" — {def.BaseProdPorHora} {PredioConfig.RecursoProducao.GetValueOrDefault(c.TipoPredio, "?")}/h"
-                        : "";
-                    sb.AppendLine($"• **{c.Nome}** Nv{c.Nivel} [{slotInfo}]{prodInfo}");
-                    foreach (var s in slots)
-                    {
-                        if (heroiPorId.TryGetValue(s.HeroiId, out var h))
-                            sb.AppendLine($"  └ {h.Nome} ({s.SlotTipo})");
-                    }
-                }
-            }
-            else
-            {
-                sb.AppendLine("**Prédios:** *Nenhum ainda. Use `/cidade construir` para construir.*");
-            }
+            await comp.UpdateAsync(m => { m.Content = msg; m.Components = null; });
+        }
+        catch (Exception ex)
+        {
+            LogErr(ex, $"PredioParaHeroi heroiId={heroiId} construcao={construcaoId} slot={slotTipo}");
+            await comp.UpdateAsync(m => { m.Content = "❌ Erro interno ao alocar. Veja o log."; m.Components = null; });
+        }
+    }
 
-            // Humor da cidade
-            var humores = cidade.Trabalhadores
-                .Where(t => heroiPorId.ContainsKey(t.HeroiId))
-                .Select(t => (double)heroiPorId[t.HeroiId].Humor)
-                .ToList();
-            double humorCidade = humores.Count > 0 ? humores.Average() : 50.0;
-            var horasAcumuladas = Math.Min((DateTime.UtcNow - cidade.UltimaColeta).TotalHours, 24.0);
-            sb.AppendLine();
-            sb.AppendLine($"😊 Humor: {humorCidade:F0}/100  |  ⏱️ Produção: {horasAcumuladas:F1}h acumuladas");
+    // ── Desalocar ─────────────────────────────────────────────────────────────────
 
-            var embed = new EmbedBuilder()
-                .WithTitle($"🏰 {cidade.Nome}  —  Nível {cidade.Nivel}")
-                .WithDescription(sb.ToString())
-                .WithColor(Color.Green)
-                .Build();
+    public async Task HandleDesalocarAsync(SocketMessageComponent comp)
+    {
+        Log($"Desalocar (botão) — user={comp.User.Username}");
+        await comp.DeferAsync(ephemeral: true);
 
-            await command.RespondAsync(embed: embed, ephemeral: true);
+        var herois  = await heroiService.ObterHeroisPorUsuarioAsync(comp.User.Id);
+        var cidade  = await cidadeService.ObterCidadePorUsuarioAsync(comp.User.Id);
+        if (cidade == null)
+        {
+            LogWarn("Desalocar: cidade não encontrada");
+            await comp.FollowupAsync("Você ainda não tem uma cidade.", ephemeral: true);
+            return;
         }
 
-        // ── /cidade coletar ─────────────────────────────────────────────────────────
-
-        private async Task ColetarAsync(SocketSlashCommand command)
+        var heroiPorId    = herois.ToDictionary(h => h.Id);
+        var alocadosNode  = cidade.Trabalhadores.Select(t => t.HeroiId).ToList();
+        var alocadosPredio = new List<Guid>();
+        foreach (var c in cidade.Construcoes)
         {
-            var cidade = await _cidadeService.ObterCidadePorUsuarioAsync(command.User.Id);
-            if (cidade == null)
-            {
-                await command.RespondAsync("Você ainda não tem uma cidade. Use `/cidade ver` para criar uma.", ephemeral: true);
-                return;
-            }
-
-            var (cidadeAtualizada, produzido) = await _cidadeService.ColetarProducaoAsync(command.User.Id);
-
-            var total = produzido.Comida + produzido.Madeira + produzido.Pedra + produzido.Erva + produzido.Ouro;
-            if (total == 0)
-            {
-                await command.RespondAsync("Nenhuma produção para coletar. Aloque heróis ou aguarde mais tempo.", ephemeral: true);
-                return;
-            }
-
-            var linhas = new[]
-            {
-                produzido.Comida  > 0 ? $"🌾 Comida: +{produzido.Comida}"   : null,
-                produzido.Madeira > 0 ? $"🪵 Madeira: +{produzido.Madeira}" : null,
-                produzido.Pedra   > 0 ? $"⛏️ Pedra: +{produzido.Pedra}"     : null,
-                produzido.Erva    > 0 ? $"🌿 Erva: +{produzido.Erva}"       : null,
-                produzido.Ouro    > 0 ? $"💰 Ouro: +{produzido.Ouro}"       : null,
-            }.Where(l => l != null);
-
-            var embed = new EmbedBuilder()
-                .WithTitle($"✅ Coleta — {cidadeAtualizada.Nome}")
-                .WithDescription(string.Join("\n", linhas))
-                .WithColor(Color.Gold)
-                .Build();
-
-            await command.RespondAsync(embed: embed, ephemeral: true);
+            var slots = await cidadeService.ObterSlotsPorPredioAsync(c.Id);
+            alocadosPredio.AddRange(slots.Select(s => s.HeroiId));
         }
 
-        // ── /cidade alocar_recurso ──────────────────────────────────────────────────
+        var todos = alocadosNode.Concat(alocadosPredio).Distinct().ToList();
+        Log($"Desalocar: {todos.Count} heróis alocados ({alocadosNode.Count} node, {alocadosPredio.Count} prédio)");
 
-        private async Task AlocarRecursoAsync(SocketSlashCommand command, string? nomeHeroi, string? nomeNode)
+        if (!todos.Any())
         {
-            if (string.IsNullOrWhiteSpace(nomeHeroi))
-            {
-                await command.RespondAsync("Informe o nome do herói.", ephemeral: true);
-                return;
-            }
+            await comp.FollowupAsync("Nenhum herói alocado no momento.", ephemeral: true);
+            return;
+        }
 
-            if (!Enum.TryParse<TipoResourceNode>(nomeNode ?? "Campo", true, out var node))
-            {
-                await command.RespondAsync(
-                    $"Node '{nomeNode}' inválido. Opções: {string.Join(", ", Enum.GetNames<TipoResourceNode>())}.",
-                    ephemeral: true);
-                return;
-            }
+        var select = new SelectMenuBuilder()
+            .WithCustomId("cidade_desalocar_heroi")
+            .WithPlaceholder("Escolha o herói para desalocar...")
+            .WithMinValues(1).WithMaxValues(1);
 
-            var herois = await _heroiService.ObterHeroisPorUsuarioAsync(command.User.Id);
-            var heroi  = herois.FirstOrDefault(h => h.Nome.Equals(nomeHeroi, StringComparison.OrdinalIgnoreCase));
-            if (heroi == null)
-            {
-                await command.RespondAsync($"Herói '{nomeHeroi}' não encontrado.", ephemeral: true);
-                return;
-            }
+        foreach (var id in todos.Take(25))
+            if (heroiPorId.TryGetValue(id, out var h))
+                select.AddOption(h.Nome, id.ToString());
 
-            if (await _cidadeService.ObterCidadePorUsuarioAsync(command.User.Id) == null)
-                await _cidadeService.CriarCidadeAsync("Minha Cidade", command.User.Id);
+        await comp.FollowupAsync(
+            "Escolha o herói para desalocar:",
+            components: new ComponentBuilder().WithSelectMenu(select).Build(),
+            ephemeral: true);
+    }
 
-            try
+    public async Task HandleDesalocarHeroiAsync(SocketMessageComponent comp)
+    {
+        var heroiIdStr = comp.Data.Values.FirstOrDefault();
+        Log($"DesalocarHeroi — heroiId={heroiIdStr} user={comp.User.Username}");
+
+        if (heroiIdStr == null || !Guid.TryParse(heroiIdStr, out var heroiId))
+        {
+            LogWarn($"DesalocarHeroi: heroiId inválido '{heroiIdStr}'");
+            await comp.UpdateAsync(m => { m.Content = "Herói inválido."; m.Components = null; });
+            return;
+        }
+
+        try
+        {
+            // Capture location before desallocating
+            var heroi     = await heroiService.ObterHeroiPorIdAsync(heroiId);
+            var nomeHeroi = heroi?.Nome ?? heroiId.ToString();
+
+            var cidade      = await cidadeService.ObterCidadePorUsuarioAsync(comp.User.Id);
+            string localizacao = "desconhecido";
+            if (cidade != null)
             {
-                await _cidadeService.AlocarRecursoAsync(command.User.Id, heroi.Id, node);
-                if (ResourceNodeConfig.BaseRates.TryGetValue(node, out var rate))
+                var trabalhador = cidade.Trabalhadores.FirstOrDefault(t => t.HeroiId == heroiId);
+                if (trabalhador?.ResourceNode != null)
                 {
-                    double bonus = heroi.Profissao.HasValue &&
-                        ResourceNodeConfig.ProfissaoBonus.TryGetValue((node, heroi.Profissao.Value), out var b) ? b : 0.0;
-                    double porHora = rate.basePorHora * (1.0 + bonus);
-                    await command.RespondAsync(
-                        $"**{heroi.Nome}** alocado em **{node}** → {porHora:F1} {rate.recurso}/h.",
-                        ephemeral: true);
+                    localizacao = $"node **{trabalhador.ResourceNode}**";
                 }
                 else
                 {
-                    await command.RespondAsync($"**{heroi.Nome}** alocado em **{node}**.", ephemeral: true);
+                    foreach (var c in cidade.Construcoes)
+                    {
+                        var slots = await cidadeService.ObterSlotsPorPredioAsync(c.Id);
+                        var slot  = slots.FirstOrDefault(s => s.HeroiId == heroiId);
+                        if (slot != null)
+                        {
+                            var tipoSlot = slot.SlotTipo == SlotTipo.Responsabilidade ? "Responsável" : "Operador";
+                            localizacao = $"**{c.Nome}** ({tipoSlot})";
+                            break;
+                        }
+                    }
                 }
             }
-            catch (InvalidOperationException ex)
+
+            var erro = await cidadeService.DesalocarHeroiAsync(comp.User.Id, heroiId);
+            Log($"DesalocarHeroi: resultado={erro ?? "OK"}");
+
+            await comp.UpdateAsync(m =>
             {
-                await command.RespondAsync(ex.Message, ephemeral: true);
-            }
+                m.Content    = erro == null
+                    ? $"✅ **{nomeHeroi}** desalocado de {localizacao}!"
+                    : $"❌ {erro}";
+                m.Components = null;
+            });
+        }
+        catch (Exception ex)
+        {
+            LogErr(ex, $"DesalocarHeroi heroiId={heroiId}");
+            await comp.UpdateAsync(m => { m.Content = "❌ Erro interno ao desalocar. Veja o log."; m.Components = null; });
+        }
+    }
+
+    // ── Construir ─────────────────────────────────────────────────────────────────
+
+    public async Task HandleConstruirAsync(SocketMessageComponent comp)
+    {
+        Log($"Construir (botão) — user={comp.User.Username}");
+        await comp.DeferAsync(ephemeral: true);
+
+        var cidade  = await cidadeService.ObterCidadePorUsuarioAsync(comp.User.Id);
+        var jaBuilt = cidade?.Construcoes.Select(c => c.TipoPredio).ToHashSet() ?? [];
+
+        var select = new SelectMenuBuilder()
+            .WithCustomId("cidade_construir_predio")
+            .WithPlaceholder("Escolha o prédio para construir...")
+            .WithMinValues(1).WithMaxValues(1);
+
+        foreach (var (tipo, custo) in PredioConfig.CustosConstrucao)
+        {
+            if (jaBuilt.Contains(tipo)) continue;
+            var partesCusto = new List<string>();
+            if (custo.Ouro    > 0) partesCusto.Add($"{custo.Ouro}💰");
+            if (custo.Madeira > 0) partesCusto.Add($"{custo.Madeira}🪵");
+            if (custo.Pedra   > 0) partesCusto.Add($"{custo.Pedra}⛏️");
+            if (custo.Comida  > 0) partesCusto.Add($"{custo.Comida}🌾");
+            select.AddOption($"{tipo} — {string.Join(" ", partesCusto)}", tipo.ToString());
         }
 
-        // ── /cidade alocar_predio ──────────────────────────────────────────────────
+        Log($"Construir: {select.Options.Count} prédios disponíveis");
 
-        private async Task AlocarPredioAsync(SocketSlashCommand command, string? nomeHeroi, string? nomePredio, string? nomeSlot)
+        if (select.Options.Count == 0)
         {
-            if (string.IsNullOrWhiteSpace(nomeHeroi))
-            {
-                await command.RespondAsync("Informe o nome do herói.", ephemeral: true);
-                return;
-            }
+            await comp.FollowupAsync("Todos os prédios já foram construídos!", ephemeral: true);
+            return;
+        }
 
-            if (!Enum.TryParse<TipoPredio>(nomePredio, true, out var predio))
-            {
-                await command.RespondAsync(
-                    $"Prédio '{nomePredio}' inválido. Opções: {string.Join(", ", Enum.GetNames<TipoPredio>())}.",
-                    ephemeral: true);
-                return;
-            }
+        await comp.FollowupAsync(
+            "Escolha o prédio para construir:",
+            components: new ComponentBuilder().WithSelectMenu(select).Build(),
+            ephemeral: true);
+    }
 
-            if (!Enum.TryParse<SlotTipo>(nomeSlot ?? "Operacao", true, out var slotTipo))
-            {
-                await command.RespondAsync(
-                    "Slot inválido. Opções: Responsabilidade, Operacao.",
-                    ephemeral: true);
-                return;
-            }
+    public async Task HandleConstruirPredioAsync(SocketMessageComponent comp)
+    {
+        var predioStr = comp.Data.Values.FirstOrDefault();
+        Log($"ConstruirPredio — predio={predioStr} user={comp.User.Username}");
 
-            var herois = await _heroiService.ObterHeroisPorUsuarioAsync(command.User.Id);
-            var heroi  = herois.FirstOrDefault(h => h.Nome.Equals(nomeHeroi, StringComparison.OrdinalIgnoreCase));
-            if (heroi == null)
-            {
-                await command.RespondAsync($"Herói '{nomeHeroi}' não encontrado.", ephemeral: true);
-                return;
-            }
+        if (predioStr == null || !Enum.TryParse<TipoPredio>(predioStr, out var tipoPredio))
+        {
+            LogWarn($"ConstruirPredio: parse falhou '{predioStr}'");
+            await comp.UpdateAsync(m => { m.Content = "Prédio inválido."; m.Components = null; });
+            return;
+        }
 
-            var erro = await _cidadeService.AlocarSlotPredioAsync(command.User.Id, heroi.Id, predio, slotTipo);
-            if (erro != null)
-                await command.RespondAsync($"❌ {erro}", ephemeral: true);
+        try
+        {
+            if (await cidadeService.ObterCidadePorUsuarioAsync(comp.User.Id) == null)
+                await cidadeService.CriarCidadeAsync("Minha Cidade", comp.User.Id);
+
+            Log($"ConstruirPredio: chamando ConstruirPredioAsync({tipoPredio})");
+            var erro = await cidadeService.ConstruirPredioAsync(comp.User.Id, tipoPredio);
+            Log($"ConstruirPredio: resultado={erro ?? "OK"}");
+
+            string msg;
+            if (erro == null)
+            {
+                msg = $"🏗️ **{tipoPredio}** construída!";
+                if (PredioConfig.Slots.TryGetValue((tipoPredio, 1), out var def))
+                {
+                    var slotStr = $"{def.NumResponsabilidade} Resp";
+                    if (def.NumOperacao > 0) slotStr += $" + {def.NumOperacao} Op";
+                    msg += $" Slots: {slotStr}.";
+                    if (def.BaseProdPorHora > 0)
+                        msg += $" Prod: {def.BaseProdPorHora} {PredioConfig.RecursoProducao.GetValueOrDefault(tipoPredio, "?")}/h.";
+                }
+            }
             else
-                await command.RespondAsync(
-                    $"**{heroi.Nome}** alocado em **{predio}** como **{slotTipo}**.",
-                    ephemeral: true);
+            {
+                msg = $"❌ {erro}";
+            }
+
+            await comp.UpdateAsync(m => { m.Content = msg; m.Components = null; });
         }
-
-        // ── /cidade desalocar ──────────────────────────────────────────────────────
-
-        private async Task DesalocarAsync(SocketSlashCommand command, string? nomeHeroi)
+        catch (Exception ex)
         {
-            if (string.IsNullOrWhiteSpace(nomeHeroi))
-            {
-                await command.RespondAsync("Informe o nome do herói.", ephemeral: true);
-                return;
-            }
-
-            var herois = await _heroiService.ObterHeroisPorUsuarioAsync(command.User.Id);
-            var heroi  = herois.FirstOrDefault(h => h.Nome.Equals(nomeHeroi, StringComparison.OrdinalIgnoreCase));
-            if (heroi == null)
-            {
-                await command.RespondAsync($"Herói '{nomeHeroi}' não encontrado.", ephemeral: true);
-                return;
-            }
-
-            var erro = await _cidadeService.DesalocarHeroiAsync(command.User.Id, heroi.Id);
-            if (erro != null)
-                await command.RespondAsync($"❌ {erro}", ephemeral: true);
-            else
-                await command.RespondAsync($"**{heroi.Nome}** foi desalocado.", ephemeral: true);
+            LogErr(ex, $"ConstruirPredio predio={tipoPredio}");
+            await comp.UpdateAsync(m => { m.Content = "❌ Erro interno ao construir. Veja o log."; m.Components = null; });
         }
+    }
 
-        // ── /cidade construir ──────────────────────────────────────────────────────
+    // ── Atualizar painel ──────────────────────────────────────────────────────────
 
-        private async Task ConstruirAsync(SocketSlashCommand command, string? nomePredio)
-        {
-            if (!Enum.TryParse<TipoPredio>(nomePredio, true, out var predio))
-            {
-                await command.RespondAsync(
-                    $"Prédio inválido. Opções: {string.Join(", ", Enum.GetNames<TipoPredio>())}.",
-                    ephemeral: true);
-                return;
-            }
+    public async Task HandleAtualizarAsync(SocketMessageComponent comp)
+    {
+        Log($"Atualizar — user={comp.User.Username}");
+        await comp.DeferAsync();
+        var (embed, comps) = await BuildPanelAsync(comp.User.Id);
+        await comp.ModifyOriginalResponseAsync(m => { m.Embed = embed; m.Components = comps; });
+    }
 
-            if (!PredioConfig.CustosConstrucao.TryGetValue(predio, out var custo))
-            {
-                await command.RespondAsync("Prédio sem configuração de custo.", ephemeral: true);
-                return;
-            }
+    // ── Helper ────────────────────────────────────────────────────────────────────
 
-            var erro = await _cidadeService.ConstruirPredioAsync(command.User.Id, predio);
-            if (erro != null)
-            {
-                await command.RespondAsync($"❌ {erro}", ephemeral: true);
-                return;
-            }
+    private async Task<(Embed embed, MessageComponent comps)> BuildPanelAsync(ulong usuarioId)
+    {
+        var cidade = await cidadeService.ObterCidadePorUsuarioAsync(usuarioId)
+                     ?? await cidadeService.CriarCidadeAsync("Minha Cidade", usuarioId);
 
-            var custoPartes = new List<string>();
-            if (custo.Ouro    > 0) custoPartes.Add($"{custo.Ouro} Ouro");
-            if (custo.Madeira > 0) custoPartes.Add($"{custo.Madeira} Madeira");
-            if (custo.Pedra   > 0) custoPartes.Add($"{custo.Pedra} Pedra");
-            if (custo.Comida  > 0) custoPartes.Add($"{custo.Comida} Comida");
+        var herois     = await heroiService.ObterHeroisPorUsuarioAsync(usuarioId);
+        var heroiPorId = herois.ToDictionary(h => h.Id);
 
-            var detalhes = string.Empty;
-            if (PredioConfig.Slots.TryGetValue((predio, 1), out var def))
-            {
-                var slots = $"{def.NumResponsabilidade} Responsável";
-                if (def.NumOperacao > 0) slots += $" + {def.NumOperacao} Operadores";
-                detalhes += $"\n🧑‍🔧 Slots: {slots}";
-                if (def.BaseProdPorHora > 0)
-                    detalhes += $"\n📦 Produção base: {def.BaseProdPorHora} {PredioConfig.RecursoProducao.GetValueOrDefault(predio, "?")}/h";
-            }
+        var slotsPorConstrucao = new Dictionary<Guid, List<SlotOcupacao>>();
+        foreach (var c in cidade.Construcoes)
+            slotsPorConstrucao[c.Id] = await cidadeService.ObterSlotsPorPredioAsync(c.Id);
 
-            await command.RespondAsync(
-                $"🏗️ **{predio}** construída! Custo: {string.Join(", ", custoPartes)}.{detalhes}",
-                ephemeral: true);
-        }
+        return (CidadePanel.CriarEmbed(cidade, heroiPorId, slotsPorConstrucao), CidadePanel.CriarComponentes());
     }
 }

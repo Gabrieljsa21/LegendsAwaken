@@ -14,6 +14,8 @@ namespace LegendsAwaken.Domain.Interfaces
         Task AtualizarAsync(Cidade cidade);
         Task<List<Cidade>> ObterTodasAsync();
         Task<Cidade?> ObterPorProprietarioIdAsync(ulong usuarioId);
+        Task AdicionarTrabalhadorAsync(Guid cidadeId, PersonagemTrabalhador trabalhador);
+        Task RemoverTrabalhadorAsync(Guid trabalhadorId);
     }
 }
 

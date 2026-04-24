@@ -23,24 +23,12 @@ namespace LegendsAwaken.Infrastructure.Repositories
             await connection.OpenAsync();
 
             var command = connection.CreateCommand();
-            command.CommandText = @"SELECT * FROM TorreAndares WHERE Numero = $numero";
+            command.CommandText = @"SELECT * FROM Andares WHERE Numero = $numero";
             command.Parameters.AddWithValue("$numero", numeroAndar);
 
             using var reader = await command.ExecuteReaderAsync();
             if (await reader.ReadAsync())
-            {
-                return new TorreAndar
-                {
-                    Numero = reader.GetInt32(reader.GetOrdinal("Numero")),
-                    Tipo = Enum.Parse<TipoAndar>(reader.GetString(reader.GetOrdinal("Tipo"))),
-                    TemBoss = reader.GetBoolean(reader.GetOrdinal("TemBoss")),
-                    DificuldadeBoss = reader.IsDBNull(reader.GetOrdinal("DificuldadeBoss")) ? null : Enum.Parse<NivelBoss>(reader.GetString(reader.GetOrdinal("DificuldadeBoss"))),
-                    Inimigos = JsonSerializer.Deserialize<List<Inimigo>>(reader.GetString(reader.GetOrdinal("Inimigos"))) ?? new List<Inimigo>(),
-                    RecompensaTipo = reader.GetString(reader.GetOrdinal("RecompensaTipo")),
-                    RecompensaQuantidade = reader.GetInt32(reader.GetOrdinal("RecompensaQuantidade")),
-                    CriadoEm = reader.GetDateTime(reader.GetOrdinal("CriadoEm"))
-                };
-            }
+                return MapearTorreAndar(reader);
 
             return null;
         }
@@ -50,9 +38,8 @@ namespace LegendsAwaken.Infrastructure.Repositories
             using var connection = new SqliteConnection(_connectionString);
             await connection.OpenAsync();
 
-            // Verifica se já existe
             var existsCmd = connection.CreateCommand();
-            existsCmd.CommandText = @"SELECT COUNT(*) FROM TorreAndares WHERE Numero = $numero";
+            existsCmd.CommandText = @"SELECT COUNT(*) FROM Andares WHERE Numero = $numero";
             existsCmd.Parameters.AddWithValue("$numero", andar.Numero);
             var exists = Convert.ToInt64(await existsCmd.ExecuteScalarAsync()) > 0;
 
@@ -61,39 +48,42 @@ namespace LegendsAwaken.Infrastructure.Repositories
             {
                 command = connection.CreateCommand();
                 command.CommandText = @"
-                    UPDATE TorreAndares SET
+                    UPDATE Andares SET
                         Tipo = $tipo,
                         TemBoss = $temBoss,
                         DificuldadeBoss = $dificuldadeBoss,
+                        NivelDificuldade = $nivelDificuldade,
                         ObjetivoCumprido = $objetivoCumprido,
                         Inimigos = $inimigos,
                         RecompensaTipo = $recompensaTipo,
                         RecompensaQuantidade = $recompensaQuantidade,
-                        CriadoEm = $criadoEm
+                        DataAlteracao = $dataAlteracao
                     WHERE Numero = $numero";
             }
             else
             {
                 command = connection.CreateCommand();
                 command.CommandText = @"
-                    INSERT INTO TorreAndares (
-                        Numero, Tipo, TemBoss, DificuldadeBoss,ObjetivoCumprido,
+                    INSERT INTO Andares (
+                        Numero, Tipo, TemBoss, DificuldadeBoss, NivelDificuldade, ObjetivoCumprido,
                         Inimigos, RecompensaTipo, RecompensaQuantidade, CriadoEm
                     ) VALUES (
-                        $numero, $tipo, $temBoss, $dificuldadeBoss, $objetivoCumprido,
+                        $numero, $tipo, $temBoss, $dificuldadeBoss, $nivelDificuldade, $objetivoCumprido,
                         $inimigos, $recompensaTipo, $recompensaQuantidade, $criadoEm
                     )";
+                command.Parameters.AddWithValue("$criadoEm", andar.CriadoEm);
             }
 
             command.Parameters.AddWithValue("$numero", andar.Numero);
             command.Parameters.AddWithValue("$tipo", andar.Tipo.ToString());
             command.Parameters.AddWithValue("$temBoss", andar.TemBoss);
             command.Parameters.AddWithValue("$dificuldadeBoss", andar.DificuldadeBoss?.ToString() ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue("$nivelDificuldade", andar.NivelDificuldade);
             command.Parameters.AddWithValue("$objetivoCumprido", andar.ObjetivoCumprido);
             command.Parameters.AddWithValue("$inimigos", JsonSerializer.Serialize(andar.Inimigos));
-            command.Parameters.AddWithValue("$recompensaTipo", andar.RecompensaTipo);
+            command.Parameters.AddWithValue("$recompensaTipo", andar.RecompensaTipo ?? (object)DBNull.Value);
             command.Parameters.AddWithValue("$recompensaQuantidade", andar.RecompensaQuantidade);
-            command.Parameters.AddWithValue("$criadoEm", andar.CriadoEm);
+            command.Parameters.AddWithValue("$dataAlteracao", andar.DataAlteracao?.ToString("o") ?? (object)DBNull.Value);
 
             await command.ExecuteNonQueryAsync();
         }
@@ -104,7 +94,7 @@ namespace LegendsAwaken.Infrastructure.Repositories
             await connection.OpenAsync();
 
             var command = connection.CreateCommand();
-            command.CommandText = @"SELECT COUNT(*) FROM TorreAndares WHERE Numero = $numero";
+            command.CommandText = @"SELECT COUNT(*) FROM Andares WHERE Numero = $numero";
             command.Parameters.AddWithValue("$numero", numeroAndar);
 
             return Convert.ToInt64(await command.ExecuteScalarAsync()) > 0;
@@ -116,14 +106,12 @@ namespace LegendsAwaken.Infrastructure.Repositories
             await connection.OpenAsync();
 
             var command = connection.CreateCommand();
-            command.CommandText = @"SELECT * FROM TorreAndares WHERE UsuarioId = $usuarioId ORDER BY Numero DESC LIMIT 1";
+            command.CommandText = @"SELECT * FROM Andares WHERE UsuarioId = $usuarioId ORDER BY Numero DESC LIMIT 1";
             command.Parameters.AddWithValue("$usuarioId", usuarioId.ToString());
 
             using var reader = await command.ExecuteReaderAsync();
             if (await reader.ReadAsync())
-            {
                 return MapearTorreAndar(reader);
-            }
 
             return null;
         }
@@ -134,14 +122,12 @@ namespace LegendsAwaken.Infrastructure.Repositories
             await connection.OpenAsync();
 
             var command = connection.CreateCommand();
-            command.CommandText = @"SELECT * FROM TorreAndares WHERE Id = $id";
+            command.CommandText = @"SELECT * FROM Andares WHERE Id = $id";
             command.Parameters.AddWithValue("$id", andarId.ToString());
 
             using var reader = await command.ExecuteReaderAsync();
             if (await reader.ReadAsync())
-            {
                 return MapearTorreAndar(reader);
-            }
 
             return null;
         }
@@ -153,15 +139,15 @@ namespace LegendsAwaken.Infrastructure.Repositories
 
             var command = connection.CreateCommand();
             command.CommandText = @"
-        INSERT INTO TorreAndares (
-            Id, UsuarioId, Numero, Tipo, TemBoss, DificuldadeBoss,
-            ObjetivoCumprido, Inimigos, RecompensaTipo, RecompensaQuantidade,
-            CriadoEm, DataAlteracao
-        ) VALUES (
-            $id, $usuarioId, $numero, $tipo, $temBoss, $dificuldadeBoss,
-            $objetivoCumprido, $inimigos, $recompensaTipo, $recompensaQuantidade,
-            $criadoEm, $dataAlteracao
-        )";
+                INSERT INTO Andares (
+                    Id, UsuarioId, Numero, Tipo, TemBoss, DificuldadeBoss,
+                    NivelDificuldade, ObjetivoCumprido, Inimigos, RecompensaTipo,
+                    RecompensaQuantidade, CriadoEm, DataAlteracao
+                ) VALUES (
+                    $id, $usuarioId, $numero, $tipo, $temBoss, $dificuldadeBoss,
+                    $nivelDificuldade, $objetivoCumprido, $inimigos, $recompensaTipo,
+                    $recompensaQuantidade, $criadoEm, $dataAlteracao
+                )";
 
             command.Parameters.AddWithValue("$id", andar.Id.ToString());
             command.Parameters.AddWithValue("$usuarioId", andar.UsuarioId.ToString());
@@ -169,9 +155,10 @@ namespace LegendsAwaken.Infrastructure.Repositories
             command.Parameters.AddWithValue("$tipo", andar.Tipo.ToString());
             command.Parameters.AddWithValue("$temBoss", andar.TemBoss);
             command.Parameters.AddWithValue("$dificuldadeBoss", andar.DificuldadeBoss?.ToString() ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue("$nivelDificuldade", andar.NivelDificuldade);
             command.Parameters.AddWithValue("$objetivoCumprido", andar.ObjetivoCumprido);
             command.Parameters.AddWithValue("$inimigos", JsonSerializer.Serialize(andar.Inimigos));
-            command.Parameters.AddWithValue("$recompensaTipo", andar.RecompensaTipo);
+            command.Parameters.AddWithValue("$recompensaTipo", andar.RecompensaTipo ?? (object)DBNull.Value);
             command.Parameters.AddWithValue("$recompensaQuantidade", andar.RecompensaQuantidade);
             command.Parameters.AddWithValue("$criadoEm", andar.CriadoEm);
             command.Parameters.AddWithValue("$dataAlteracao", andar.DataAlteracao?.ToString("o") ?? (object)DBNull.Value);
@@ -186,34 +173,39 @@ namespace LegendsAwaken.Infrastructure.Repositories
 
             var command = connection.CreateCommand();
             command.CommandText = @"
-        UPDATE TorreAndares SET
-            Numero = $numero,
-            Tipo = $tipo,
-            TemBoss = $temBoss,
-            DificuldadeBoss = $dificuldadeBoss,
-            ObjetivoCumprido = $objetivoCumprido,
-            Inimigos = $inimigos,
-            RecompensaTipo = $recompensaTipo,
-            RecompensaQuantidade = $recompensaQuantidade,
-            DataAlteracao = $dataAlteracao
-        WHERE Id = $id";
+                UPDATE Andares SET
+                    Numero = $numero,
+                    Tipo = $tipo,
+                    TemBoss = $temBoss,
+                    DificuldadeBoss = $dificuldadeBoss,
+                    NivelDificuldade = $nivelDificuldade,
+                    ObjetivoCumprido = $objetivoCumprido,
+                    Inimigos = $inimigos,
+                    RecompensaTipo = $recompensaTipo,
+                    RecompensaQuantidade = $recompensaQuantidade,
+                    DataAlteracao = $dataAlteracao
+                WHERE Id = $id";
 
             command.Parameters.AddWithValue("$id", andar.Id.ToString());
             command.Parameters.AddWithValue("$numero", andar.Numero);
             command.Parameters.AddWithValue("$tipo", andar.Tipo.ToString());
             command.Parameters.AddWithValue("$temBoss", andar.TemBoss);
             command.Parameters.AddWithValue("$dificuldadeBoss", andar.DificuldadeBoss?.ToString() ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue("$nivelDificuldade", andar.NivelDificuldade);
             command.Parameters.AddWithValue("$objetivoCumprido", andar.ObjetivoCumprido);
             command.Parameters.AddWithValue("$inimigos", JsonSerializer.Serialize(andar.Inimigos));
-            command.Parameters.AddWithValue("$recompensaTipo", andar.RecompensaTipo);
+            command.Parameters.AddWithValue("$recompensaTipo", andar.RecompensaTipo ?? (object)DBNull.Value);
             command.Parameters.AddWithValue("$recompensaQuantidade", andar.RecompensaQuantidade);
             command.Parameters.AddWithValue("$dataAlteracao", andar.DataAlteracao?.ToString("o") ?? (object)DBNull.Value);
 
             await command.ExecuteNonQueryAsync();
         }
 
-        private TorreAndar MapearTorreAndar(SqliteDataReader reader)
+        private static TorreAndar MapearTorreAndar(SqliteDataReader reader)
         {
+            int ordNivelDif = -1;
+            try { ordNivelDif = reader.GetOrdinal("NivelDificuldade"); } catch { }
+
             return new TorreAndar
             {
                 Id = Guid.Parse(reader["Id"].ToString()!),
@@ -222,14 +214,16 @@ namespace LegendsAwaken.Infrastructure.Repositories
                 Tipo = Enum.Parse<TipoAndar>(reader["Tipo"].ToString()!),
                 TemBoss = Convert.ToBoolean(reader["TemBoss"]),
                 DificuldadeBoss = reader["DificuldadeBoss"] == DBNull.Value ? null : Enum.Parse<NivelBoss>(reader["DificuldadeBoss"].ToString()!),
+                NivelDificuldade = ordNivelDif >= 0 && reader[ordNivelDif] != DBNull.Value ? Convert.ToInt32(reader[ordNivelDif]) : 0,
                 ObjetivoCumprido = Convert.ToBoolean(reader["ObjetivoCumprido"]),
-                Inimigos = JsonSerializer.Deserialize<List<Inimigo>>(reader["Inimigos"].ToString()!) ?? new(),
-                RecompensaTipo = reader["RecompensaTipo"].ToString()!,
+                Inimigos = reader["Inimigos"] != DBNull.Value && !string.IsNullOrEmpty(reader["Inimigos"].ToString())
+                    ? JsonSerializer.Deserialize<List<Inimigo>>(reader["Inimigos"].ToString()!) ?? new()
+                    : new(),
+                RecompensaTipo = reader["RecompensaTipo"] == DBNull.Value ? null : reader["RecompensaTipo"].ToString(),
                 RecompensaQuantidade = Convert.ToInt32(reader["RecompensaQuantidade"]),
                 CriadoEm = DateTime.Parse(reader["CriadoEm"].ToString()!),
                 DataAlteracao = reader["DataAlteracao"] == DBNull.Value ? null : DateTime.Parse(reader["DataAlteracao"].ToString()!)
             };
         }
-
     }
 }

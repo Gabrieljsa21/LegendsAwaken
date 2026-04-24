@@ -210,8 +210,8 @@ Cada etapa é pré-requisito ou dependência lógica da seguinte.
 |---|---|---|
 | 3B-1 | Inventário Unificado | Pré-requisito para Relíquias |
 | 3B-2 | Conversão de Heróis (Venda + Absorção) | — |
-| 3B-3 | Torre — Modo Operação | — |
-| 3B-4 | Sustento (Comida / Moradia / Estados) | — |
+| 3B-3 | Torre — Modo Operação ✅ | — |
+| 3B-4 | Sustento (Comida / Moradia / Estados) ✅ MVP | — |
 | 3B-5 | Guilda / Missões | HeroPowerScore (requer combate estável) |
 | 3B-6 | Relíquias | Inventário Unificado (3B-1) |
 | 3B-7 | Novos Prédios | Sustento (3B-4) + Guilda (3B-5) |
@@ -234,21 +234,30 @@ Cada sistema recebe UX de painel desde o primeiro dia (usando o padrão da UX-0)
 - [ ] Bloqueios anti-exploit: herói equipado / em missão / na Torre / alocado em prédio
 - [ ] Botões `[Vender]` e `[Absorver]` no painel de herói com confirmação efêmera
 
-### 3B-3 — Torre — Modo Operação
-- [ ] Estado `AndarConcluido` por usuário + andar
-- [ ] Sub-painel: escolha de andar (Select Menu), objetivo (farm / exploração leve), perfil de risco
-- [ ] Combate automático com resumo periódico consolidado
-- [ ] Eventos de interrupção: exibidos no próximo comando do jogador
-- [ ] `[Recuar]` com coleta parcial sem penalidade pesada
-- [ ] Recursos exclusivos por andar (biomas produtivos)
+### 3B-3 — Torre — Modo Operação ✅ concluído (MVP — v3.1.0)
 
-### 3B-4 — Sustento
-- [ ] Campo `EstadoSustento` na entidade `Heroi` (enum: Ativo / Instável / Degradado / Inativo)
-- [ ] Consumo de Comida: `Base × Raridade × (1 + Nivel/100)`; guerreiro/tanque > mago/suporte
-- [ ] Limite de Moradia via prédio Alojamento
-- [ ] Transições de estado + penalidades de atributo e XP
-- [ ] Alerta de sustento exibido no painel `/cidade`
-- [ ] Sinks de Ouro: manutenção leve de prédios, reroll de missões, upgrades progressivamente caros
+> Entidade `TorreOperacao` (raw SQLite), serviço `TorreOperacaoService`, painel `TorreModoOperacaoPanel` (4 etapas), botão no `TorrePanel`, roteamento no `CommandHandler`.
+
+- [ ] Estado `AndarConcluido` por usuário + andar *(não exigido no MVP — qualquer andar operável)*
+- [x] Sub-painel: escolha de andar (Select Menu), objetivo (FarmRecurso / ExploracaoLeve), perfil de risco (Seguro / Balanceado / Agressivo)
+- [x] Resultado automático com ouro creditado (`andar × 3 × horas × mult`); recursos exclusivos por andar
+- [ ] Eventos de interrupção: exibidos no próximo comando do jogador *(deferido)*
+- [x] `[Cancelar]` aborta operação ativa (sem coleta parcial no MVP)
+- [x] Recursos exclusivos por andar: Fragmento Rústico (≥5), Essência Corrompida (≥12), Cristal Arcano (≥18), Núcleo Sombrio (≥25)
+
+### 3B-4 — Sustento ✅ concluído (MVP — v3.2.0)
+
+> `EstadoSustento` enum + campo em `Heroi`, `UltimoSustentoEm` em `Cidade`, migration, `SustentoService` (poll, toggle, resumo), ícones no painel `/herois`, linha de sustento no `/cidade`, toggle Inativo via botão.
+
+- [x] Campo `EstadoSustento` na entidade `Heroi` (enum: Ativo / Instavel / Degradado / Inativo)
+- [x] Consumo flat: 1 Comida/hora por herói ativo (escala por raridade/classe deferida)
+- [x] `SustentoService.ToggleInativoAsync` — herói Inativo não consome Comida
+- [x] Transições de estado calculadas por horas restantes (≥8h Ativo, 2–8h Instavel, <2h Degradado)
+- [x] Linha de sustento no painel `/cidade`: `✅/⚠️/🔴 X 🌾/h | Estoque: Y | ~Z.Zh restantes`
+- [ ] Penalidades de atributo e XP por estado *(informativo apenas no MVP)*
+- [ ] Limite de Moradia via prédio Alojamento *(deferido)*
+- [ ] Consumo variável por raridade/classe *(deferido)*
+- [ ] Sinks de Ouro adicionais *(deferido)*
 
 ### 3B-5 — Guilda / Missões
 - [ ] `HeroPowerScore` implementado (`DESIGN_SISTEMAS.md §2`) — pré-requisito de cálculo de sucesso

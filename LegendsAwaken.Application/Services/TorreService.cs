@@ -24,6 +24,14 @@ namespace LegendsAwaken.Application.Services
         IReadOnlyList<RewardPayload> RewardPayloads
     );
 
+    public record AvancarAndarResult(
+        bool Passou,
+        int PoderTime,
+        int NivelDificuldade,
+        int AndarAnterior,
+        SubirAndarResult? Resultado
+    );
+
     public class TorreService
     {
         private readonly ITorreRepository _torreRepository;
@@ -90,11 +98,14 @@ namespace LegendsAwaken.Application.Services
                 await _heroiRepository.AtualizarAsync(heroi);
             }
 
+            var proximoNumero = andarAtual.Numero + 1;
+            var proximoTipo = DefinirTipoAndar(proximoNumero);
             var proximoAndar = new TorreAndar
             {
                 Id = Guid.NewGuid(),
-                Numero = andarAtual.Numero + 1,
-                Tipo = DefinirTipoAndar(andarAtual.Numero + 1),
+                Numero = proximoNumero,
+                Tipo = proximoTipo,
+                NivelDificuldade = CalcularDificuldade(proximoNumero, proximoTipo),
                 UsuarioId = usuarioId,
                 CriadoEm = DateTime.UtcNow,
                 ObjetivoCumprido = false,
@@ -194,6 +205,61 @@ namespace LegendsAwaken.Application.Services
             if (numeroAndar % 10 == 0) return TipoAndar.BossMedio;
             if (numeroAndar %  5 == 0) return TipoAndar.BossFacil;
             return TipoAndar.Normal;
+        }
+
+        private static int CalcularDificuldade(int numero, TipoAndar tipo)
+        {
+            int base_ = 5 + numero * 3;
+            double mult = tipo switch
+            {
+                TipoAndar.BossFacil   => 1.5,
+                TipoAndar.BossMedio   => 2.0,
+                TipoAndar.BossDificil => 3.0,
+                _                     => 1.0
+            };
+            return (int)(base_ * mult);
+        }
+
+        /// <summary>
+        /// Cria o andar 1 para um novo jogador.
+        /// </summary>
+        public async Task<TorreAndar> InicializarPrimeiroAndarAsync(Guid usuarioId)
+        {
+            var tipo = DefinirTipoAndar(1);
+            var andar = new TorreAndar
+            {
+                Id = Guid.NewGuid(),
+                UsuarioId = usuarioId,
+                Numero = 1,
+                Tipo = tipo,
+                NivelDificuldade = CalcularDificuldade(1, tipo),
+                ObjetivoCumprido = false,
+                CriadoEm = DateTime.UtcNow
+            };
+            await _torreRepository.AdicionarAsync(andar);
+            return andar;
+        }
+
+        /// <summary>
+        /// Compara o poder do time (soma de níveis × 5) com NivelDificuldade do andar.
+        /// Se suficiente, marca objetivo e avança.
+        /// </summary>
+        public async Task<AvancarAndarResult> TentarAvancarAsync(Guid usuarioId, List<Heroi> herois)
+        {
+            var andar = await ObterAndarAtualAsync(usuarioId)
+                ?? throw new InvalidOperationException("Andar não encontrado.");
+
+            int poderTime = herois.Sum(h => h.Nivel) * 5;
+
+            if (poderTime < andar.NivelDificuldade)
+                return new AvancarAndarResult(false, poderTime, andar.NivelDificuldade, andar.Numero, null);
+
+            andar.ObjetivoCumprido = true;
+            andar.DataAlteracao = DateTime.UtcNow;
+            await _torreRepository.AtualizarAsync(andar);
+
+            var resultado = await SubirAndarAsync(usuarioId, herois);
+            return new AvancarAndarResult(true, poderTime, andar.NivelDificuldade, andar.Numero, resultado);
         }
     }
 }

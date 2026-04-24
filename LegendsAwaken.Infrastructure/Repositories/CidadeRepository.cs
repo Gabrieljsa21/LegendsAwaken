@@ -41,7 +41,31 @@ namespace LegendsAwaken.Infrastructure.Repositories
         public async Task AtualizarAsync(Cidade cidade)
         {
             cidade.DataAlteracao = DateTime.UtcNow;
+
+            var entry = _context.Entry(cidade);
+            if (entry.State == EntityState.Detached)
+                _context.Cidades.Attach(cidade);
+
+            entry.State = EntityState.Modified;
             await _context.SaveChangesAsync();
+        }
+
+        public async Task AdicionarTrabalhadorAsync(Guid cidadeId, PersonagemTrabalhador trabalhador)
+        {
+            // Explicitly Add to bypass navigation-fixup ambiguity (ValueGeneratedOnAdd + non-empty Guid)
+            _context.Set<PersonagemTrabalhador>().Add(trabalhador);
+            _context.Entry(trabalhador).Property("CidadeId").CurrentValue = cidadeId;
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task RemoverTrabalhadorAsync(Guid trabalhadorId)
+        {
+            var t = await _context.Set<PersonagemTrabalhador>().FindAsync(trabalhadorId);
+            if (t != null)
+            {
+                _context.Set<PersonagemTrabalhador>().Remove(t);
+                await _context.SaveChangesAsync();
+            }
         }
 
         public async Task<bool> ExisteAsync(Guid cidadeId)

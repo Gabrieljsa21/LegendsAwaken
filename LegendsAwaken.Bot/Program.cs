@@ -62,6 +62,8 @@ class Program
             .AddScoped<ICidadeRepository, CidadeRepository>()
             .AddScoped<ITorreRepository>(sp =>
                 new TorreRepository(configuration.GetConnectionString("DefaultConnection")!))
+            .AddScoped<ITorreOperacaoRepository>(sp =>
+                new TorreOperacaoRepository(configuration.GetConnectionString("DefaultConnection")!))
             .AddScoped<IHeroiRepository, HeroiRepository>()
             .AddScoped<IUsuarioRepository, UsuarioRepository>()
             .AddScoped<IHabilidadeRepository, HabilidadeRepository>()
@@ -81,6 +83,8 @@ class Program
             .AddScoped<HeroiService>()
             .AddScoped<TreinamentoService>()
             .AddScoped<TorreService>()
+            .AddScoped<TorreOperacaoService>()
+            .AddScoped<SustentoService>()
             .AddScoped<CidadeService>()
             .AddScoped<UsuarioService>()
             .AddScoped<RacaService>()
@@ -101,18 +105,12 @@ class Program
 
             .AddLogging(builder =>
             {
-                builder
-                    .AddConsole() // Exibe logs no console
-                    .SetMinimumLevel(LogLevel.Error); // Define o nível mínimo de log global
-
-                // Opções de LogLevel (do mais detalhado ao mais crítico):
-                // LogLevel.Trace       → Tudo, inclusive rastreamento interno detalhado (muito verboso)
-                // LogLevel.Debug       → Informações úteis para desenvolvimento e depuração
-                // LogLevel.Information → Eventos normais e informativos (fluxo geral da aplicação)
-                // LogLevel.Warning     → Algo inesperado, mas a aplicação continua normalmente
-                // LogLevel.Error       → Erros que afetam partes da aplicação
-                // LogLevel.Critical    → Erros graves que impedem o funcionamento da aplicação
-                // LogLevel.None        → Nenhum log será emitido
+                builder.AddConsole();
+                builder.SetMinimumLevel(LogLevel.Information);
+                // Silencia ruído dos frameworks
+                builder.AddFilter("Microsoft.EntityFrameworkCore", LogLevel.Warning);
+                builder.AddFilter("Microsoft.Extensions",          LogLevel.Warning);
+                builder.AddFilter("System.Net.Http",               LogLevel.Warning);
             })
 
 
@@ -146,11 +144,11 @@ class Program
             services.GetRequiredService<BiomeService>(),
             services.GetRequiredService<ContractService>(),
             services.GetRequiredService<IContratoRepository>(),
-            services.GetRequiredService<ITorreRepository>()
+            services.GetRequiredService<ITorreRepository>(),
+            services.GetRequiredService<TorreService>(),
+            services.GetRequiredService<TorreOperacaoService>(),
+            services.GetRequiredService<SustentoService>()
         );
-
-        // Eventos de botões para rolagem interativa
-        _cliente.ButtonExecuted += handler.HandleButtonExecutedAsync;
 
         handler.Initialize();
         await handler.SetupCommandsAsync();

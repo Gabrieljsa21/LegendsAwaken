@@ -1,0 +1,13 @@
+# Heavy reference docs — loaded on demand only, not auto-included in context
+GDD.md
+TODO.md
+ROADMAP.md
+DESIGN_SISTEMAS.md
+CHANGELOG.md
+
+# Build output
+**/bin/
+**/obj/
+
+# Migrations — large and rarely needed as context
+LegendsAwaken.Infrastructure/Migrations/
