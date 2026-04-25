@@ -6,6 +6,36 @@ O formato segue o padrão [Keep a Changelog](https://keepachangelog.com/pt-BR/1.
 
 ---
 
+## [3.3.0] - 2026-04-25 · Sessão — Bioma Panel, Cidade UX e Torre Modo Operação v2
+
+### Corrigido
+- `CidadeCommand` — ícones dos nodes todos exibindo 📦 por mismatch de case ("Comida" vs "comida" no switch inline); substituído por `ResourceNodeConfig.Icone()` centralizado
+- `TorreCommand.HandleExplorarAsync` / `HandleExpAtualizarAsync` — teamPS calculado sobre todos os heróis do jogador em vez dos heróis da exploração; corrigido com filtro por `HeroisIds`
+- `ColecaoCommand.MostrarAsync` — erro 40060 causado por `DeferAsync` + `UpdateAsync`; trocado para `ModifyOriginalResponseAsync`
+
+### Adicionado
+
+**Domínio / Aplicação**
+- `BiomeService.ListarDescobertosAsync(andarAtual)` e `ObterPorIdAsync(Guid)` — métodos adicionados ao serviço de biomas
+- `ResourceNodeConfig.Icone(string recurso)` — método centralizado de ícone por recurso (switch lowercase: comida→🌾, madeira→🪵, pedra→⛏️, erva→🌿, ouro→💰)
+- `TorreOperacaoConfig` (arquivo novo) — config estática: duração fixa 8h, produção por tier de andar (1-5→Ouro×100, 6-10→Gema Rústica×5, 11-25→Essência Corrompida×8, 26-50→Fragmento Arcano×10, 51-75→Cristal Dimensional×15, 76+→Núcleo Primordial×20), afinidade racial leve, cálculo de slots (2 + GuildaNivel×2)
+- `ITorreOperacaoRepository` — novos métodos `ListarAtivasAsync`, `ListarConcluidasAsync`, `ObterPorAndarAsync`
+- `TorreOperacaoRepository` — implementação dos novos métodos do repositório
+
+**Bot**
+- `BiomaPanel.CriarLista` — Select Menu com lista de biomas descobertos, % de andares conquistados, indicador de bioma atual
+- `BiomaPanel.CriarDetalhe` — painel de detalhe: descrição, barra de progresso por andares, pool de heróis com sistema de descoberta (herói principal sempre visível; heróis secundários aparecem como "?" até o jogador coletar o primeiro fragmento; contador "? N heróis por descobrir")
+- `CidadePanel.CriarEmbed` — display de coletores agrupado por node ("• **Campo** — 12.0 🌾/h" com heróis indentados abaixo); contador de heróis disponíveis ("👥 **Heróis:** X disponíveis / Y total")
+- `TorreModoOperacaoPanel` reescrito — `CriarBoard(ativas, concluidas, andarAtual, maxSlots)`, `CriarSemAndares`, `CriarSeletorAndar`, `CriarSeletorRemover`, `CriarNotificacaoTexto`
+
+### Alterado
+- `TorreOperacaoService` reescrito — `IniciarAsync(userId, andar, construcoes)`, `ProcessarTodasAsync`, `ColetarTodasAsync`, `CancelarPorAndarAsync`, `ConcluirOperacao`; sistema anterior de 1 operação por vez substituído por board de andares com múltiplas operações simultâneas
+- `BiomaCommand` refatorado com 4 handlers: `ExecutarAsync`, `MostrarListaAsync` (torre_bioma / bioma_atualizar), `VoltarListaAsync` (bioma_lista), `MostrarDetalheAsync` (bioma_sel SelectMenu)
+- `TorreCommand` — handlers substituídos: `HandleModoOperacaoAsync`, `HandleOpAlocarAsync`, `HandleOpAndarSelAsync`, `HandleOpColetarTodasAsync`, `HandleOpRemoverSelAsync`, `HandleOpRemoverAndarSelAsync`, `HandleOpFecharAsync`; construtor passa a receber `CidadeService`
+- `CommandHandler` — IDs novos: `torre_op_alocar`, `torre_op_coletar_todas`, `torre_op_remover_sel`, `torre_op_fechar`, `torre_op_andar_sel`, `torre_op_remover_andar_sel`
+
+---
+
 ## [3.2.0] - 2026-04-24 · Fase 3B.4 — Sistema de Sustento (MVP)
 
 ### Adicionado

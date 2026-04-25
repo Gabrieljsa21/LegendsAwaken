@@ -1,189 +1,199 @@
 using Discord;
+using LegendsAwaken.Application.Services;
 using LegendsAwaken.Domain.Entities;
-using LegendsAwaken.Domain.Enum;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace LegendsAwaken.Bot.Panels;
 
 public static class TorreModoOperacaoPanel
 {
-    // ── No eligible floors (player on andar 1) ───────────────────────────────────
+    // ── Main board ───────────────────────────────────────────────────────────────
+
+    public static (Embed, MessageComponent) CriarBoard(
+        List<TorreOperacao> ativas,
+        List<TorreOperacao> concluidas,
+        int andarAtual,
+        int maxSlots)
+    {
+        var sb = new StringBuilder();
+
+        // Slot usage
+        int emUso = ativas.Count;
+        sb.AppendLine($"**Slots:** {emUso}/{maxSlots} em uso");
+
+        // Active operations
+        sb.AppendLine();
+        sb.AppendLine("**Operações Ativas**");
+        if (ativas.Any())
+        {
+            foreach (var op in ativas.OrderBy(o => o.AndarNumero))
+            {
+                var fim       = op.IniciadoEm.AddHours(op.DuracaoHoras);
+                var restante  = fim - DateTime.UtcNow;
+                var tempoStr  = restante.TotalMinutes < 1
+                    ? "⚡ Concluindo..."
+                    : restante.TotalHours >= 1
+                        ? $"⏳ {(int)restante.TotalHours}h{restante.Minutes:D2}m"
+                        : $"⏳ {restante.Minutes}m";
+
+                var (recurso, qtd, icone) = TorreOperacaoConfig.ObterProducao(op.AndarNumero);
+                sb.AppendLine($"• Andar **{op.AndarNumero}** — {icone} {recurso} ×{qtd} — {tempoStr}");
+            }
+        }
+        else
+        {
+            sb.AppendLine("*Nenhuma operação ativa.*");
+        }
+
+        // Pending collection
+        if (concluidas.Any())
+        {
+            sb.AppendLine();
+            sb.AppendLine("**Prontas para Coletar** ✅");
+            foreach (var op in concluidas.OrderBy(o => o.AndarNumero))
+            {
+                var (recurso, qtd, icone) = TorreOperacaoConfig.ObterProducao(op.AndarNumero);
+                if (op.ResultadoOuro > 0)
+                    sb.AppendLine($"• Andar **{op.AndarNumero}** — 💰 {op.ResultadoOuro} Ouro");
+                else if (op.ResultadoRecursoNome != null)
+                    sb.AppendLine($"• Andar **{op.AndarNumero}** — {icone} {op.ResultadoRecursoNome} ×{op.ResultadoRecursoQtd}");
+                else
+                    sb.AppendLine($"• Andar **{op.AndarNumero}** — {icone} {recurso} ×{qtd}");
+            }
+        }
+
+        var embed = new EmbedBuilder()
+            .WithTitle("🏭 Modo Operação")
+            .WithDescription(sb.ToString())
+            .WithColor(Color.DarkTeal)
+            .WithFooter($"Andares conquistados: 1–{andarAtual - 1} | Duração fixa: {TorreOperacaoConfig.DuracaoHoras}h")
+            .Build();
+
+        var cb = new ComponentBuilder();
+        if (emUso < maxSlots)
+            cb.WithButton("➕ Alocar", "torre_op_alocar", ButtonStyle.Success);
+        if (concluidas.Any())
+            cb.WithButton("📦 Coletar Tudo", "torre_op_coletar_todas", ButtonStyle.Primary);
+        if (ativas.Any())
+            cb.WithButton("🗑️ Remover", "torre_op_remover_sel", ButtonStyle.Danger);
+        cb.WithButton("✖ Fechar", "torre_op_fechar", ButtonStyle.Secondary);
+
+        return (embed, cb.Build());
+    }
+
+    // ── No floors yet ────────────────────────────────────────────────────────────
 
     public static (Embed, MessageComponent) CriarSemAndares()
     {
         var embed = new EmbedBuilder()
             .WithTitle("🏭 Modo Operação")
-            .WithDescription("Você precisa conquistar pelo menos um andar antes de usar o Modo Operação.\nUse **⚔️ Avançar Andar** para progredir na Torre.")
+            .WithDescription("Você precisa conquistar pelo menos um andar antes de usar o Modo Operação.\nUse **⚔️ Explorar** para progredir na Torre.")
             .WithColor(Color.DarkerGrey)
             .Build();
 
         var comps = new ComponentBuilder()
-            .WithButton("❌ Fechar", "torre_op_cancelar", ButtonStyle.Secondary)
+            .WithButton("✖ Fechar", "torre_op_fechar", ButtonStyle.Secondary)
             .Build();
 
         return (embed, comps);
     }
 
-    // ── Andar selector ───────────────────────────────────────────────────────────
+    // ── Floor selector (Alocar) ──────────────────────────────────────────────────
 
-    public static (Embed, MessageComponent) CriarSeletorAndar(int andarAtual)
+    public static (Embed, MessageComponent) CriarSeletorAndar(
+        int andarAtual, HashSet<int> andaresBloqueados, int maxSlots, int emUso)
     {
         var embed = new EmbedBuilder()
-            .WithTitle("🏭 Modo Operação")
-            .WithDescription("Selecione um andar já conquistado para enviar heróis em operação.")
+            .WithTitle("🏭 Alocar Operação")
+            .WithDescription(
+                $"Slots disponíveis: **{maxSlots - emUso}** de {maxSlots}\n" +
+                "Selecione um andar conquistado para iniciar uma operação.")
             .WithColor(Color.DarkTeal)
-            .WithFooter($"Andares elegíveis: 1–{andarAtual - 1}")
             .Build();
 
         var menu = new SelectMenuBuilder()
-            .WithCustomId("torre_op_andar")
+            .WithCustomId("torre_op_andar_sel")
             .WithPlaceholder("Escolher andar...")
             .WithMinValues(1).WithMaxValues(1);
 
-        int inicio = Math.Max(1, andarAtual - 15);
+        int inicio = Math.Max(1, andarAtual - 25);
         for (int i = andarAtual - 1; i >= inicio; i--)
         {
-            var recurso = RecursoDoAndar(i);
-            var label = recurso != null ? $"Andar {i} — {recurso}" : $"Andar {i}";
-            var desc  = recurso != null ? $"Recurso: {recurso}" : "Apenas ouro";
-            menu.AddOption(label, i.ToString(), desc);
+            if (andaresBloqueados.Contains(i)) continue;
+            var (recurso, qtd, icone) = TorreOperacaoConfig.ObterProducao(i);
+            menu.AddOption($"Andar {i}", i.ToString(), $"{icone} {recurso} ×{qtd} por operação");
+        }
+
+        if (menu.Options.Count == 0)
+        {
+            var embedVazio = new EmbedBuilder()
+                .WithTitle("🏭 Modo Operação")
+                .WithDescription("Todos os andares conquistados já têm operação em andamento.")
+                .WithColor(Color.DarkerGrey)
+                .Build();
+            return (embedVazio, new ComponentBuilder().WithButton("✖ Fechar", "torre_op_fechar", ButtonStyle.Secondary).Build());
         }
 
         var comps = new ComponentBuilder()
             .WithSelectMenu(menu)
-            .WithButton("❌ Fechar", "torre_op_cancelar", ButtonStyle.Secondary)
+            .WithButton("✖ Cancelar", "torre_op_fechar", ButtonStyle.Secondary)
             .Build();
 
         return (embed, comps);
     }
 
-    // ── Objetivo selector ────────────────────────────────────────────────────────
+    // ── Remove selector ──────────────────────────────────────────────────────────
 
-    public static (Embed, MessageComponent) CriarSeletorObjetivo(int andar)
+    public static (Embed, MessageComponent) CriarSeletorRemover(List<TorreOperacao> ativas)
     {
-        var recurso = RecursoDoAndar(andar);
-        var desc = recurso != null
-            ? $"Recurso disponível: **{recurso}**\nEscolha o objetivo da operação."
-            : "Nenhum recurso exclusivo neste andar.\nEscolha o objetivo da operação.";
-
         var embed = new EmbedBuilder()
-            .WithTitle($"🏭 Modo Operação — Andar {andar}")
-            .WithDescription(desc)
-            .WithColor(Color.DarkTeal)
-            .AddField("🌾 Farm Recurso",    "Duração: 4h | Foca em coleta de ouro e recursos.", inline: true)
-            .AddField("🗺️ Exploração Leve", "Duração: 8h | Mais ouro + bônus de XP para heróis.", inline: true)
+            .WithTitle("🗑️ Remover Operação")
+            .WithDescription("Selecione a operação que deseja cancelar.\n⚠️ Nenhuma recompensa será dada ao cancelar.")
+            .WithColor(Color.DarkRed)
             .Build();
 
-        var comps = new ComponentBuilder()
-            .WithButton("🌾 Farm Recurso",    $"torre_op_objetivo|{andar}|FarmRecurso",    ButtonStyle.Primary)
-            .WithButton("🗺️ Exploração Leve", $"torre_op_objetivo|{andar}|ExploracaoLeve", ButtonStyle.Primary)
-            .WithButton("❌ Fechar",           "torre_op_cancelar",                          ButtonStyle.Secondary)
-            .Build();
+        var menu = new SelectMenuBuilder()
+            .WithCustomId("torre_op_remover_andar_sel")
+            .WithPlaceholder("Escolher operação para cancelar...")
+            .WithMinValues(1).WithMaxValues(1);
 
-        return (embed, comps);
-    }
-
-    // ── Risk selector ────────────────────────────────────────────────────────────
-
-    public static (Embed, MessageComponent) CriarSeletorRisco(int andar, ObjetivoOperacao objetivo)
-    {
-        int horas = objetivo == ObjetivoOperacao.FarmRecurso ? 4 : 8;
-        var objStr = objetivo == ObjetivoOperacao.FarmRecurso ? "🌾 Farm Recurso" : "🗺️ Exploração Leve";
-
-        int ouroSeg = (int)(andar * 3 * horas * 0.8);
-        int ouroBal = andar * 3 * horas;
-        int ouroAgr = (int)(andar * 3 * horas * 1.5);
-
-        var embed = new EmbedBuilder()
-            .WithTitle($"🏭 Modo Operação — Andar {andar}")
-            .WithDescription($"Objetivo: **{objStr}** | Duração: **{horas}h**\nEscolha o perfil de risco:")
-            .WithColor(Color.DarkTeal)
-            .AddField("🛡️ Seguro",    $"~{ouroSeg} ouro | Garantido", inline: true)
-            .AddField("⚖️ Balanceado", $"~{ouroBal} ouro | Padrão",   inline: true)
-            .AddField("⚔️ Agressivo",  $"~{ouroAgr} ouro | Arriscado", inline: true)
-            .Build();
-
-        var objStr2 = objetivo.ToString();
-        var comps = new ComponentBuilder()
-            .WithButton("🛡️ Seguro",    $"torre_op_risco|{andar}|{objStr2}|Seguro",    ButtonStyle.Success)
-            .WithButton("⚖️ Balanceado", $"torre_op_risco|{andar}|{objStr2}|Balanceado", ButtonStyle.Primary)
-            .WithButton("⚔️ Agressivo",  $"torre_op_risco|{andar}|{objStr2}|Agressivo",  ButtonStyle.Danger)
-            .WithButton("❌ Fechar",     "torre_op_cancelar",                             ButtonStyle.Secondary)
-            .Build();
-
-        return (embed, comps);
-    }
-
-    // ── Active operation status ──────────────────────────────────────────────────
-
-    public static (Embed, MessageComponent) CriarStatusAtivo(TorreOperacao op)
-    {
-        var fim      = op.IniciadoEm.AddHours(op.DuracaoHoras);
-        var restante = fim - DateTime.UtcNow;
-        string restanteStr = restante.TotalMinutes < 1
-            ? "Menos de 1 min"
-            : restante.TotalHours >= 1
-                ? $"{(int)restante.TotalHours}h {restante.Minutes}min"
-                : $"{restante.Minutes} min";
-
-        var objStr  = op.Objetivo == ObjetivoOperacao.FarmRecurso ? "🌾 Farm Recurso" : "🗺️ Exploração Leve";
-        var riscoStr = op.PerfilRisco switch
+        foreach (var op in ativas.OrderBy(o => o.AndarNumero))
         {
-            PerfilRisco.Seguro     => "🛡️ Seguro",
-            PerfilRisco.Balanceado => "⚖️ Balanceado",
-            PerfilRisco.Agressivo  => "⚔️ Agressivo",
-            _                      => op.PerfilRisco.ToString()
-        };
-
-        var embed = new EmbedBuilder()
-            .WithTitle("🏭 Operação em Andamento")
-            .WithColor(Color.Blue)
-            .AddField("Andar",       op.AndarNumero.ToString(), inline: true)
-            .AddField("Objetivo",    objStr,                     inline: true)
-            .AddField("Risco",       riscoStr,                   inline: true)
-            .AddField("Concluído em", $"⏳ {restanteStr}")
-            .WithFooter($"Iniciado às {op.IniciadoEm:HH:mm} UTC")
-            .Build();
+            var fim       = op.IniciadoEm.AddHours(op.DuracaoHoras);
+            var restante  = fim - DateTime.UtcNow;
+            var tempoStr  = restante.TotalMinutes < 1 ? "concluindo" : $"{(int)restante.TotalMinutes}m rest.";
+            var (recurso, _, icone) = TorreOperacaoConfig.ObterProducao(op.AndarNumero);
+            menu.AddOption($"Andar {op.AndarNumero} — {recurso}", op.AndarNumero.ToString(), tempoStr);
+        }
 
         var comps = new ComponentBuilder()
-            .WithButton("❌ Cancelar Operação", "torre_op_cancelar_ativo", ButtonStyle.Danger)
-            .WithButton("✖ Fechar",             "torre_op_cancelar",       ButtonStyle.Secondary)
+            .WithSelectMenu(menu)
+            .WithButton("✖ Cancelar", "torre_op_fechar", ButtonStyle.Secondary)
             .Build();
 
         return (embed, comps);
     }
 
-    // ── Concluded: collect rewards ───────────────────────────────────────────────
+    // ── Notification text ────────────────────────────────────────────────────────
 
-    public static (Embed, MessageComponent) CriarColeta(TorreOperacao op)
+    public static string CriarNotificacaoTexto(List<TorreOperacao> concluidas)
     {
         var sb = new StringBuilder();
-        sb.AppendLine($"💰 **Ouro:** +{op.ResultadoOuro ?? 0}");
-        if (op.ResultadoRecursoNome != null)
-            sb.AppendLine($"📦 **{op.ResultadoRecursoNome}:** +{op.ResultadoRecursoQtd ?? 0}");
-
-        var objStr = op.Objetivo == ObjetivoOperacao.FarmRecurso ? "🌾 Farm Recurso" : "🗺️ Exploração Leve";
-
-        var embed = new EmbedBuilder()
-            .WithTitle("🏭 Operação Concluída!")
-            .WithDescription(sb.ToString())
-            .WithColor(Color.Green)
-            .AddField("Andar",    op.AndarNumero.ToString(), inline: true)
-            .AddField("Objetivo", objStr,                     inline: true)
-            .WithFooter($"Concluído às {op.ConcluidoEm:HH:mm} UTC")
-            .Build();
-
-        var comps = new ComponentBuilder()
-            .WithButton("📦 Coletar", "torre_op_coletar", ButtonStyle.Success)
-            .WithButton("✖ Fechar",   "torre_op_cancelar", ButtonStyle.Secondary)
-            .Build();
-
-        return (embed, comps);
+        sb.AppendLine($"📬 **{concluidas.Count} operação(ões) concluída(s)!** Use **🏭 Modo Operação** para coletar:");
+        foreach (var op in concluidas.Take(3))
+        {
+            if (op.ResultadoOuro > 0)
+                sb.AppendLine($"• Andar {op.AndarNumero}: 💰 {op.ResultadoOuro} Ouro");
+            else if (op.ResultadoRecursoNome != null)
+                sb.AppendLine($"• Andar {op.AndarNumero}: {op.ResultadoRecursoNome} ×{op.ResultadoRecursoQtd}");
+        }
+        return sb.ToString().TrimEnd();
     }
 
-    // ── Notification text (shown as ephemeral followup when /torre is opened) ────
-
+    // Legacy single-op notification (kept for /torre call that still uses the old path)
     public static string CriarNotificacaoTexto(TorreOperacao op)
     {
         var sb = new StringBuilder();
@@ -193,15 +203,4 @@ public static class TorreModoOperacaoPanel
             sb.AppendLine($"📦 {op.ResultadoRecursoNome}: +{op.ResultadoRecursoQtd ?? 0}");
         return sb.ToString().TrimEnd();
     }
-
-    // ── Helper ───────────────────────────────────────────────────────────────────
-
-    private static string? RecursoDoAndar(int andar) => andar switch
-    {
-        >= 25 => "Núcleo Sombrio",
-        >= 18 => "Cristal Arcano",
-        >= 12 => "Essência Corrompida",
-        >= 5  => "Fragmento Rústico",
-        _     => null
-    };
 }

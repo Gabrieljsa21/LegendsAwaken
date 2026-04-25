@@ -12,6 +12,8 @@ namespace LegendsAwaken.Domain.Interfaces
         Task<Party?> ObterPorIdAsync(Guid partyId);
         Task AdicionarHeroiAsync(Guid partyId, Guid heroiId);
         Task RemoverHeroiAsync(Guid partyId, Guid heroiId);
+        Task AtualizarAsync(Party party);
+        Task DeletarAsync(Guid partyId);
         Task SalvarAsync();
     }
 }

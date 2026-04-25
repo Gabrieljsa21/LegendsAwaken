@@ -13,7 +13,7 @@ Bot RPG para Discord escrito em C#. O jogador assume o papel de **Mestre** que c
 - 3 caminhos de desbloqueio: acúmulo de fragmentos, marcos da Torre, condição única
 - Contratos de drop: arquétipo (+30% fragmentos da profissão) e nomeado (+50% de herói específico)
 - `/colecao` — painel de coleção com progresso por herói e botão de recrutar
-- `/bioma` — bioma atual com heróis disponíveis e pesos de drop
+- `/bioma` — lista de biomas descobertos com % de andares conquistados e indicador de bioma atual; painel de detalhe com barra de progresso e pool de heróis (heróis secundários aparecem como "?" até o primeiro fragmento coletado)
 - `/contrato` — contratos ativos com select menu de arquétipo
 
 **Heróis e Progressão**
@@ -29,6 +29,7 @@ Bot RPG para Discord escrito em C#. O jogador assume o papel de **Mestre** que c
 - Bosses escalonados nos andares 5/10/25 com multiplicadores de XP e Ouro
 - Ouro por andar: `5 + Numero×3` × boss_mult
 - Drops de fragmentos integrados ao progresso da Torre; detecção automática de bioma novo e heróis de marco
+- Modo Operação — board de andares com múltiplas operações simultâneas: duração fixa de 8h, produção por tier de andar (Ouro, Gema Rústica, Essência Corrompida, Fragmento Arcano, Cristal Dimensional, Núcleo Primordial), slots calculados por nível de guilda
 
 **Combate**
 - Combate automático por turnos com ATB (iniciativa por Agilidade)
@@ -40,6 +41,7 @@ Bot RPG para Discord escrito em C#. O jogador assume o papel de **Mestre** que c
 - ResourceNodes (Campo/Floresta/Mina/Prado) — tier 1 de produção por profissão
 - Dois tipos de slot por prédio: Responsabilidade (gate por Confiança + atributo) e Operação
 - Humor da Cidade = média dos heróis alocados × multiplicador de produção
+- `/cidade ver` exibe coletores agrupados por node com taxa/h e heróis indentados abaixo de cada node; contador de heróis disponíveis vs. total
 - `/cidade ver`, `/cidade coletar`, `/cidade alocar_recurso`, `/cidade alocar_predio`, `/cidade construir`
 
 **Crafting e Equipamentos**

@@ -76,7 +76,7 @@ public class ColecaoCommand(
         var embed      = ColecaoPanel.CriarEmbed(todosHerois, desbloqueados, progressos, unlockList);
         var components = ColecaoPanel.CriarComponentes(heroisProntos);
 
-        await comp.UpdateAsync(m => { m.Embed = embed; m.Components = components; });
+        await comp.ModifyOriginalResponseAsync(m => { m.Embed = embed; m.Components = components; });
     }
 
     public async Task HandleRecrutarAsync(SocketMessageComponent interaction, Guid heroiId)

@@ -3,6 +3,7 @@ using LegendsAwaken.Domain.Enum;
 using LegendsAwaken.Domain.Interfaces;
 using Microsoft.Data.Sqlite;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace LegendsAwaken.Infrastructure.Repositories
@@ -65,6 +66,56 @@ namespace LegendsAwaken.Infrastructure.Repositories
                 ORDER BY ConcluidoEm DESC LIMIT 1";
             cmd.Parameters.AddWithValue("$uid", usuarioId.ToString());
             cmd.Parameters.AddWithValue("$status", (int)StatusOperacao.Concluida);
+            using var reader = await cmd.ExecuteReaderAsync();
+            return await reader.ReadAsync() ? Mapear(reader) : null;
+        }
+
+        public async Task<List<TorreOperacao>> ListarAtivasAsync(Guid usuarioId)
+        {
+            using var connection = new SqliteConnection(_connectionString);
+            await connection.OpenAsync();
+            var cmd = connection.CreateCommand();
+            cmd.CommandText = @"
+                SELECT * FROM TorreOperacoes
+                WHERE UsuarioId = $uid AND Status = $status
+                ORDER BY IniciadoEm ASC";
+            cmd.Parameters.AddWithValue("$uid",    usuarioId.ToString());
+            cmd.Parameters.AddWithValue("$status", (int)StatusOperacao.Ativa);
+            var lista = new List<TorreOperacao>();
+            using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync()) lista.Add(Mapear(reader));
+            return lista;
+        }
+
+        public async Task<List<TorreOperacao>> ListarConcluidasAsync(Guid usuarioId)
+        {
+            using var connection = new SqliteConnection(_connectionString);
+            await connection.OpenAsync();
+            var cmd = connection.CreateCommand();
+            cmd.CommandText = @"
+                SELECT * FROM TorreOperacoes
+                WHERE UsuarioId = $uid AND Status = $status
+                ORDER BY ConcluidoEm DESC";
+            cmd.Parameters.AddWithValue("$uid",    usuarioId.ToString());
+            cmd.Parameters.AddWithValue("$status", (int)StatusOperacao.Concluida);
+            var lista = new List<TorreOperacao>();
+            using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync()) lista.Add(Mapear(reader));
+            return lista;
+        }
+
+        public async Task<TorreOperacao?> ObterPorAndarAsync(Guid usuarioId, int andar)
+        {
+            using var connection = new SqliteConnection(_connectionString);
+            await connection.OpenAsync();
+            var cmd = connection.CreateCommand();
+            cmd.CommandText = @"
+                SELECT * FROM TorreOperacoes
+                WHERE UsuarioId = $uid AND AndarNumero = $andar AND Status = $status
+                LIMIT 1";
+            cmd.Parameters.AddWithValue("$uid",    usuarioId.ToString());
+            cmd.Parameters.AddWithValue("$andar",  andar);
+            cmd.Parameters.AddWithValue("$status", (int)StatusOperacao.Ativa);
             using var reader = await cmd.ExecuteReaderAsync();
             return await reader.ReadAsync() ? Mapear(reader) : null;
         }

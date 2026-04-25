@@ -22,4 +22,16 @@ public class BiomeService(IBiomaRepository biomaRepository)
         var biomaAnterior = await biomaRepository.ObterPorAndarAsync(andarAtual - 1);
         return biomaAtual?.Id != biomaAnterior?.Id;
     }
+
+    public async Task<List<Bioma>> ListarDescobertosAsync(int andarAtual)
+    {
+        var todos = await biomaRepository.ListarTodosAsync();
+        return todos.Where(b => b.AndarInicio <= andarAtual).OrderBy(b => b.AndarInicio).ToList();
+    }
+
+    public async Task<Bioma?> ObterPorIdAsync(Guid id)
+    {
+        var todos = await biomaRepository.ListarTodosAsync();
+        return todos.FirstOrDefault(b => b.Id == id);
+    }
 }

@@ -64,6 +64,12 @@ class Program
                 new TorreRepository(configuration.GetConnectionString("DefaultConnection")!))
             .AddScoped<ITorreOperacaoRepository>(sp =>
                 new TorreOperacaoRepository(configuration.GetConnectionString("DefaultConnection")!))
+            .AddScoped<ITorreExploracaoRepository>(sp =>
+                new TorreExploracaoRepository(configuration.GetConnectionString("DefaultConnection")!))
+            .AddScoped<ITorreBoosterRepository>(sp =>
+                new TorreBoosterRepository(configuration.GetConnectionString("DefaultConnection")!))
+            .AddScoped<ICidadeBoosterRepository>(sp =>
+                new CidadeBoosterRepository(configuration.GetConnectionString("DefaultConnection")!))
             .AddScoped<IHeroiRepository, HeroiRepository>()
             .AddScoped<IUsuarioRepository, UsuarioRepository>()
             .AddScoped<IHabilidadeRepository, HabilidadeRepository>()
@@ -85,6 +91,7 @@ class Program
             .AddScoped<TorreService>()
             .AddScoped<TorreOperacaoService>()
             .AddScoped<SustentoService>()
+            .AddScoped<CidadeBoosterService>()
             .AddScoped<CidadeService>()
             .AddScoped<UsuarioService>()
             .AddScoped<RacaService>()
@@ -99,6 +106,7 @@ class Program
             .AddScoped<ContractService>()
             .AddScoped<RecruitmentService>()
             .AddScoped<RewardDistributionService>()
+            .AddScoped<TorreExploracaoService>()
 
             .AddSingleton(_cliente)
             .AddSingleton<IConfiguration>(configuration)
@@ -135,6 +143,7 @@ class Program
             services.GetRequiredService<CombatService>(),
             services.GetRequiredService<PartyService>(),
             services.GetRequiredService<CidadeService>(),
+            services.GetRequiredService<CidadeBoosterService>(),
             services.GetRequiredService<CraftingService>(),
             services.GetRequiredService<ArenaService>(),
             services.GetRequiredService<IHeroiConfigRepository>(),
@@ -147,6 +156,7 @@ class Program
             services.GetRequiredService<ITorreRepository>(),
             services.GetRequiredService<TorreService>(),
             services.GetRequiredService<TorreOperacaoService>(),
+            services.GetRequiredService<TorreExploracaoService>(),
             services.GetRequiredService<SustentoService>()
         );
 
@@ -155,6 +165,13 @@ class Program
 
         // Criação e população do banco de dados
         await CriarBancoEDadosBaseAsync();
+
+        // Pre-warm the shared DbContext so the first slash command doesn't hit 3s timeout
+        try
+        {
+            await services.GetRequiredService<LegendsAwakenDbContext>().Database.ExecuteSqlRawAsync("SELECT 1");
+        }
+        catch { }
 
         await Task.Delay(-1);
     }

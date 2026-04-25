@@ -13,17 +13,20 @@ namespace LegendsAwaken.Application.Services
         private readonly ICidadeRepository _cidadeRepository;
         private readonly IHeroiRepository _heroiRepository;
         private readonly ISlotOcupacaoRepository _slotRepository;
+        private readonly CidadeBoosterService _boosterService;
 
         private const double HorasMaximaProducao = 24.0;
 
         public CidadeService(
             ICidadeRepository cidadeRepository,
             IHeroiRepository heroiRepository,
-            ISlotOcupacaoRepository slotRepository)
+            ISlotOcupacaoRepository slotRepository,
+            CidadeBoosterService boosterService)
         {
             _cidadeRepository = cidadeRepository;
-            _heroiRepository = heroiRepository;
-            _slotRepository = slotRepository;
+            _heroiRepository  = heroiRepository;
+            _slotRepository   = slotRepository;
+            _boosterService   = boosterService;
         }
 
         public async Task<Cidade> CriarCidadeAsync(string nome, ulong usuarioId)
@@ -178,16 +181,18 @@ namespace LegendsAwaken.Application.Services
             cidade.Recursos.Adicionar(-custo.Pedra,   "pedra");
             cidade.Recursos.Adicionar(-custo.Comida,  "comida");
 
-            var nomePredio = tipoPredio.ToString();
-            cidade.Construcoes.Add(new Construcao
-            {
-                Nome = nomePredio,
-                Nivel = 1,
-                TipoPredio = tipoPredio,
-                EstaAtiva = true
-            });
-
+            // Persist resource deduction first, then insert the building separately to avoid
+            // EF navigation-fixup ambiguity (same pattern as AdicionarTrabalhadorAsync)
             await _cidadeRepository.AtualizarAsync(cidade);
+
+            await _cidadeRepository.AdicionarConstrucaoAsync(cidade.Id, new Construcao
+            {
+                Id         = Guid.NewGuid(),
+                Nome       = tipoPredio.ToString(),
+                Nivel      = 1,
+                TipoPredio = tipoPredio,
+                EstaAtiva  = true
+            });
             return null;
         }
 
@@ -208,6 +213,10 @@ namespace LegendsAwaken.Application.Services
             var herois = await _heroiRepository.ObterPorUsuarioIdAsync(usuarioId);
             var heroiPorId = herois.ToDictionary(h => h.Id);
 
+            // Active city booster
+            var boosterAtivo = await _boosterService.ObterAtivoAsync(usuarioId);
+            double prodMult  = CidadeBoosterService.GetMultiplicador(boosterAtivo);
+
             var produzido = new Recursos();
 
             // ── Tier 1: ResourceNode workers ──────────────────────────────────
@@ -220,7 +229,7 @@ namespace LegendsAwaken.Application.Services
                 double bonus = heroi.Profissao.HasValue &&
                     ResourceNodeConfig.ProfissaoBonus.TryGetValue((node, heroi.Profissao.Value), out var b) ? b : 0.0;
 
-                int quantidade = (int)(rate.basePorHora * (1.0 + bonus) * horasDecorridas);
+                int quantidade = (int)(rate.basePorHora * (1.0 + bonus) * horasDecorridas * prodMult);
                 if (quantidade <= 0) continue;
 
                 produzido.Adicionar(quantidade, rate.recurso);
@@ -247,31 +256,39 @@ namespace LegendsAwaken.Application.Services
                 var responsaveis = slots.Where(s => s.SlotTipo == SlotTipo.Responsabilidade).ToList();
                 var operadores = slots.Where(s => s.SlotTipo == SlotTipo.Operacao).ToList();
 
-                // Building inactive if no Responsibility slot filled
                 if (responsaveis.Count == 0) continue;
 
-                // Mult(Responsáveis) = average efficiency of Responsabilidade heroes
                 double multResp = responsaveis
                     .Select(s => heroiPorId.TryGetValue(s.HeroiId, out var h)
                         ? 1.0 + h.ObterAtributosTotais(new AtributosBase()).Get(def.AtributoReq) / 100.0
                         : 1.0)
                     .Average();
 
-                // Soma(Operadores) = sum of individual efficiency
                 double somaOp = operadores
                     .Sum(s => heroiPorId.TryGetValue(s.HeroiId, out var h)
                         ? 1.0 + h.ObterAtributosTotais(new AtributosBase()).Get(def.AtributoReq) / 100.0
                         : 1.0);
 
-                // If no operators, treat as 1.0 contribution (building still works with just Responsável)
                 if (operadores.Count == 0) somaOp = 1.0;
 
-                double producao = def.BaseProdPorHora * multResp * somaOp * humorMult * horasDecorridas;
+                double producao = def.BaseProdPorHora * multResp * somaOp * humorMult * horasDecorridas * prodMult;
                 int quantidade = (int)producao;
                 if (quantidade <= 0) continue;
 
                 produzido.Adicionar(quantidade, recurso);
                 cidade.Recursos.Adicionar(quantidade, recurso);
+            }
+
+            // ── Booster de Conversão: 10% chance of Ouro bonus ────────────────
+            if (boosterAtivo?.Tipo == TipoBoosterCidade.Conversao)
+            {
+                int totalRecursos = produzido.Comida + produzido.Madeira + produzido.Pedra + produzido.Erva;
+                if (totalRecursos > 0 && Random.Shared.NextDouble() < 0.10)
+                {
+                    int ouroBonus = Math.Max(1, totalRecursos / 10);
+                    produzido.Adicionar(ouroBonus, "ouro");
+                    cidade.Recursos.Adicionar(ouroBonus, "ouro");
+                }
             }
 
             cidade.UltimaColeta = agora;

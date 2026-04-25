@@ -163,4 +163,10 @@ namespace LegendsAwaken.Domain.Enum
 
     public enum EstadoSustento { Ativo, Instavel, Degradado, Inativo }
 
+    public enum StatusExploracao { Ativa, Concluida, Falha, Coletada }
+
+    public enum TipoBooster { Progresso, Fragmento, Eficiencia, XP, Ouro, Materiais, Checkpoint }
+
+    public enum TipoBoosterCidade { Producao, Rendimento, Eficiencia, Qualidade, Especializacao, Conversao }
+
 }

@@ -106,7 +106,7 @@ namespace LegendsAwaken.Infrastructure.Repositories
             await connection.OpenAsync();
 
             var command = connection.CreateCommand();
-            command.CommandText = @"SELECT * FROM Andares WHERE UsuarioId = $usuarioId ORDER BY Numero DESC LIMIT 1";
+            command.CommandText = @"SELECT * FROM Andares WHERE UsuarioId = $usuarioId AND ObjetivoCumprido = 0 ORDER BY Numero ASC LIMIT 1";
             command.Parameters.AddWithValue("$usuarioId", usuarioId.ToString());
 
             using var reader = await command.ExecuteReaderAsync();

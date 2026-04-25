@@ -1,12 +1,14 @@
 using Discord;
 using LegendsAwaken.Domain.Entities;
 using LegendsAwaken.Domain.Entities.Fragmento;
+using System;
+using StatusExploracao = LegendsAwaken.Domain.Enum.StatusExploracao;
 
 namespace LegendsAwaken.Bot.Panels;
 
 public static class TorrePanel
 {
-    public static Embed CriarEmbed(TorreAndar andar, Bioma? bioma = null)
+    public static Embed CriarEmbed(TorreAndar andar, Bioma? bioma = null, TorreExploracao? exploracao = null)
     {
         var (tipoStr, cor) = andar.Tipo switch
         {
@@ -28,17 +30,59 @@ public static class TorrePanel
         if (bioma != null)
             builder.AddField("Bioma", $"🗺️ {bioma.Nome}", inline: false);
 
-        builder.WithFooter("Poder do time = soma dos níveis × 5");
+        if (exploracao != null)
+        {
+            string expStr;
+            if (exploracao.Status == StatusExploracao.Ativa)
+            {
+                var eta = ComputarETA(exploracao);
+                expStr = $"⚔️ Em progresso: {(int)exploracao.Progresso}% | ⏱️ ETA: {eta}";
+            }
+            else
+            {
+                expStr = exploracao.Status switch
+                {
+                    StatusExploracao.Concluida => "✅ Concluída — colete as recompensas!",
+                    StatusExploracao.Falha     => "💀 Derrota — colete o loot dos checkpoints!",
+                    _                          => ""
+                };
+            }
+            if (!string.IsNullOrEmpty(expStr))
+                builder.AddField("Exploração", expStr, inline: false);
+        }
+
+        builder.WithFooter("Use 🔍 Investigar para ver a chance de vitória antes de explorar");
 
         return builder.Build();
     }
 
-    public static MessageComponent CriarComponentes()
+    public static MessageComponent CriarComponentes(bool temExploracao = false)
     {
-        return new ComponentBuilder()
-            .WithButton("⚔️ Avançar Andar",  "torre_avancar",         ButtonStyle.Success)
-            .WithButton("🏭 Modo Operação",   "torre_modo_operacao",   ButtonStyle.Primary)
-            .WithButton("🔄",                 "torre_atualizar",       ButtonStyle.Secondary)
-            .Build();
+        var cb = new ComponentBuilder();
+
+        if (temExploracao)
+            cb.WithButton("⚔️ Ver Exploração", "torre_explorar",        ButtonStyle.Primary);
+        else
+            cb.WithButton("🔍 Investigar",     "torre_investigar",      ButtonStyle.Secondary)
+              .WithButton("⚔️ Explorar",        "torre_explorar",        ButtonStyle.Success);
+
+        cb.WithButton("🗺️ Bioma",         "torre_bioma",         ButtonStyle.Secondary)
+          .WithButton("🏭 Modo Operação", "torre_modo_operacao", ButtonStyle.Primary)
+          .WithButton("🔄",               "torre_atualizar",     ButtonStyle.Secondary);
+
+        return cb.Build();
+    }
+
+    private static string ComputarETA(TorreExploracao exp)
+    {
+        if (exp.Progresso <= 0) return "Calculando...";
+        var elapsedMin = (DateTime.UtcNow - exp.IniciadoEm).TotalMinutes;
+        if (elapsedMin < 0.5) return "Calculando...";
+        var ratePerMin   = exp.Progresso / elapsedMin;
+        var remainingMin = (100.0 - exp.Progresso) / ratePerMin;
+        if (remainingMin <= 0) return "iminente";
+        return remainingMin >= 60
+            ? $"~{(int)(remainingMin / 60)}h {(int)(remainingMin % 60)}m"
+            : $"~{(int)Math.Ceiling(remainingMin)}m";
     }
 }

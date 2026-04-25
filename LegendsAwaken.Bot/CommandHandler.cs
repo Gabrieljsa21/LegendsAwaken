@@ -33,6 +33,7 @@ namespace LegendsAwaken.Bot
         private readonly CombatService _combatService;
         private readonly PartyService _partyService;
         private readonly CidadeService _cidadeService;
+        private readonly CidadeBoosterService _cidadeBoosterService;
         private readonly CraftingService _craftingService;
         private readonly ArenaService _arenaService;
         private readonly IHeroiConfigRepository _heroiConfigRepo;
@@ -45,6 +46,7 @@ namespace LegendsAwaken.Bot
         private readonly ITorreRepository _torreRepository;
         private readonly TorreService _torreService;
         private readonly TorreOperacaoService _torreOperacaoService;
+        private readonly TorreExploracaoService _torreExploracaoService;
         private readonly SustentoService _sustentoService;
 
         public CommandHandler(
@@ -59,6 +61,7 @@ namespace LegendsAwaken.Bot
             CombatService combatService,
             PartyService partyService,
             CidadeService cidadeService,
+            CidadeBoosterService cidadeBoosterService,
             CraftingService craftingService,
             ArenaService arenaService,
             IHeroiConfigRepository heroiConfigRepo,
@@ -71,6 +74,7 @@ namespace LegendsAwaken.Bot
             ITorreRepository torreRepository,
             TorreService torreService,
             TorreOperacaoService torreOperacaoService,
+            TorreExploracaoService torreExploracaoService,
             SustentoService sustentoService)
         {
             _client = client;
@@ -84,6 +88,7 @@ namespace LegendsAwaken.Bot
             _combatService = combatService;
             _partyService = partyService;
             _cidadeService = cidadeService;
+            _cidadeBoosterService = cidadeBoosterService;
             _craftingService = craftingService;
             _arenaService = arenaService;
             _heroiConfigRepo = heroiConfigRepo;
@@ -96,15 +101,17 @@ namespace LegendsAwaken.Bot
             _torreRepository = torreRepository;
             _torreService = torreService;
             _torreOperacaoService = torreOperacaoService;
+            _torreExploracaoService = torreExploracaoService;
             _sustentoService = sustentoService;
         }
 
         public void Initialize()
         {
-            _client.SlashCommandExecuted += cmd  => { _ = HandleSlashCommandAsync(cmd);  return Task.CompletedTask; };
-            _client.ButtonExecuted       += comp => { _ = HandleButtonExecutedAsync(comp); return Task.CompletedTask; };
-            _client.SelectMenuExecuted   += comp => { _ = HandleButtonExecutedAsync(comp); return Task.CompletedTask; };
-            _client.AutocompleteExecuted += auto => { _ = HandleAutocompleteAsync(auto);  return Task.CompletedTask; };
+            _client.SlashCommandExecuted += cmd   => { _ = HandleSlashCommandAsync(cmd);   return Task.CompletedTask; };
+            _client.ButtonExecuted       += comp  => { _ = HandleButtonExecutedAsync(comp); return Task.CompletedTask; };
+            _client.SelectMenuExecuted   += comp  => { _ = HandleButtonExecutedAsync(comp); return Task.CompletedTask; };
+            _client.AutocompleteExecuted += auto  => { _ = HandleAutocompleteAsync(auto);  return Task.CompletedTask; };
+            _client.ModalSubmitted       += modal => { _ = HandleModalSubmittedAsync(modal); return Task.CompletedTask; };
             _client.Ready += OnReadyAsync;
         }
 
@@ -159,15 +166,15 @@ namespace LegendsAwaken.Bot
 
                     case "torre":
                     case "subir_andar":
-                        await new TorreCommand(_torreService, _heroiService, _biomeService, _torreOperacaoService, _logger).ExecutarAsync(command);
+                        await new TorreCommand(_torreService, _heroiService, _biomeService, _torreOperacaoService, _cidadeService, _torreExploracaoService, _partyService, _logger).ExecutarAsync(command);
                         break;
 
                     case "herois":
-                        await new HeroisCommand(_heroiService, _sustentoService, _logger).ExecutarAsync(command);
+                        await new HeroisCommand(_heroiService, _sustentoService, _partyService, _logger).ExecutarAsync(command);
                         break;
 
                     case "cidade":
-                        await new CidadeCommand(_cidadeService, _heroiService, _logger).ExecutarAsync(command);
+                        await new CidadeCommand(_cidadeService, _heroiService, _cidadeBoosterService, _logger).ExecutarAsync(command);
                         break;
 
                     case "grupo":
@@ -281,11 +288,7 @@ namespace LegendsAwaken.Bot
                         break;
 
                     case "bioma":
-                        await new BiomaCommand(_biomeService, _torreRepository).ExecutarAsync(command);
-                        break;
-
-                    case "contrato":
-                        await new ContratoCommand(_contractService, _contratoRepository).ExecutarAsync(command);
+                        await new BiomaCommand(_biomeService, _torreRepository, _fragmentoRepo, _heroiConfigRepo).ExecutarAsync(command);
                         break;
 
                     case "inventario":
@@ -344,6 +347,24 @@ namespace LegendsAwaken.Bot
         }
 
 
+        private async Task HandleModalSubmittedAsync(SocketModal modal)
+        {
+            _logger.LogInformation("[Modal] CustomId={CustomId} User={User}", modal.Data.CustomId, modal.User.Username);
+            var parts = modal.Data.CustomId.Split('|');
+            try
+            {
+                if (parts[0] == "grupos_nome_modal" && parts.Length >= 2 && Guid.TryParse(parts[1], out var partyId))
+                {
+                    await new GruposCommand(_partyService, _heroiService, _logger).HandleNomeModalAsync(modal, partyId);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[Modal] Exceção não tratada. CustomId={CustomId}", modal.Data.CustomId);
+                try { await modal.RespondAsync("❌ Erro interno.", ephemeral: true); } catch { }
+            }
+        }
+
         public async Task HandleButtonExecutedAsync(SocketMessageComponent comp)
         {
             _logger.LogInformation("[Interação] CustomId={CustomId} Tipo={Tipo} User={User}",
@@ -382,9 +403,11 @@ namespace LegendsAwaken.Bot
             }
 
             // ————— Heróis buttons/select menus —————
-            if (parts[0] == "herois_ver" || parts[0] == "herois_atualizar" || parts[0] == "herois_toggle_inativo")
+            if (parts[0] == "herois_ver" || parts[0] == "herois_atualizar" || parts[0] == "herois_toggle_inativo" ||
+                parts[0] == "herois_colecao" || parts[0] == "herois_treinar" || parts[0] == "herois_treinar_heroi" ||
+                parts[0] == "herois_grupos")
             {
-                var heroisCmd = new HeroisCommand(_heroiService, _sustentoService, _logger);
+                var heroisCmd = new HeroisCommand(_heroiService, _sustentoService, _partyService, _logger);
                 try
                 {
                     if (comp.Data.Type == ComponentType.SelectMenu && parts[0] == "herois_ver")
@@ -395,10 +418,109 @@ namespace LegendsAwaken.Bot
 
                     if (parts[0] == "herois_toggle_inativo" && parts.Length >= 2 && Guid.TryParse(parts[1], out var toggleHeroiId))
                         { await heroisCmd.HandleToggleInativoAsync(comp, toggleHeroiId); return; }
+
+                    if (parts[0] == "herois_grupos")
+                        { await heroisCmd.HandleGruposAsync(comp); return; }
+
+                    if (parts[0] == "herois_colecao")
+                    {
+                        await new ColecaoCommand(_heroiConfigRepo, _heroiDesbloqueadoRepo, _fragmentoRepo, _recruitmentService)
+                            .MostrarAsync(comp);
+                        return;
+                    }
+
+                    if (parts[0] == "herois_treinar")
+                    {
+                        await comp.DeferAsync(ephemeral: true);
+                        var hList = await _heroiService.ObterHeroisPorUsuarioAsync(comp.User.Id);
+                        if (!hList.Any()) { await comp.FollowupAsync("Nenhum herói disponível para treinar.", ephemeral: true); return; }
+                        var sel = new SelectMenuBuilder()
+                            .WithCustomId("herois_treinar_heroi")
+                            .WithPlaceholder("Escolha o herói para treinar...")
+                            .WithMinValues(1).WithMaxValues(1);
+                        foreach (var h in hList.OrderBy(h => h.Nome).Take(25))
+                            sel.AddOption(h.Nome, h.Id.ToString(), $"Nv {h.Nivel}");
+                        await comp.FollowupAsync(
+                            "⚔️ Treinar herói (custo: 100 Ouro + 10 Comida | cooldown: 4h):",
+                            components: new ComponentBuilder().WithSelectMenu(sel).Build(),
+                            ephemeral: true);
+                        return;
+                    }
+
+                    if (comp.Data.Type == ComponentType.SelectMenu && parts[0] == "herois_treinar_heroi")
+                    {
+                        var heroiIdStr = comp.Data.Values.FirstOrDefault();
+                        if (heroiIdStr == null || !Guid.TryParse(heroiIdStr, out var treinarId))
+                        { await comp.UpdateAsync(m => { m.Content = "Herói inválido."; m.Components = null; }); return; }
+                        var hAll  = await _heroiService.ObterHeroisPorUsuarioAsync(comp.User.Id);
+                        var heroi = hAll.FirstOrDefault(h => h.Id == treinarId);
+                        var res   = await _arenaService.TreinarAsync(comp.User.Id, treinarId);
+                        if (res.Erro != null)
+                        { await comp.UpdateAsync(m => { m.Content = $"❌ {res.Erro}"; m.Components = null; }); return; }
+                        var msg = $"✅ **{heroi?.Nome ?? "Herói"}** treinou e ganhou **{res.XpGanho} XP**!";
+                        if (res.NiveisGanhos > 0) msg += $" (+{res.NiveisGanhos} nível!)";
+                        msg += "\n*Custo: 100 Ouro + 10 Comida | Cooldown: 4h*";
+                        await comp.UpdateAsync(m => { m.Content = msg; m.Components = null; });
+                        return;
+                    }
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "[Herois] Exceção não tratada. CustomId={CustomId} User={User}",
+                        comp.Data.CustomId, comp.User.Username);
+                    try { await comp.FollowupAsync("❌ Erro interno. Tente novamente.", ephemeral: true); } catch { }
+                }
+                return;
+            }
+
+            // ————— Grupos buttons/select menus —————
+            if (parts[0].StartsWith("grupos_"))
+            {
+                var gruposCmd = new GruposCommand(_partyService, _heroiService, _logger);
+                try
+                {
+                    if (parts[0] == "grupos_lista")
+                        { await gruposCmd.HandleListaAsync(comp); return; }
+
+                    if (comp.Data.Type == ComponentType.SelectMenu && parts[0] == "grupos_ver_sel")
+                        { await gruposCmd.HandleVerSelAsync(comp); return; }
+
+                    if (parts[0] == "grupos_criar")
+                        { await gruposCmd.HandleCriarAsync(comp); return; }
+
+                    if (comp.Data.Type == ComponentType.SelectMenu && parts[0] == "grupos_criar_sel")
+                        { await gruposCmd.HandleCriarSelAsync(comp); return; }
+
+                    if (parts[0] == "grupos_recomendado")
+                        { await gruposCmd.HandleRecomendadoAsync(comp); return; }
+
+                    if (parts[0] == "grupos_ver" && parts.Length >= 2 && Guid.TryParse(parts[1], out var verPartyId))
+                        { await gruposCmd.HandleVerAsync(comp, verPartyId); return; }
+
+                    if (parts[0] == "grupos_add_sel" && parts.Length >= 2 && Guid.TryParse(parts[1], out var addSelPartyId))
+                        { await gruposCmd.HandleAddSelAsync(comp, addSelPartyId); return; }
+
+                    if (comp.Data.Type == ComponentType.SelectMenu && parts[0] == "grupos_add" && parts.Length >= 2 && Guid.TryParse(parts[1], out var addPartyId))
+                        { await gruposCmd.HandleAddAsync(comp, addPartyId); return; }
+
+                    if (parts[0] == "grupos_rem_sel" && parts.Length >= 2 && Guid.TryParse(parts[1], out var remSelPartyId))
+                        { await gruposCmd.HandleRemSelAsync(comp, remSelPartyId); return; }
+
+                    if (comp.Data.Type == ComponentType.SelectMenu && parts[0] == "grupos_rem" && parts.Length >= 2 && Guid.TryParse(parts[1], out var remPartyId))
+                        { await gruposCmd.HandleRemAsync(comp, remPartyId); return; }
+
+                    if (parts[0] == "grupos_nome_toggle" && parts.Length >= 2 && Guid.TryParse(parts[1], out var togglePartyId))
+                        { await gruposCmd.HandleNomeToggleAsync(comp, togglePartyId); return; }
+
+                    if (parts[0] == "grupos_nome_editar" && parts.Length >= 2 && Guid.TryParse(parts[1], out var editarPartyId))
+                        { await gruposCmd.HandleNomeEditarAsync(comp, editarPartyId); return; }
+
+                    if (parts[0] == "grupos_deletar" && parts.Length >= 2 && Guid.TryParse(parts[1], out var deletarPartyId))
+                        { await gruposCmd.HandleDeletarAsync(comp, deletarPartyId); return; }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "[Grupos] Exceção não tratada. CustomId={CustomId} User={User}",
                         comp.Data.CustomId, comp.User.Username);
                     try { await comp.FollowupAsync("❌ Erro interno. Tente novamente.", ephemeral: true); } catch { }
                 }
@@ -415,70 +537,68 @@ namespace LegendsAwaken.Bot
                 return;
             }
 
-            // Select menu: mudar arquetipo de contrato
-            if (comp.Data.Type == ComponentType.SelectMenu && comp.Data.CustomId == "contrato_arquetipo")
+            // ————— Bioma buttons/select menus —————
+            if (parts[0] == "bioma_atualizar" || parts[0] == "torre_bioma" ||
+                parts[0] == "bioma_lista" || parts[0] == "bioma_fechar" ||
+                parts[0] == "bioma_sel" || parts[0] == "bioma_ver_colecao")
             {
-                var arquetipoStr = comp.Data.Values.FirstOrDefault();
-                if (arquetipoStr is not null && Enum.TryParse<Profissao>(arquetipoStr, out var arquetipo))
-                    await new ContratoCommand(_contractService, _contratoRepository)
-                        .HandleArquetipoAsync(comp, arquetipo);
-                return;
-            }
+                var biomaCmd = new BiomaCommand(_biomeService, _torreRepository, _fragmentoRepo, _heroiConfigRepo);
+                try
+                {
+                    if (parts[0] == "torre_bioma" || parts[0] == "bioma_atualizar")
+                        { await biomaCmd.MostrarListaAsync(comp); return; }
 
-            // Button: bioma -> ver colecao
-            if (comp.Data.CustomId == "bioma_ver_colecao")
-            {
-                await new ColecaoCommand(_heroiConfigRepo, _heroiDesbloqueadoRepo, _fragmentoRepo, _recruitmentService)
-                    .MostrarAsync(comp);
-                return;
-            }
+                    if (parts[0] == "bioma_lista")
+                        { await biomaCmd.VoltarListaAsync(comp); return; }
 
-            // Button: bioma -> contratos
-            if (comp.Data.CustomId == "bioma_contratos")
-            {
-                await new ContratoCommand(_contractService, _contratoRepository)
-                    .MostrarAsync(comp);
-                return;
-            }
+                    if (parts[0] == "bioma_fechar")
+                        { await comp.UpdateAsync(m => { m.Content = "Fechado."; m.Embed = null; m.Components = new ComponentBuilder().Build(); }); return; }
 
-            // Button: remover foco nomeado
-            if (comp.Data.CustomId == "contrato_remover_nomeado")
-            {
-                await comp.DeferAsync(ephemeral: true);
-                var usuarioId = DiscordIdHelper.ToGuid(comp.User.Id);
-                var nomeado = await _contratoRepository.ObterAtivoAsync(usuarioId, LegendsAwaken.Domain.Enum.TipoContrato.Nomeado);
-                if (nomeado is not null)
-                    await _contratoRepository.DesativarAsync(nomeado.Id);
-                await comp.FollowupAsync(nomeado is not null ? "Foco nomeado removido." : "Nenhum foco nomeado ativo.", ephemeral: true);
+                    if (comp.Data.Type == ComponentType.SelectMenu && parts[0] == "bioma_sel")
+                        { await biomaCmd.MostrarDetalheAsync(comp); return; }
+
+                    if (parts[0] == "bioma_ver_colecao")
+                    {
+                        await new ColecaoCommand(_heroiConfigRepo, _heroiDesbloqueadoRepo, _fragmentoRepo, _recruitmentService)
+                            .MostrarAsync(comp);
+                        return;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "[Bioma] Exceção não tratada. CustomId={CustomId} User={User}",
+                        comp.Data.CustomId, comp.User.Username);
+                    try { await comp.FollowupAsync("❌ Erro interno. Tente novamente.", ephemeral: true); } catch { }
+                }
                 return;
             }
 
             // ————— Torre Modo Operação buttons/select menus —————
             if (parts[0] == "torre_modo_operacao" || parts[0].StartsWith("torre_op_"))
             {
-                var torreCmd = new TorreCommand(_torreService, _heroiService, _biomeService, _torreOperacaoService, _logger);
+                var torreCmd = new TorreCommand(_torreService, _heroiService, _biomeService, _torreOperacaoService, _cidadeService, _torreExploracaoService, _partyService, _logger);
                 try
                 {
                     if (parts[0] == "torre_modo_operacao")
                         { await torreCmd.HandleModoOperacaoAsync(comp); return; }
 
-                    if (comp.Data.Type == ComponentType.SelectMenu && parts[0] == "torre_op_andar")
-                        { await torreCmd.HandleOpAndarAsync(comp); return; }
+                    if (parts[0] == "torre_op_alocar")
+                        { await torreCmd.HandleOpAlocarAsync(comp); return; }
 
-                    if (parts[0] == "torre_op_objetivo" && parts.Length >= 3 && int.TryParse(parts[1], out var opAndarObj))
-                        { await torreCmd.HandleOpObjetivoAsync(comp, opAndarObj, parts[2]); return; }
+                    if (comp.Data.Type == ComponentType.SelectMenu && parts[0] == "torre_op_andar_sel")
+                        { await torreCmd.HandleOpAndarSelAsync(comp); return; }
 
-                    if (parts[0] == "torre_op_risco" && parts.Length >= 4 && int.TryParse(parts[1], out var opAndarRisco))
-                        { await torreCmd.HandleOpRiscoAsync(comp, opAndarRisco, parts[2], parts[3]); return; }
+                    if (parts[0] == "torre_op_coletar_todas")
+                        { await torreCmd.HandleOpColetarTodasAsync(comp); return; }
 
-                    if (parts[0] == "torre_op_coletar")
-                        { await torreCmd.HandleOpColetarAsync(comp); return; }
+                    if (parts[0] == "torre_op_remover_sel")
+                        { await torreCmd.HandleOpRemoverSelAsync(comp); return; }
 
-                    if (parts[0] == "torre_op_cancelar_ativo")
-                        { await torreCmd.HandleOpCancelarAtivoAsync(comp); return; }
+                    if (comp.Data.Type == ComponentType.SelectMenu && parts[0] == "torre_op_remover_andar_sel")
+                        { await torreCmd.HandleOpRemoverAndarSelAsync(comp); return; }
 
-                    if (parts[0] == "torre_op_cancelar")
-                        { await torreCmd.HandleOpCancelarAsync(comp); return; }
+                    if (parts[0] == "torre_op_fechar")
+                        { await torreCmd.HandleOpFecharAsync(comp); return; }
                 }
                 catch (Exception ex)
                 {
@@ -492,7 +612,7 @@ namespace LegendsAwaken.Bot
             // ————— Torre buttons —————
             if (parts[0] == "torre_atualizar")
             {
-                await new TorreCommand(_torreService, _heroiService, _biomeService, _torreOperacaoService, _logger).HandleAtualizarAsync(comp);
+                await new TorreCommand(_torreService, _heroiService, _biomeService, _torreOperacaoService, _cidadeService, _torreExploracaoService, _partyService, _logger).HandleAtualizarAsync(comp);
                 return;
             }
 
@@ -500,7 +620,7 @@ namespace LegendsAwaken.Bot
             {
                 try
                 {
-                    await new TorreCommand(_torreService, _heroiService, _biomeService, _torreOperacaoService, _logger).HandleAvancarAsync(comp);
+                    await new TorreCommand(_torreService, _heroiService, _biomeService, _torreOperacaoService, _cidadeService, _torreExploracaoService, _partyService, _logger).HandleAvancarAsync(comp);
                 }
                 catch (Exception ex)
                 {
@@ -510,10 +630,53 @@ namespace LegendsAwaken.Bot
                 return;
             }
 
+            // ————— Torre Exploração buttons/select menus —————
+            if (parts[0] == "torre_investigar" || parts[0] == "torre_explorar" ||
+                parts[0] == "torre_explorar_confirmar" || parts[0].StartsWith("torre_exp_"))
+            {
+                var expCmd = new TorreCommand(_torreService, _heroiService, _biomeService, _torreOperacaoService, _cidadeService, _torreExploracaoService, _partyService, _logger);
+                try
+                {
+                    if (parts[0] == "torre_investigar")
+                        { await expCmd.HandleInvestigarAsync(comp); return; }
+
+                    if (parts[0] == "torre_explorar")
+                        { await expCmd.HandleExplorarAsync(comp); return; }
+
+                    if (parts[0] == "torre_explorar_confirmar" && parts.Length >= 3)
+                        { await expCmd.HandleExplorarConfirmarAsync(comp, parts[1], parts[2]); return; }
+
+                    if (comp.Data.Type == ComponentType.SelectMenu && parts[0] == "torre_exp_grupo_sel")
+                        { await expCmd.HandleExpGrupoSelAsync(comp); return; }
+
+                    if (comp.Data.Type == ComponentType.SelectMenu && parts[0] == "torre_exp_booster_sel")
+                        { await expCmd.HandleExpBoosterSelAsync(comp); return; }
+
+                    if (parts[0] == "torre_exp_atualizar")
+                        { await expCmd.HandleExpAtualizarAsync(comp); return; }
+
+                    if (parts[0] == "torre_exp_coletar")
+                        { await expCmd.HandleExpColetarAsync(comp); return; }
+
+                    if (parts[0] == "torre_exp_cancelar")
+                        { await expCmd.HandleExpCancelarAsync(comp); return; }
+
+                    if (parts[0] == "torre_exp_cancelar_sel")
+                        { await expCmd.HandleExpCancelarSelAsync(comp); return; }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "[TorreExp] Exceção não tratada. CustomId={CustomId} User={User}",
+                        comp.Data.CustomId, comp.User.Username);
+                    try { await comp.FollowupAsync("❌ Erro interno. Tente novamente.", ephemeral: true); } catch { }
+                }
+                return;
+            }
+
             // ————— Cidade buttons/select menus —————
             if (parts[0].StartsWith("cidade_"))
             {
-                var cidadeCmd = new CidadeCommand(_cidadeService, _heroiService, _logger);
+                var cidadeCmd = new CidadeCommand(_cidadeService, _heroiService, _cidadeBoosterService, _logger);
                 try
                 {
                     if (parts[0] == "cidade_coletar")
@@ -551,6 +714,12 @@ namespace LegendsAwaken.Bot
 
                     if (parts[0] == "cidade_atualizar")
                         { await cidadeCmd.HandleAtualizarAsync(comp); return; }
+
+                    if (parts[0] == "cidade_booster")
+                        { await cidadeCmd.HandleBoosterAsync(comp); return; }
+
+                    if (comp.Data.Type == ComponentType.SelectMenu && parts[0] == "cidade_booster_ativar")
+                        { await cidadeCmd.HandleBoosterAtivarAsync(comp); return; }
                 }
                 catch (Exception ex)
                 {
@@ -655,18 +824,30 @@ namespace LegendsAwaken.Bot
                 new SlashCommandBuilder()
                     .WithName("bioma")
                     .WithDescription("Ver o bioma atual da Torre com herois disponiveis e contratos"),
-
-                new SlashCommandBuilder()
-                    .WithName("contrato")
-                    .WithDescription("Gerenciar contratos de drop: arquetipo e foco nomeado")
             };
+
+            // Remove commands that no longer exist in our list
+            try
+            {
+                var existingCmds = await guild.GetApplicationCommandsAsync();
+                var desiredNames  = commands.Select(c => c.Name).ToHashSet();
+                foreach (var cmd in existingCmds.Where(c => !desiredNames.Contains(c.Name)))
+                {
+                    await cmd.DeleteAsync();
+                    _logger.LogInformation("Comando /{CommandName} removido.", cmd.Name);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao limpar comandos antigos.");
+            }
 
             foreach (var cmd in commands)
             {
                 try
                 {
                     await guild.CreateApplicationCommandAsync(cmd.Build());
-                    _logger.LogInformation("Comando /{CommandName} registrado no servidor.", cmd.Name);
+                    _logger.LogInformation("Comando /{CommandName} registrado.", cmd.Name);
                 }
                 catch (Exception ex)
                 {

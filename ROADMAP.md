@@ -200,15 +200,62 @@
 
 ---
 
+## Sessão 2026-04-25 — Bioma Panel, Cidade UX e Torre Modo Operação v2 ✅ concluída
+
+### Correções de bug
+- [x] `CidadeCommand` — ícones dos nodes corrigidos; switch de case substituído por `ResourceNodeConfig.Icone()` centralizado
+- [x] `TorreCommand.HandleExplorarAsync` / `HandleExpAtualizarAsync` — teamPS filtrado por `HeroisIds` da exploração
+- [x] `ColecaoCommand.MostrarAsync` — erro 40060 resolvido trocando `DeferAsync` + `UpdateAsync` por `ModifyOriginalResponseAsync`
+
+### Bioma
+- [x] `BiomeService.ListarDescobertosAsync(andarAtual)` e `ObterPorIdAsync(Guid)` adicionados
+- [x] `BiomaPanel.CriarLista` — Select Menu com biomas descobertos, % andares conquistados e indicador de bioma atual
+- [x] `BiomaPanel.CriarDetalhe` — barra de progresso por andares, pool de heróis com sistema de descoberta ("?" para heróis não descobertos, contador de pendentes)
+- [x] `BiomaCommand` refatorado com 4 handlers: `ExecutarAsync`, `MostrarListaAsync`, `VoltarListaAsync`, `MostrarDetalheAsync`
+
+### Cidade UX
+- [x] `CidadePanel.CriarEmbed` — coletores agrupados por node com heróis indentados e taxa por hora
+- [x] Contador de heróis disponíveis exibido no painel (`👥 X disponíveis / Y total`)
+- [x] `ResourceNodeConfig.Icone(string recurso)` — método centralizado (lowercase switch)
+
+### Torre Modo Operação v2
+- [x] `TorreOperacaoConfig` (arquivo novo) — duração fixa 8h, produção por tier de andar em 6 faixas, afinidade racial leve, cálculo de slots por nível de guilda
+- [x] `TorreOperacaoService` reescrito — suporte a múltiplas operações simultâneas (`IniciarAsync`, `ProcessarTodasAsync`, `ColetarTodasAsync`, `CancelarPorAndarAsync`)
+- [x] `ITorreOperacaoRepository` / `TorreOperacaoRepository` — `ListarAtivasAsync`, `ListarConcluidasAsync`, `ObterPorAndarAsync`
+- [x] `TorreModoOperacaoPanel` reescrito — board de andares (`CriarBoard`, `CriarSemAndares`, `CriarSeletorAndar`, `CriarSeletorRemover`, `CriarNotificacaoTexto`)
+- [x] `TorreCommand` — wizard de 4 etapas substituído por handlers de board: `HandleModoOperacaoAsync`, `HandleOpAlocarAsync`, `HandleOpAndarSelAsync`, `HandleOpColetarTodasAsync`, `HandleOpRemoverSelAsync`, `HandleOpRemoverAndarSelAsync`, `HandleOpFecharAsync`
+- [x] `CommandHandler` — novos IDs de interação roteados; `TorreCommand` injetado com `CidadeService`
+
+---
+
 ## Fase 3B — Expansão de Sistemas (P1)
 **Objetivo:** adicionar profundidade econômica e loops complementares. Implementar após UX-0 validado.
 
-### Ordem de build aprovada
+### Próximos Passos Recomendados (2026-04-25)
+
+> Baseado na análise dos documentos de design T0 (Torre) e T1 (Boosters Cidade) cruzados com o que está implementado.
+
+| Prioridade | Sistema | Motivo |
+|---|---|---|
+| 🔴 Alta | **3B-ItemUnico** — Item único por andar (Torre Operação) | T3 identifica como ponto mais crítico: sem diversidade de itens o sistema colapsa em "farm 2 andares pra sempre" |
+| 🔴 Alta | **3B-TorreExp** — Investigação + Checkpoints + Heróis Feridos | Loop central da Torre; T0 define estes como mecanismos core |
+| 🟠 Média | **3B-BoostCidade** — Boosters consumíveis da cidade | T1 completo; conecta crafting, economia e Torre |
+| 🟠 Média | **3B-RotacaoInteresse** — Crafting + eventos que demandam itens de andares variados | T3: sem rotação de interesse o jogador escolhe 2 andares e nunca muda |
+| 🟡 Média | **3B-1** — Inventário Unificado | Pré-requisito bloqueante para Relíquias e Mercado |
+| 🟡 Média | **3B-2** — Conversão de Heróis | Sink de heróis excedentes; requer Inventário |
+| 🔵 Baixa | **3B-5** — Guilda / Missões | Requer HeroPowerScore estável |
+| 🔵 Baixa | **3B-6** — Relíquias | Requer Inventário (3B-1) |
+
+### Ordem de build completa
 Cada etapa é pré-requisito ou dependência lógica da seguinte.
 
 | # | Sistema | Dependência |
 |---|---|---|
-| 3B-1 | Inventário Unificado | Pré-requisito para Relíquias |
+| 3B-ItemUnico | Item Único por Andar (Torre Operação) | `TorreOperacaoConfig`, sistema de Inventário básico |
+| 3B-TorreExp | Torre Exploração Avançada — Investigação, Checkpoints, Heróis Feridos | `TorreExploracaoService` |
+| 3B-BoostCidade | Boosters da Cidade — consumíveis craftáveis de produção | Crafting expandido |
+| 3B-RotacaoInteresse | Rotação de Interesse — demandas de crafting e eventos semanais | 3B-ItemUnico + Crafting |
+| 3B-1 | Inventário Unificado | Pré-requisito para Relíquias e Mercado |
 | 3B-2 | Conversão de Heróis (Venda + Absorção) | — |
 | 3B-3 | Torre — Modo Operação ✅ | — |
 | 3B-4 | Sustento (Comida / Moradia / Estados) ✅ MVP | — |
@@ -221,6 +268,60 @@ Cada etapa é pré-requisito ou dependência lógica da seguinte.
 | 3B-Meta | Nível do Mestre + Traços 4★ | Requer atividade de todos os sistemas 3B |
 
 Cada sistema recebe UX de painel desde o primeiro dia (usando o padrão da UX-0).
+
+### 3B-ItemUnico — Item Único por Andar (T3 — ponto crítico)
+Design: cada andar da Torre tem 1 item exclusivo associado. O jogador avança a Torre, vê o item do andar, decide se vale alocar um slot de operação para farmá-lo. Sem diversidade de itens o sistema colapsa em "farm 2 andares pra sempre".
+
+**Status dos tipos de item (T3):**
+- [ ] **Equipamento com efeito específico** — crit, sustain, speed (não apenas "mais forte")
+- [ ] **Item de nicho** — forte para certos heróis/builds, irrelevante para outros
+- [ ] **Consumível estratégico** — buff temporário poderoso, crafteável ou drop direto
+- [ ] **Componente de crafting raro** — ingrediente de recipe avançada (cria demanda de andar)
+- [ ] **Item de progressão** — usado em ascensão futura (cria demanda de longo prazo)
+
+**Implementação:**
+- [ ] `AndarItem` entity — `AndarNumero`, `ItemConfig` (Id, Nome, Tipo, Efeito, Slot/Raridade)
+- [ ] `AndarItemConfig` static seed ou tabela — 1 entrada por andar (ex: andares 1–100 documentados)
+- [ ] `TorreOperacaoConfig.ObterProducao` estendido para incluir item do andar (além do recurso)
+- [ ] `TorreModoOperacaoPanel.CriarBoard` — exibir item do andar em cada linha do board
+- [ ] `CriarSeletorAndar` — mostrar item ao lado do andar no Select Menu
+- [ ] `TorreOperacaoService.ConcluirOperacao` — adicionar item ao inventário do jogador
+
+### 3B-TorreExp — Torre Exploração Avançada (T0)
+Sistemas pendentes do design T0 para completar o loop de exploração com risco controlado e checkpoints.
+
+- [ ] **Sistema de Investigação do Andar** — 3 níveis: Básico (% vitória com time atual), Intermediário (fraquezas elementais), Avançado (distribuição de checkpoints + modificadores)
+- [ ] **Probabilidade de Vitória** — cálculo: `teamPS / andarDificuldade` (clamp 5–95%); exibição ao jogador antes de confirmar
+- [ ] **Checkpoints de Loot** — loot gerado ao atingir marcos de progresso (ex: 25%, 50%, 75%, 100%); falha preserva loot até último checkpoint atingido
+- [ ] **Heróis feridos ao falhar** — heróis da run ficam indisponíveis por tempo proporcional à raridade; ícone 🩹 no painel
+- [ ] **Checkpoints dinâmicos** — andares mais difíceis têm checkpoints mais espaçados (configurado por `AndarConfig`)
+- [ ] **Modificadores de andar** — ex: "sem checkpoint até 50%", "+50% loot / risco dobrado"
+
+### 3B-BoostCidade — Boosters da Cidade (T1)
+Itens consumíveis craftáveis que melhoram eficiência de atividades fora da Torre. 1 ativo globalmente, duração em tempo real.
+
+**6 tipos (T1):**
+- [ ] **Produção** — +X% velocidade de produção (aumenta consumo por tempo)
+- [ ] **Rendimento** — +X% quantidade produzida (não aumenta consumo)
+- [ ] **Eficiência** — -X% custo por ciclo (foco em economia pura)
+- [ ] **Qualidade** — chance de produzir item/versão melhor
+- [ ] **Especialização** — +X% eficiência para tipo específico (mineração / agricultura / crafting)
+- [ ] **Conversão** — chance de gerar recurso secundário
+
+**Implementação:**
+- [ ] Enum `TipoBoosterCidade` + entidade `BoosterCidadeAtivo` (`UsuarioId`, `Tipo`, `IniciadoEm`, `DuracaoMinutos`)
+- [ ] `BoosterCidadeService.AtivarAsync`, `ObterAtivoAsync`, `AplicarEfeitoAsync`
+- [ ] Hook em `CidadeService.ColetarProducaoAsync` — aplica multiplicador do booster ativo
+- [ ] Crafting recipes de boosters — materiais da Torre como ingredientes
+- [ ] `BoosterCidadeConfig` data-driven (efeito, duração, custo por tipo)
+- [ ] Painel `/cidade` — linha de booster ativo com duração restante; botão `[Ativar Booster]`
+
+### 3B-RotacaoInteresse — Rotação de Interesse (T3)
+Sem rotação, jogador escolhe 2 andares e nunca muda. T3 identifica três soluções:
+
+- [ ] **Crafting demanda itens de andares variados** — recipes avançadas exigem componentes de biomas diferentes
+- [ ] **Eventos semanais** — evento pede drop específico de andar rotativo (incentivo temporário a mudar alocação)
+- [ ] **Ascensão / progressão** consome item de andar específico — cria demanda permanente
 
 ### 3B-1 — Inventário Unificado
 - [ ] `Inventario` — entidade unificada por jogador; tipos: `Recurso | Item | Reliquia | Consumivel`

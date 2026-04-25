@@ -68,6 +68,13 @@ namespace LegendsAwaken.Infrastructure.Repositories
             }
         }
 
+        public async Task AdicionarConstrucaoAsync(Guid cidadeId, Construcao construcao)
+        {
+            _context.Set<Construcao>().Add(construcao);
+            _context.Entry(construcao).Property("CidadeId").CurrentValue = cidadeId;
+            await _context.SaveChangesAsync();
+        }
+
         public async Task<bool> ExisteAsync(Guid cidadeId)
         {
             return await _context.Cidades.AnyAsync(c => c.Id == cidadeId);

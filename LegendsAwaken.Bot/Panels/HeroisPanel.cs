@@ -70,7 +70,10 @@ public static class HeroisPanel
             builder.WithSelectMenu(select);
         }
 
-        builder.WithButton("🔄", "herois_atualizar", ButtonStyle.Secondary);
+        builder.WithButton("👥 Grupos",    "herois_grupos",    ButtonStyle.Primary);
+        builder.WithButton("📖 Coleção",  "herois_colecao",   ButtonStyle.Secondary);
+        builder.WithButton("⚔️ Treinar",   "herois_treinar",   ButtonStyle.Primary);
+        builder.WithButton("🔄",           "herois_atualizar", ButtonStyle.Secondary);
         return builder.Build();
     }
 

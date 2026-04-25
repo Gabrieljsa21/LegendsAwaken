@@ -21,6 +21,9 @@ namespace LegendsAwaken.Application.Services
         private readonly string _connectionString;
         private readonly LegendsAwakenDbContext _db;
         private readonly ITorreOperacaoRepository _torreOpRepo;
+        private readonly ITorreExploracaoRepository _torreExploracaoRepo;
+        private readonly ITorreBoosterRepository _torreBoosterRepo;
+        private readonly ICidadeBoosterRepository _cidadeBoosterRepo;
 
         /// <summary>
         /// Inicializa uma nova instância do <see cref="GeracaoDeDadosService"/>.
@@ -28,10 +31,19 @@ namespace LegendsAwaken.Application.Services
         /// <param name="configuration">Configuração da aplicação contendo a connection string.</param>
         /// <param name="db">Contexto do banco de dados.</param>
 
-        public GeracaoDeDadosService(IConfiguration configuration, LegendsAwakenDbContext db, ITorreOperacaoRepository torreOpRepo)
+        public GeracaoDeDadosService(
+            IConfiguration configuration,
+            LegendsAwakenDbContext db,
+            ITorreOperacaoRepository torreOpRepo,
+            ITorreExploracaoRepository torreExploracaoRepo,
+            ITorreBoosterRepository torreBoosterRepo,
+            ICidadeBoosterRepository cidadeBoosterRepo)
         {
             _db = db;
             _torreOpRepo = torreOpRepo;
+            _torreExploracaoRepo = torreExploracaoRepo;
+            _torreBoosterRepo    = torreBoosterRepo;
+            _cidadeBoosterRepo   = cidadeBoosterRepo;
             var connection = _db.Database.GetDbConnection();
             var path = new SqliteConnectionStringBuilder(connection.ConnectionString).DataSource;
 
@@ -49,6 +61,9 @@ namespace LegendsAwaken.Application.Services
         {
             await _db.Database.MigrateAsync();
             await _torreOpRepo.EnsureTableAsync();
+            await _torreExploracaoRepo.EnsureTableAsync();
+            await _torreBoosterRepo.EnsureTableAsync();
+            await _cidadeBoosterRepo.EnsureTablesAsync();
             await ListarTabelasAsync();
         }
 

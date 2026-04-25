@@ -48,6 +48,14 @@ Tarefas granulares organizadas por área. Acompanhe o progresso macro no `ROADMA
 - [x] `DiscordIdHelper.ToGuid(ulong)` — conversão determinística Discord ID → Guid
 - [x] 39 testes unitários passando
 
+## Bioma — Painel Avancado ✅ concluído (Sessão 2026-04-25)
+
+- [x] `BiomeService.ListarDescobertosAsync(andarAtual)` — lista biomas com andares conquistados pelo usuário
+- [x] `BiomeService.ObterPorIdAsync(id)` — busca bioma por Guid para exibição de detalhe
+- [x] `BiomaPanel.CriarLista(biomas, andarAtual)` — Select Menu com % de andares conquistados e indicador de bioma atual
+- [x] `BiomaPanel.CriarDetalhe(bioma, pool, fragmentos, unlockMap, andarAtual)` — barra de progresso, sistema de descoberta de heróis do pool (fragmentos coletados vs total necessário)
+- [x] `BiomaCommand` refatorado: construtor `BiomaCommand(BiomeService, ITorreRepository, IFragmentoRepository, IHeroiConfigRepository)`; handlers: `ExecutarAsync`, `MostrarListaAsync`, `VoltarListaAsync`, `MostrarDetalheAsync`
+
 ---
 
 ## Heróis
@@ -149,19 +157,89 @@ Fórmulas definidas em `GDD.md §5.0` e `DESIGN_SISTEMAS.md §3`.
 - [ ] Fragmentos de personagens fixos como drop raro
 - [x] `/treinar` funcional via Arena (XP acelerado)
 
-## Torre — Modo Operação ✅ MVP concluído (Fase 3B-3 — v3.1.0)
+## Torre — Modo Operação ✅ concluído (Fase 3B-3 — v3.1.0 + Sessão 2026-04-25)
 
-Entidade `TorreOperacao`, `TorreOperacaoService`, painel `TorreModoOperacaoPanel` (4 etapas), botão `🏭 Modo Operação` no `TorrePanel`.
+Entidade `TorreOperacao`, `TorreOperacaoService`, painel `TorreModoOperacaoPanel`, botão `🏭 Modo Operação` no `TorrePanel`. Sessão 2026-04-25: redesign completo para múltiplas operações simultâneas (board de andares).
 
 - [ ] Estado `AndarConcluido` por usuário + andar *(não exigido no MVP)*
-- [x] `TorreModoOperacaoPanel` — flow: Select Menu de andar → objetivo (FarmRecurso / ExploracaoLeve) → perfil de risco (Seguro / Balanceado / Agressivo) → confirmação
-- [x] `TorreOperacaoService.IniciarAsync`, `VerificarPendenteAsync` (auto-conclui expirado), `ColetarAsync` (credita ouro), `CancelarAsync`
+- [x] `TorreModoOperacaoPanel` — flow: Select Menu de andar → objetivo (FarmRecurso / ExploracaoLeve) → perfil de risco (Seguro / Balanceado / Agressivo) → confirmação *(MVP v1)*
+- [x] `TorreOperacaoService.IniciarAsync`, `VerificarPendenteAsync` (auto-conclui expirado), `ColetarAsync` (credita ouro), `CancelarAsync` *(MVP v1)*
 - [x] Fórmula de ouro: `andar × 3 × horas × mult` (Seguro=0.8, Balanceado=1.0, Agressivo=1.5)
 - [x] Recursos exclusivos por andar: Fragmento Rústico (≥5), Essência Corrompida (≥12), Cristal Arcano (≥18), Núcleo Sombrio (≥25)
 - [x] Poll de operação pendente em `TorreCommand.ExecutarAsync`
+- [x] Redesign: múltiplas operações simultâneas (board de andares) *(Sessão 2026-04-25)*
+- [x] Duração fixa 8h para todas as operações *(Sessão 2026-04-25)*
+- [x] Capacidade de slots: 2 + GuildaNivel × 2 *(Sessão 2026-04-25)*
+- [x] `TorreOperacaoConfig` — produção por tier de andar, afinidade racial leve *(Sessão 2026-04-25)*
+- [x] `TorreOperacaoService` reescrito: `IniciarAsync`, `ProcessarTodasAsync`, `ColetarTodasAsync`, `CancelarPorAndarAsync` *(Sessão 2026-04-25)*
+- [x] `TorreModoOperacaoPanel` board: lista de andares ativos/concluídos, seletores de alocar/remover *(Sessão 2026-04-25)*
+- [x] `ITorreOperacaoRepository` + `TorreOperacaoRepository` — `ListarAtivasAsync`, `ListarConcluidasAsync`, `ObterPorAndarAsync` *(Sessão 2026-04-25)*
 - [ ] Eventos de interrupção com decisão do jogador *(deferido)*
 - [ ] Líder decide automaticamente se jogador não responder *(deferido)*
 - [ ] Sistema de notificação inteligente *(deferido)*
+
+## Torre — Item Único por Andar (T3 — ponto crítico, Fase 3B-ItemUnico)
+
+> T3 identifica como o "ponto mais crítico do design": sem diversidade de função dos itens o sistema colapsa em "farm 2 andares pra sempre".
+
+- [ ] Design de itens por andar: cada item deve cumprir papel diferente — não apenas "mais forte"
+  - [ ] Equipamento com efeito específico (crit, sustain, speed)
+  - [ ] Item de nicho (forte para certos heróis/builds, irrelevante para outros)
+  - [ ] Consumível estratégico (buff temporário poderoso)
+  - [ ] Componente de crafting raro (ingrediente de recipe avançada)
+  - [ ] Item de progressão (usado em ascensão futura)
+- [ ] `AndarItem` entity — `AndarNumero`, `ItemConfigId`, `Nome`, `Tipo`, `Efeito`
+- [ ] `AndarItemConfig` seed — 1 item por andar documentado (seed inicial: andares 1–25)
+- [ ] `TorreOperacaoConfig.ObterProducao` — retornar item do andar além do recurso
+- [ ] `TorreModoOperacaoPanel.CriarBoard` — exibir nome/tipo do item de cada andar no board
+- [ ] `CriarSeletorAndar` — mostrar item ao lado do andar no Select Menu de alocação
+- [ ] `TorreOperacaoService.ConcluirOperacao` — adicionar item ao inventário do jogador
+
+## Torre — Rotação de Interesse (T3 — anticongelamento de alocação)
+
+> T3: sem rotação de interesse, jogador com 20 slots escolhe os 20 melhores andares e nunca muda.
+
+- [ ] Crafting avançado exige componentes de biomas diferentes (ex: recipe de item Tier II requer drop do Bioma A + Bioma B)
+- [ ] Eventos semanais pedem drop específico de andar rotativo
+- [ ] Items de progressão (ascensão, relíquias) consomem drop de andar específico
+
+## Torre — Exploração Avançada (T0 — Fase 3B-TorreExp)
+
+### Investigação do Andar
+- [ ] Botão `[🔍 Investigar]` no `TorrePanel` ou no seletor de andar da Exploração
+- [ ] **Nível Básico** — chance de vitória: `teamPS / andarDificuldade` (clamp 5–95%), exibida antes de confirmar
+- [ ] **Nível Intermediário** — fraquezas elementais do andar (icon do elemento que o time explora)
+- [ ] **Nível Avançado** — distribuição de checkpoints + modificadores ativos do andar
+- [ ] `AndarConfig` ou campo `Dificuldade` em `TorreAndar` para alimentar o cálculo
+
+### Checkpoints de Loot
+- [ ] Campo `ProgressoAtual` (0–100) em `TorreExploracao`
+- [ ] Config de checkpoints por andar (ex: `{25, 50, 75, 100}`)
+- [ ] Ao atingir checkpoint: gerar e garantir loot daquele intervalo
+- [ ] Ao falhar: preservar loot até último checkpoint; perder intervalo atual
+- [ ] `TorreCheckpointLoot` entity + repositório + migration
+- [ ] Integração com `TorreExploracaoService.ProcessarAsync`
+
+### Heróis Feridos ao Falhar
+- [ ] Ao falhar: heróis do time marcados como feridos (`FerimentoAt`, `HorasRecuperacao`)
+- [ ] Bloqueio em Torre, Arena e Missões enquanto ferido
+- [ ] Tick de cura baseado em tempo (4–12h por raridade) em `SustentoService` ou `CuraService`
+- [ ] Ícone `🩹` em `HeroisPanel` + ETA de cura
+
+## Boosters da Cidade (T1 — Fase 3B-BoostCidade)
+
+> 6 tipos de boosters consumíveis craftáveis. 1 ativo globalmente, duração em tempo real.
+
+- [ ] Enum `TipoBoosterCidade`: Producao, Rendimento, Eficiencia, Qualidade, Especializacao, Conversao
+- [ ] Entidade `BoosterCidadeAtivo` — `UsuarioId`, `Tipo`, `IniciadoEm`, `DuracaoMinutos`, `Valor`
+- [ ] `BoosterCidadeService.AtivarAsync` — valida 1 ativo; desativa anterior se troca
+- [ ] `BoosterCidadeService.ObterAtivoAsync` + `AplicarEfeitoAsync(multiplier)`
+- [ ] Hook em `CidadeService.ColetarProducaoAsync` — aplica booster ativo
+- [ ] Crafting recipes de boosters: materiais da Torre como ingredientes
+- [ ] `BoosterCidadeConfig` data-driven (efeito, duração, custo por tipo)
+- [ ] Painel `/cidade` — booster ativo com duração restante; botão `[Ativar Booster]`
+
+---
 
 ## Torre — Design Avançado (Fase 3C)
 

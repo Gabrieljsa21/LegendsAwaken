@@ -10,7 +10,7 @@ using LegendsAwaken.Domain.Enum;
 
 namespace LegendsAwaken.Bot.Commands;
 
-public class HeroisCommand(HeroiService heroiService, SustentoService sustentoService, ILogger? logger = null)
+public class HeroisCommand(HeroiService heroiService, SustentoService sustentoService, PartyService? partyService = null, ILogger? logger = null)
 {
     private void Log(string msg)                  => logger?.LogInformation("[Herois] {Msg}", msg);
     private void LogErr(Exception ex, string ctx) => logger?.LogError(ex, "[Herois] ERRO em {Ctx}", ctx);
@@ -90,6 +90,19 @@ public class HeroisCommand(HeroiService heroiService, SustentoService sustentoSe
             LogErr(ex, $"ToggleInativo heroiId={heroiId}");
             await comp.FollowupAsync("❌ Erro interno ao alterar sustento.", ephemeral: true);
         }
+    }
+
+    // ── Abrir painel de grupos ───────────────────────────────────────────────────
+
+    public async Task HandleGruposAsync(SocketMessageComponent comp)
+    {
+        if (partyService == null)
+        {
+            await comp.DeferAsync(ephemeral: true);
+            await comp.FollowupAsync("Sistema de grupos não disponível.", ephemeral: true);
+            return;
+        }
+        await new GruposCommand(partyService, heroiService, logger).AbrirAsync(comp);
     }
 
     // ── Atualizar painel ─────────────────────────────────────────────────────────

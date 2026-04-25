@@ -3,8 +3,9 @@
     public class Party
     {
         public Guid Id { get; set; }
-        public ulong UsuarioId { get; set; }     // dono da party
+        public ulong UsuarioId { get; set; }
         public string Nome { get; set; } = string.Empty;
+        public bool NomeModoManual { get; set; } = false;
         public List<PartyHero> Membros { get; set; } = new();
     }
 

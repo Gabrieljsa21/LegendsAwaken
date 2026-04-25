@@ -25,11 +25,6 @@ LegendsAwaken/
 │   │   ├── Usuario.cs
 │   │   ├── Auxiliares/
 │   │   │   └── HeroiAuxiliares.cs         # HeroiBonusAtributo, HeroiTag, HeroiVinculo, HeroiAfinidadeElemental
-│   │   ├── Banner/
-│   │   │   ├── BannerConfiguracao.cs
-│   │   │   ├── BannerHistorico.cs
-│   │   │   ├── BannerProgresso.cs
-│   │   │   └── RacaChance.cs
 │   │   └── Combate/
 │   │       ├── CombatEncounter.cs
 │   │       └── Combatente.cs
@@ -43,7 +38,6 @@ LegendsAwaken/
 │   ├── Factories/
 │   │   └── HeroiFactory.cs
 │   └── Interfaces/
-│       ├── IBannerHistoricoRepository.cs
 │       ├── ICidadeRepository.cs
 │       ├── IHabilidadeRepository.cs
 │       ├── IHeroiRepository.cs
@@ -52,27 +46,22 @@ LegendsAwaken/
 │       └── IUsuarioRepository.cs
 │
 ├── LegendsAwaken.Application/             # Orquestração de casos de uso
-│   ├── DTOs/
-│   │   └── GachaResultadoDTO.cs
 │   ├── Helpers/
-│   │   ├── BannerDinamico.cs
 │   │   └── NomeGenerator.cs
 │   ├── Interfaces/
 │   │   ├── IAtributoBonusService.cs
 │   │   └── IHabilidadeService.cs
 │   └── Services/
 │       ├── AtributoBonusService.cs
-│       ├── BannerHistoricoService.cs
-│       ├── BannerService.cs
 │       ├── CidadeService.cs
 │       ├── CombatService.cs
-│       ├── GachaService.cs                # Gacha com soft-pity cúbico; RaridadeConfig (SOLID)
 │       ├── GeracaoDeDadosService.cs
 │       ├── HabilidadeService.cs
 │       ├── HeroiLevelUpService.cs         # RaridadeConfig, grants de ascensão, bônus raciais
 │       ├── HeroiService.cs
 │       ├── PartyService.cs
 │       ├── RacaService.cs
+│       ├── TorreOperacaoConfig.cs         # Config estática: duração, produção por tier, CalcularMaxSlots
 │       ├── TorreService.cs
 │       ├── TreinamentoService.cs
 │       └── UsuarioService.cs
@@ -84,14 +73,21 @@ LegendsAwaken/
 │   │   ├── 20250724221226_InitialCreate.cs
 │   │   ├── 20260411035328_CidadeRefactor.cs
 │   │   └── LegendsAwakenDbContextModelSnapshot.cs
-│   ├── Providers/
-│   │   └── BannerConfiguracoesProvider.cs
 │   ├── Repositories/
-│   │   ├── BannerHistoricoRepository.cs
+│   │   ├── BiomaRepository.cs
 │   │   ├── CidadeRepository.cs
+│   │   ├── ContratoRepository.cs
+│   │   ├── FragmentoRepository.cs
 │   │   ├── HabilidadeRepository.cs
+│   │   ├── HeroiConfigRepository.cs
+│   │   ├── HeroiDesbloqueadoRepository.cs
 │   │   ├── HeroiRepository.cs
+│   │   ├── ItemRepository.cs
 │   │   ├── PartyRepository.cs
+│   │   ├── SlotOcupacaoRepository.cs
+│   │   ├── TorreBoosterRepository.cs
+│   │   ├── TorreExploracaoRepository.cs
+│   │   ├── TorreOperacaoRepository.cs
 │   │   ├── TorreRepository.cs
 │   │   └── UsuarioRepository.cs
 │   └── SeedData/
@@ -103,15 +99,29 @@ LegendsAwaken/
 │   ├── BotConfig.cs
 │   ├── appsettings.json
 │   ├── Commands/
-│   │   ├── BannerCommand.cs
+│   │   ├── ArenaCommand.cs
+│   │   ├── BiomaCommand.cs                # 4 handlers: lista + detalhe de bioma
 │   │   ├── CidadeCommand.cs
+│   │   ├── ColecaoCommand.cs
 │   │   ├── CombatCommand.cs
+│   │   ├── GruposCommand.cs
+│   │   ├── HeroisCommand.cs
 │   │   ├── InvocarCommand.cs
 │   │   ├── ListarHeroisCommand.cs
 │   │   ├── SubirAndarCommand.cs
+│   │   ├── TorreCommand.cs               # Handlers de Modo Operação board-based
 │   │   ├── TreinarCommand.cs
 │   │   └── VerHeroiCommand.cs
+│   ├── Panels/
+│   │   ├── BiomaPanel.cs                  # Seletor de biomas descobertos + barra de progresso
+│   │   ├── CidadePanel.cs                 # Agrupamento por node + contador de heróis disponíveis
+│   │   ├── ColecaoPanel.cs
+│   │   ├── ContratoPanel.cs
+│   │   ├── GruposPanel.cs
+│   │   ├── TorreExploracaoPanel.cs
+│   │   └── TorreModoOperacaoPanel.cs      # Board de andares ativos/concluídos
 │   └── Helpers/
+│       ├── DiscordIdHelper.cs             # ToGuid via BinaryPrimitives.WriteUInt64LittleEndian
 │       └── EmbedHelper.cs
 │
 ├── LegendsAwaken.Data/                    # Dados estáticos em JSON

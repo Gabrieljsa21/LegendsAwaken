@@ -2,6 +2,8 @@ using LegendsAwaken.Domain.Entities;
 using LegendsAwaken.Domain.Enum;
 using LegendsAwaken.Domain.Interfaces;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace LegendsAwaken.Application.Services
@@ -9,15 +11,15 @@ namespace LegendsAwaken.Application.Services
     public class TorreOperacaoService
     {
         private readonly ITorreOperacaoRepository _repo;
-        private readonly ITorreRepository _torreRepo;
-        private readonly IUsuarioRepository _usuarioRepo;
+        private readonly ITorreRepository         _torreRepo;
+        private readonly IUsuarioRepository       _usuarioRepo;
 
         public TorreOperacaoService(
             ITorreOperacaoRepository repo,
             ITorreRepository torreRepo,
             IUsuarioRepository usuarioRepo)
         {
-            _repo = repo;
+            _repo      = repo;
             _torreRepo = torreRepo;
             _usuarioRepo = usuarioRepo;
         }
@@ -28,59 +30,110 @@ namespace LegendsAwaken.Application.Services
             return andar?.Numero ?? 1;
         }
 
-        // Returns a concluded operation ready to collect, auto-concluding any finished active op.
-        public async Task<TorreOperacao?> VerificarPendenteAsync(Guid usuarioId)
-        {
-            var ativa = await _repo.ObterAtivaAsync(usuarioId);
-            if (ativa != null)
-            {
-                var fim = ativa.IniciadoEm.AddHours(ativa.DuracaoHoras);
-                if (DateTime.UtcNow >= fim)
-                {
-                    ConcluirOperacao(ativa);
-                    await _repo.AtualizarAsync(ativa);
-                    return ativa;
-                }
-                return null;
-            }
-
-            return await _repo.ObterConcluidaAsync(usuarioId);
-        }
+        // ── Query helpers ────────────────────────────────────────────────────────
 
         public Task<TorreOperacao?> ObterAtivaAsync(Guid usuarioId)
             => _repo.ObterAtivaAsync(usuarioId);
 
-        public async Task<TorreOperacao> IniciarAsync(
-            Guid usuarioId, int andarNumero,
-            ObjetivoOperacao objetivo, PerfilRisco perfil)
-        {
-            var existente = await _repo.ObterAtivaAsync(usuarioId);
-            if (existente != null)
-            {
-                existente.Status = StatusOperacao.Expirada;
-                await _repo.AtualizarAsync(existente);
-            }
+        public Task<List<TorreOperacao>> ListarAtivasAsync(Guid usuarioId)
+            => _repo.ListarAtivasAsync(usuarioId);
 
-            int duracao = objetivo == ObjetivoOperacao.FarmRecurso ? 4 : 8;
+        // Checks all active ops and auto-concludes finished ones; returns newly concluded list
+        public async Task<List<TorreOperacao>> ProcessarTodasAsync(Guid usuarioId)
+        {
+            var ativas = await _repo.ListarAtivasAsync(usuarioId);
+            var concluidas = new List<TorreOperacao>();
+            foreach (var op in ativas)
+            {
+                if (DateTime.UtcNow >= op.IniciadoEm.AddHours(op.DuracaoHoras))
+                {
+                    ConcluirOperacao(op);
+                    await _repo.AtualizarAsync(op);
+                    concluidas.Add(op);
+                }
+            }
+            return concluidas;
+        }
+
+        public Task<List<TorreOperacao>> ListarConcluidasAsync(Guid usuarioId)
+            => _repo.ListarConcluidasAsync(usuarioId);
+
+        // Legacy single-op check (used by /torre notification)
+        public async Task<TorreOperacao?> VerificarPendenteAsync(Guid usuarioId)
+        {
+            await ProcessarTodasAsync(usuarioId);
+            return await _repo.ObterConcluidaAsync(usuarioId);
+        }
+
+        // ── Start ─────────────────────────────────────────────────────────────────
+
+        public async Task<TorreOperacao> IniciarAsync(
+            Guid usuarioId, int andarNumero, IEnumerable<Construcao> construcoes)
+        {
+            // Slot capacity check
+            var ativas = await _repo.ListarAtivasAsync(usuarioId);
+            int maxSlots = TorreOperacaoConfig.CalcularMaxSlots(construcoes);
+            if (ativas.Count >= maxSlots)
+                throw new InvalidOperationException($"Capacidade máxima atingida ({maxSlots} operações simultâneas).");
+
+            // Floor already running?
+            var existente = await _repo.ObterPorAndarAsync(usuarioId, andarNumero);
+            if (existente != null)
+                throw new InvalidOperationException($"O andar {andarNumero} já tem uma operação em andamento.");
+
+            var (recurso, quantidade, _) = TorreOperacaoConfig.ObterProducao(andarNumero);
+
             var op = new TorreOperacao
             {
-                Id          = Guid.NewGuid(),
-                UsuarioId   = usuarioId,
-                AndarNumero = andarNumero,
-                Objetivo    = objetivo,
-                PerfilRisco = perfil,
-                Status      = StatusOperacao.Ativa,
-                IniciadoEm  = DateTime.UtcNow,
-                DuracaoHoras = duracao
+                Id           = Guid.NewGuid(),
+                UsuarioId    = usuarioId,
+                AndarNumero  = andarNumero,
+                Objetivo     = ObjetivoOperacao.FarmRecurso,   // legacy field — unused
+                PerfilRisco  = PerfilRisco.Balanceado,          // legacy field — unused
+                Status       = StatusOperacao.Ativa,
+                IniciadoEm   = DateTime.UtcNow,
+                DuracaoHoras = TorreOperacaoConfig.DuracaoHoras,
+                ResultadoRecursoNome = recurso,
+                ResultadoRecursoQtd  = quantidade
             };
             await _repo.AdicionarAsync(op);
             return op;
         }
 
+        // ── Collect ──────────────────────────────────────────────────────────────
+
+        public async Task<int> ColetarTodasAsync(Guid usuarioId, ulong discordUserId)
+        {
+            var concluidas = await _repo.ListarConcluidasAsync(usuarioId);
+            if (concluidas.Count == 0) return 0;
+
+            int ouroTotal = 0;
+            foreach (var op in concluidas)
+            {
+                if (op.ResultadoOuro is > 0)
+                    ouroTotal += op.ResultadoOuro.Value;
+
+                op.Status = StatusOperacao.Expirada;
+                await _repo.AtualizarAsync(op);
+            }
+
+            if (ouroTotal > 0)
+            {
+                var usuario = await _usuarioRepo.ObterPorIdAsync(discordUserId);
+                if (usuario != null)
+                {
+                    usuario.Moedas += ouroTotal;
+                    await _usuarioRepo.AtualizarAsync(usuario);
+                }
+            }
+
+            return concluidas.Count;
+        }
+
+        // Legacy single-op collect (kept for backwards compat)
         public async Task ColetarAsync(TorreOperacao op, ulong discordUserId)
         {
             if (op.Status != StatusOperacao.Concluida) return;
-
             if (op.ResultadoOuro is > 0)
             {
                 var usuario = await _usuarioRepo.ObterPorIdAsync(discordUserId);
@@ -90,15 +143,23 @@ namespace LegendsAwaken.Application.Services
                     await _usuarioRepo.AtualizarAsync(usuario);
                 }
             }
-
             op.Status = StatusOperacao.Expirada;
             await _repo.AtualizarAsync(op);
         }
+
+        // ── Cancel ───────────────────────────────────────────────────────────────
 
         public async Task CancelarAsync(TorreOperacao op)
         {
             op.Status = StatusOperacao.Expirada;
             await _repo.AtualizarAsync(op);
+        }
+
+        public async Task CancelarPorAndarAsync(Guid usuarioId, int andar)
+        {
+            var op = await _repo.ObterPorAndarAsync(usuarioId, andar);
+            if (op == null) return;
+            await CancelarAsync(op);
         }
 
         // ── Private helpers ──────────────────────────────────────────────────────
@@ -107,45 +168,22 @@ namespace LegendsAwaken.Application.Services
         {
             op.Status      = StatusOperacao.Concluida;
             op.ConcluidoEm = DateTime.UtcNow;
-            op.ResultadoOuro = CalcularOuro(op.AndarNumero, op.PerfilRisco, op.DuracaoHoras);
-            var (nome, qtd) = CalcularRecurso(op.AndarNumero, op.PerfilRisco, op.DuracaoHoras);
-            op.ResultadoRecursoNome = nome;
-            op.ResultadoRecursoQtd  = nome != null ? qtd : null;
-        }
 
-        private static int CalcularOuro(int andar, PerfilRisco perfil, int horas)
-        {
-            double mult = perfil switch
-            {
-                PerfilRisco.Seguro     => 0.8,
-                PerfilRisco.Balanceado => 1.0,
-                PerfilRisco.Agressivo  => 1.5,
-                _                      => 1.0
-            };
-            return (int)(andar * 3 * horas * mult);
-        }
+            var (recurso, quantidade, _) = TorreOperacaoConfig.ObterProducao(op.AndarNumero);
 
-        private static (string? nome, int qtd) CalcularRecurso(int andar, PerfilRisco perfil, int horas)
-        {
-            string? nome = andar switch
+            // Ouro is a special case: store in ResultadoOuro, no recurso name
+            if (recurso == "Ouro")
             {
-                >= 25 => "Núcleo Sombrio",
-                >= 18 => "Cristal Arcano",
-                >= 12 => "Essência Corrompida",
-                >= 5  => "Fragmento Rústico",
-                _     => null
-            };
-            if (nome == null) return (null, 0);
-
-            double mult = perfil switch
+                op.ResultadoOuro        = quantidade;
+                op.ResultadoRecursoNome = null;
+                op.ResultadoRecursoQtd  = null;
+            }
+            else
             {
-                PerfilRisco.Seguro     => 0.8,
-                PerfilRisco.Balanceado => 1.0,
-                PerfilRisco.Agressivo  => 1.5,
-                _                      => 1.0
-            };
-            int qtd = Math.Max(1, (int)(horas / 4.0 * (1 + andar / 15.0) * mult));
-            return (nome, qtd);
+                op.ResultadoOuro        = 0;
+                op.ResultadoRecursoNome = recurso;
+                op.ResultadoRecursoQtd  = quantidade;
+            }
         }
     }
 }

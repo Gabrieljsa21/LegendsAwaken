@@ -53,6 +53,26 @@ namespace LegendsAwaken.Infrastructure.Repositories
             }
         }
 
+        public async Task AtualizarAsync(Party party)
+        {
+            _db.Parties.Update(party);
+            await _db.SaveChangesAsync();
+        }
+
+        public async Task DeletarAsync(Guid partyId)
+        {
+            var membros = await _db.PartyHeroes
+                .Where(ph => ph.PartyId == partyId)
+                .ToListAsync();
+            _db.PartyHeroes.RemoveRange(membros);
+
+            var party = await _db.Parties.FindAsync(partyId);
+            if (party != null)
+                _db.Parties.Remove(party);
+
+            await _db.SaveChangesAsync();
+        }
+
         public Task SalvarAsync() => _db.SaveChangesAsync();
     }
 }

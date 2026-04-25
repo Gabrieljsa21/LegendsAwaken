@@ -1,7 +1,7 @@
 # Legends Awaken — Análise do Projeto
 
 **Repositório:** https://github.com/Gabrieljsa21/LegendsAwaken  
-**Data da análise:** 2026-04-10 *(atualizada em 2026-04-18 — Fase 3A.3 concluída)*
+**Data da análise:** 2026-04-10 *(atualizada em 2026-04-18 — Fase 3A.3 concluída)* *(atualizada em 2026-04-25 — Sessão Bioma Panel + Torre Op v2)*
 
 ---
 
@@ -53,6 +53,10 @@ A arquitetura está corretamente aplicada: Domain não tem dependências externa
 - `Random.Shared` usado consistentemente em toda a codebase — thread-safe em chamadas Discord concorrentes
 - 39 testes unitários cobrindo os 5 novos serviços do sistema de fragmentos e a extensão do TorreService
 - Primary constructor injection em todos os novos serviços e comandos bot — C# idiomático
+- `ResourceNodeConfig.Icone(string)` — método único de ícone de recurso elimina switches duplicados; fácil de evoluir
+- `TorreOperacaoConfig` — config estática imutável centraliza duração, produção por tier e capacidade de slots; nenhum número mágico no sistema de operação
+- Sistema de descoberta de heróis no Bioma: heróis secundários ficam ocultos até o primeiro fragmento coletado — revelação progressiva coerente com a progressão do jogador
+- `BiomaPanel` com seletor de biomas descobertos e barra de progresso por andares — UX de progressão clara sem consulta manual
 
 ---
 

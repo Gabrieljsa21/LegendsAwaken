@@ -27,5 +27,15 @@ namespace LegendsAwaken.Application.Services
                 { (TipoResourceNode.Prado,    Profissao.Agricultor), 0.40 },
                 { (TipoResourceNode.Prado,    Profissao.Caçador),    0.25 },
             };
+
+        public static string Icone(string recurso) => recurso.ToLower() switch
+        {
+            "comida"  => "🌾",
+            "madeira" => "🪵",
+            "pedra"   => "⛏️",
+            "erva"    => "🌿",
+            "ouro"    => "💰",
+            _         => "📦"
+        };
     }
 }
