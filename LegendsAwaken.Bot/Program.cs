@@ -3,8 +3,10 @@ using Discord.Interactions;
 using Discord.WebSocket;
 using LegendsAwaken.Application.Interfaces;
 using LegendsAwaken.Application.Services;
+using System.IO;
 using LegendsAwaken.Bot;
 using LegendsAwaken.Bot.Commands;
+using LegendsAwaken.Bot.Interactions;
 using LegendsAwaken.Domain.Interfaces;
 using LegendsAwaken.Infrastructure;
 using LegendsAwaken.Infrastructure.Repositories;
@@ -70,6 +72,10 @@ class Program
                 new TorreBoosterRepository(configuration.GetConnectionString("DefaultConnection")!))
             .AddScoped<ICidadeBoosterRepository>(sp =>
                 new CidadeBoosterRepository(configuration.GetConnectionString("DefaultConnection")!))
+            .AddScoped<IRecursoEstoqueRepository>(sp =>
+                new RecursoEstoqueRepository(configuration.GetConnectionString("DefaultConnection")!))
+            .AddScoped<IJogadorItemRepository>(sp =>
+                new JogadorItemRepository(configuration.GetConnectionString("DefaultConnection")!))
             .AddScoped<IHeroiRepository, HeroiRepository>()
             .AddScoped<IUsuarioRepository, UsuarioRepository>()
             .AddScoped<IHabilidadeRepository, HabilidadeRepository>()
@@ -107,6 +113,11 @@ class Program
             .AddScoped<RecruitmentService>()
             .AddScoped<RewardDistributionService>()
             .AddScoped<TorreExploracaoService>()
+            .AddScoped<RecursoService>()
+            .AddScoped<JogadorItemService>()
+            .AddScoped<HeroiDataLoader>()
+            .AddSingleton<R2ImageService>()
+            .AddSingleton<InteractionRouter>()
 
             .AddSingleton(_cliente)
             .AddSingleton<IConfiguration>(configuration)
@@ -157,7 +168,11 @@ class Program
             services.GetRequiredService<TorreService>(),
             services.GetRequiredService<TorreOperacaoService>(),
             services.GetRequiredService<TorreExploracaoService>(),
-            services.GetRequiredService<SustentoService>()
+            services.GetRequiredService<SustentoService>(),
+            services.GetRequiredService<RecursoService>(),
+            services.GetRequiredService<JogadorItemService>(),
+            services.GetRequiredService<R2ImageService>(),
+            services.GetRequiredService<InteractionRouter>()
         );
 
         handler.Initialize();
@@ -190,6 +205,10 @@ class Program
             var geracaoService = scope.ServiceProvider.GetRequiredService<GeracaoDeDadosService>();
             await geracaoService.CriarTabelasAsync();
             await geracaoService.PopularDadosBaseAsync();
+
+            var heroiLoader = scope.ServiceProvider.GetRequiredService<HeroiDataLoader>();
+            var heroesJsonPath = Path.Combine(AppContext.BaseDirectory, "Data", "heroes.json");
+            await heroiLoader.SincronizarAsync(heroesJsonPath);
         }
         catch (Exception ex)
         {

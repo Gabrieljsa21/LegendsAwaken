@@ -5,6 +5,7 @@ using LegendsAwaken.Application.Interfaces;
 using LegendsAwaken.Application.Services;
 using LegendsAwaken.Bot.Commands;
 using LegendsAwaken.Bot.Helpers;
+using LegendsAwaken.Bot.Interactions;
 using LegendsAwaken.Bot.Panels;
 using LegendsAwaken.Domain.Entities.Auxiliares;
 using LegendsAwaken.Domain.Enum;
@@ -48,6 +49,10 @@ namespace LegendsAwaken.Bot
         private readonly TorreOperacaoService _torreOperacaoService;
         private readonly TorreExploracaoService _torreExploracaoService;
         private readonly SustentoService _sustentoService;
+        private readonly RecursoService _recursoService;
+        private readonly JogadorItemService _jogadorItemService;
+        private readonly R2ImageService _r2ImageService;
+        private readonly InteractionRouter _interactionRouter;
 
         public CommandHandler(
             DiscordSocketClient client,
@@ -75,7 +80,11 @@ namespace LegendsAwaken.Bot
             TorreService torreService,
             TorreOperacaoService torreOperacaoService,
             TorreExploracaoService torreExploracaoService,
-            SustentoService sustentoService)
+            SustentoService sustentoService,
+            RecursoService recursoService,
+            JogadorItemService jogadorItemService,
+            R2ImageService r2ImageService,
+            InteractionRouter interactionRouter)
         {
             _client = client;
             _logger = logger;
@@ -103,6 +112,10 @@ namespace LegendsAwaken.Bot
             _torreOperacaoService = torreOperacaoService;
             _torreExploracaoService = torreExploracaoService;
             _sustentoService = sustentoService;
+            _recursoService = recursoService;
+            _jogadorItemService = jogadorItemService;
+            _r2ImageService = r2ImageService;
+            _interactionRouter = interactionRouter;
         }
 
         public void Initialize()
@@ -166,11 +179,11 @@ namespace LegendsAwaken.Bot
 
                     case "torre":
                     case "subir_andar":
-                        await new TorreCommand(_torreService, _heroiService, _biomeService, _torreOperacaoService, _cidadeService, _torreExploracaoService, _partyService, _logger).ExecutarAsync(command);
+                        await new TorreCommand(_torreService, _heroiService, _biomeService, _torreOperacaoService, _cidadeService, _torreExploracaoService, _partyService, _recursoService, _jogadorItemService, _logger).ExecutarAsync(command);
                         break;
 
                     case "herois":
-                        await new HeroisCommand(_heroiService, _sustentoService, _partyService, _logger).ExecutarAsync(command);
+                        await new HeroisCommand(_heroiService, _sustentoService, _partyService, _logger, _heroiConfigRepo, _r2ImageService).ExecutarAsync(command);
                         break;
 
                     case "cidade":
@@ -370,6 +383,22 @@ namespace LegendsAwaken.Bot
             _logger.LogInformation("[Interação] CustomId={CustomId} Tipo={Tipo} User={User}",
                 comp.Data.CustomId, comp.Data.Type, comp.User.Username);
 
+            // Route new-style ':' customIds to registered handlers
+            if (await _interactionRouter.TryRouteAsync(comp))
+                return;
+
+            // Global cancel — dismiss ephemeral confirmation panel
+            if (comp.Data.CustomId == "global:cancelar")
+            {
+                await comp.UpdateAsync(m =>
+                {
+                    m.Content = "Ação cancelada.";
+                    m.Embed = null;
+                    m.Components = new ComponentBuilder().Build();
+                });
+                return;
+            }
+
             var parts = comp.Data.CustomId.Split('|');
 
             // ————— Inventário buttons/select menus —————
@@ -407,7 +436,7 @@ namespace LegendsAwaken.Bot
                 parts[0] == "herois_colecao" || parts[0] == "herois_treinar" || parts[0] == "herois_treinar_heroi" ||
                 parts[0] == "herois_grupos")
             {
-                var heroisCmd = new HeroisCommand(_heroiService, _sustentoService, _partyService, _logger);
+                var heroisCmd = new HeroisCommand(_heroiService, _sustentoService, _partyService, _logger, _heroiConfigRepo, _r2ImageService);
                 try
                 {
                     if (comp.Data.Type == ComponentType.SelectMenu && parts[0] == "herois_ver")
@@ -576,7 +605,7 @@ namespace LegendsAwaken.Bot
             // ————— Torre Modo Operação buttons/select menus —————
             if (parts[0] == "torre_modo_operacao" || parts[0].StartsWith("torre_op_"))
             {
-                var torreCmd = new TorreCommand(_torreService, _heroiService, _biomeService, _torreOperacaoService, _cidadeService, _torreExploracaoService, _partyService, _logger);
+                var torreCmd = new TorreCommand(_torreService, _heroiService, _biomeService, _torreOperacaoService, _cidadeService, _torreExploracaoService, _partyService, _recursoService, _jogadorItemService, _logger);
                 try
                 {
                     if (parts[0] == "torre_modo_operacao")
@@ -612,7 +641,7 @@ namespace LegendsAwaken.Bot
             // ————— Torre buttons —————
             if (parts[0] == "torre_atualizar")
             {
-                await new TorreCommand(_torreService, _heroiService, _biomeService, _torreOperacaoService, _cidadeService, _torreExploracaoService, _partyService, _logger).HandleAtualizarAsync(comp);
+                await new TorreCommand(_torreService, _heroiService, _biomeService, _torreOperacaoService, _cidadeService, _torreExploracaoService, _partyService, _recursoService, _jogadorItemService, _logger).HandleAtualizarAsync(comp);
                 return;
             }
 
@@ -620,7 +649,7 @@ namespace LegendsAwaken.Bot
             {
                 try
                 {
-                    await new TorreCommand(_torreService, _heroiService, _biomeService, _torreOperacaoService, _cidadeService, _torreExploracaoService, _partyService, _logger).HandleAvancarAsync(comp);
+                    await new TorreCommand(_torreService, _heroiService, _biomeService, _torreOperacaoService, _cidadeService, _torreExploracaoService, _partyService, _recursoService, _jogadorItemService, _logger).HandleAvancarAsync(comp);
                 }
                 catch (Exception ex)
                 {
@@ -634,7 +663,7 @@ namespace LegendsAwaken.Bot
             if (parts[0] == "torre_investigar" || parts[0] == "torre_explorar" ||
                 parts[0] == "torre_explorar_confirmar" || parts[0].StartsWith("torre_exp_"))
             {
-                var expCmd = new TorreCommand(_torreService, _heroiService, _biomeService, _torreOperacaoService, _cidadeService, _torreExploracaoService, _partyService, _logger);
+                var expCmd = new TorreCommand(_torreService, _heroiService, _biomeService, _torreOperacaoService, _cidadeService, _torreExploracaoService, _partyService, _recursoService, _jogadorItemService, _logger);
                 try
                 {
                     if (parts[0] == "torre_investigar")
