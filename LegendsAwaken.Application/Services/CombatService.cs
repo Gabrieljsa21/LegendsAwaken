@@ -86,7 +86,7 @@ namespace LegendsAwaken.Application.Services
         /// Crit: BaseCritChance + Percepcao×0.1% → ×1.5
         /// Burst cap: resultado ≤ 65% do HP máximo do alvo
         /// </summary>
-        internal int CalcularDano(Combatente atk, Combatente def, double skillMult, double typeMult = 1.0)
+        public int CalcularDano(Combatente atk, Combatente def, double skillMult, double typeMult = 1.0)
         {
             double ataque = atk.Atributos.Forca;
             double defesa = def.Atributos.Vitalidade;
