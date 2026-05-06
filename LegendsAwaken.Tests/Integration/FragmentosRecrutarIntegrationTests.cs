@@ -31,7 +31,7 @@ public class FragmentosRecrutarIntegrationTests : IDisposable
 
     public FragmentosRecrutarIntegrationTests()
     {
-        _conn = new SqliteConnection("Data Source=fa_recrutamento_test;Mode=Memory;Cache=Shared");
+        _conn = new SqliteConnection($"Data Source={Guid.NewGuid():N};Mode=Memory;Cache=Shared");
         _conn.Open();
 
         var opts = new DbContextOptionsBuilder<LegendsAwakenDbContext>()
@@ -82,6 +82,7 @@ public class FragmentosRecrutarIntegrationTests : IDisposable
 
     public void Dispose()
     {
+        _db.Database.EnsureDeleted();
         _db.Dispose();
         _conn.Dispose();
     }
