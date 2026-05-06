@@ -13,6 +13,8 @@ public static class ConfirmationPanel
     /// <param name="cancelId">CustomId do botão Cancelar. Padrão: "global:cancelar"</param>
     public static PanelResult Criar(string mensagem, string confirmId, string cancelId = "global:cancelar")
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(confirmId);
+
         var embed = new EmbedBuilder()
             .WithTitle("⚠️ Confirmar ação")
             .WithDescription(mensagem)
