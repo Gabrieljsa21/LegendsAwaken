@@ -28,8 +28,6 @@ class Program
     private static IServiceProvider? _services;
     private static string? _token;
 
-    private static readonly ulong GUILD_ID = 1388541192806989834;
-
     public static Task Main(string[] args) => new Program().IniciarAsync();
 
     public async Task IniciarAsync()
@@ -39,6 +37,10 @@ class Program
             .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
             .AddEnvironmentVariables()
             .Build();
+
+        var guildIdStr = configuration["Discord:GuildId"]
+            ?? throw new InvalidOperationException("Discord:GuildId não configurado em appsettings.json.");
+        var GUILD_ID = ulong.Parse(guildIdStr);
 
         _token = Environment.GetEnvironmentVariable("LegendsAwakenToken");
         if (string.IsNullOrWhiteSpace(_token))
