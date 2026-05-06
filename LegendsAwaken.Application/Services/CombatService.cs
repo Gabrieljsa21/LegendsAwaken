@@ -9,7 +9,7 @@ namespace LegendsAwaken.Application.Services
 {
     public class CombatService
     {
-        private static readonly Random _random = new();
+        private static Random _random => Random.Shared;
 
         // ── Constantes da fórmula (GDD §5.0 / DESIGN_SISTEMAS §3) ─────────────
         private const double BurstCapFactor = 0.65;   // hit único ≤ 65% do HP máximo
