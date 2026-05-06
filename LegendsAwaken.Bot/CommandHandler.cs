@@ -384,10 +384,20 @@ namespace LegendsAwaken.Bot
                 comp.Data.CustomId, comp.Data.Type, comp.User.Username);
 
             // Route new-style ':' customIds to registered handlers
-            if (await _interactionRouter.TryRouteAsync(comp))
+            try
+            {
+                if (await _interactionRouter.TryRouteAsync(comp))
+                    return;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[Router] Exceção não tratada. CustomId={CustomId} User={User}",
+                    comp.Data.CustomId, comp.User.Username);
+                try { await comp.RespondAsync("❌ Erro interno. Tente novamente.", ephemeral: true); } catch { }
                 return;
+            }
 
-            // Global cancel — dismiss ephemeral confirmation panel
+            // Global cancel — kept outside router as a universal escape hatch for all confirmation panels
             if (comp.Data.CustomId == "global:cancelar")
             {
                 await comp.UpdateAsync(m =>
