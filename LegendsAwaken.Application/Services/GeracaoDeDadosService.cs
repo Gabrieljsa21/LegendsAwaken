@@ -5,6 +5,7 @@ using LegendsAwaken.Infrastructure.SeedData;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -21,6 +22,7 @@ namespace LegendsAwaken.Application.Services
         private readonly ICidadeBoosterRepository _cidadeBoosterRepo;
         private readonly IRecursoEstoqueRepository _recursoEstoqueRepo;
         private readonly IJogadorItemRepository _jogadorItemRepo;
+        private readonly ILogger<GeracaoDeDadosService> _logger;
 
         /// <summary>
         /// Inicializa uma nova instância do <see cref="GeracaoDeDadosService"/>.
@@ -36,7 +38,8 @@ namespace LegendsAwaken.Application.Services
             ITorreBoosterRepository torreBoosterRepo,
             ICidadeBoosterRepository cidadeBoosterRepo,
             IRecursoEstoqueRepository recursoEstoqueRepo,
-            IJogadorItemRepository jogadorItemRepo)
+            IJogadorItemRepository jogadorItemRepo,
+            ILogger<GeracaoDeDadosService> logger)
         {
             _db = db;
             _torreOpRepo = torreOpRepo;
@@ -45,6 +48,7 @@ namespace LegendsAwaken.Application.Services
             _cidadeBoosterRepo   = cidadeBoosterRepo;
             _recursoEstoqueRepo  = recursoEstoqueRepo;
             _jogadorItemRepo     = jogadorItemRepo;
+            _logger              = logger;
             var connection = _db.Database.GetDbConnection();
             var path = new SqliteConnectionStringBuilder(connection.ConnectionString).DataSource;
 
@@ -52,7 +56,7 @@ namespace LegendsAwaken.Application.Services
                 ?? throw new ArgumentNullException("Connection string 'DefaultConnection' não encontrada.");
 
             // Log para debug:
-            Console.WriteLine($"[DEBUG] Banco em uso (DbContext): {connection.ConnectionString}");
+            _logger.LogDebug("Banco em uso (DbContext): {ConnectionString}", connection.ConnectionString);
         }
 
         /// <summary>
@@ -117,7 +121,7 @@ namespace LegendsAwaken.Application.Services
                 var alterCmd = conn.CreateCommand();
                 alterCmd.CommandText = "ALTER TABLE Andares ADD COLUMN Inimigos TEXT";
                 await alterCmd.ExecuteNonQueryAsync();
-                Console.WriteLine("[Migration] Coluna Inimigos adicionada à tabela Andares.");
+                _logger.LogInformation("Migration: coluna Inimigos adicionada à tabela Andares");
             }
         }
 
@@ -133,11 +137,10 @@ namespace LegendsAwaken.Application.Services
             cmd.CommandText = "SELECT name FROM sqlite_master WHERE type='table';";
 
             using var reader = await cmd.ExecuteReaderAsync();
-            Console.WriteLine("Tabelas no banco:");
+            var tabelas = new System.Collections.Generic.List<string>();
             while (await reader.ReadAsync())
-            {
-                Console.WriteLine(reader.GetString(0));
-            }
+                tabelas.Add(reader.GetString(0));
+            _logger.LogInformation("Tabelas no banco: {Tabelas}", string.Join(", ", tabelas));
         }
     }
 }
