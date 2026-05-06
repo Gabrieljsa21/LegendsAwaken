@@ -453,53 +453,18 @@ public class CidadeCommand(CidadeService cidadeService, HeroiService heroiServic
             return;
         }
 
-        try
+        var heroi = await heroiService.ObterHeroiPorIdAsync(heroiId);
+        var nomeHeroi = heroi?.Nome ?? heroiId.ToString();
+        var panel = ConfirmationPanel.Criar(
+            $"Desalocar **{nomeHeroi}**? Esta ação remove o herói imediatamente.",
+            confirmId: $"cidade:desalocar_confirmar:{heroiId}"
+        );
+        await comp.UpdateAsync(m =>
         {
-            // Capture location before desallocating
-            var heroi     = await heroiService.ObterHeroiPorIdAsync(heroiId);
-            var nomeHeroi = heroi?.Nome ?? heroiId.ToString();
-
-            var cidade      = await cidadeService.ObterCidadePorUsuarioAsync(comp.User.Id);
-            string localizacao = "desconhecido";
-            if (cidade != null)
-            {
-                var trabalhador = cidade.Trabalhadores.FirstOrDefault(t => t.HeroiId == heroiId);
-                if (trabalhador?.ResourceNode != null)
-                {
-                    localizacao = $"node **{trabalhador.ResourceNode}**";
-                }
-                else
-                {
-                    foreach (var c in cidade.Construcoes)
-                    {
-                        var slots = await cidadeService.ObterSlotsPorPredioAsync(c.Id);
-                        var slot  = slots.FirstOrDefault(s => s.HeroiId == heroiId);
-                        if (slot != null)
-                        {
-                            var tipoSlot = slot.SlotTipo == SlotTipo.Responsabilidade ? "Responsável" : "Operador";
-                            localizacao = $"**{c.Nome}** ({tipoSlot})";
-                            break;
-                        }
-                    }
-                }
-            }
-
-            var erro = await cidadeService.DesalocarHeroiAsync(comp.User.Id, heroiId);
-            Log($"DesalocarHeroi: resultado={erro ?? "OK"}");
-
-            await comp.UpdateAsync(m =>
-            {
-                m.Content    = erro == null
-                    ? $"✅ **{nomeHeroi}** desalocado de {localizacao}!"
-                    : $"❌ {erro}";
-                m.Components = null;
-            });
-        }
-        catch (Exception ex)
-        {
-            LogErr(ex, $"DesalocarHeroi heroiId={heroiId}");
-            await comp.UpdateAsync(m => { m.Content = "❌ Erro interno ao desalocar. Veja o log."; m.Components = null; });
-        }
+            m.Embed = panel.Embed;
+            m.Components = panel.Components;
+            m.Content = "";
+        });
     }
 
     // ── Construir ─────────────────────────────────────────────────────────────────
@@ -554,40 +519,27 @@ public class CidadeCommand(CidadeService cidadeService, HeroiService heroiServic
             return;
         }
 
-        try
+        var custoStr = "custo desconhecido";
+        if (PredioConfig.CustosConstrucao.TryGetValue(tipoPredio, out var custo))
         {
-            if (await cidadeService.ObterCidadePorUsuarioAsync(comp.User.Id) == null)
-                await cidadeService.CriarCidadeAsync("Minha Cidade", comp.User.Id);
-
-            Log($"ConstruirPredio: chamando ConstruirPredioAsync({tipoPredio})");
-            var erro = await cidadeService.ConstruirPredioAsync(comp.User.Id, tipoPredio);
-            Log($"ConstruirPredio: resultado={erro ?? "OK"}");
-
-            string msg;
-            if (erro == null)
-            {
-                msg = $"🏗️ **{tipoPredio}** construída!";
-                if (PredioConfig.Slots.TryGetValue((tipoPredio, 1), out var def))
-                {
-                    var slotStr = $"{def.NumResponsabilidade} Resp";
-                    if (def.NumOperacao > 0) slotStr += $" + {def.NumOperacao} Op";
-                    msg += $" Slots: {slotStr}.";
-                    if (def.BaseProdPorHora > 0)
-                        msg += $" Prod: {def.BaseProdPorHora} {PredioConfig.RecursoProducao.GetValueOrDefault(tipoPredio, "?")}/h.";
-                }
-            }
-            else
-            {
-                msg = $"❌ {erro}";
-            }
-
-            await comp.UpdateAsync(m => { m.Content = msg; m.Components = null; });
+            var partesCusto = new List<string>();
+            if (custo.Ouro    > 0) partesCusto.Add($"{custo.Ouro}💰");
+            if (custo.Madeira > 0) partesCusto.Add($"{custo.Madeira}🪵");
+            if (custo.Pedra   > 0) partesCusto.Add($"{custo.Pedra}⛏️");
+            if (custo.Comida  > 0) partesCusto.Add($"{custo.Comida}🌾");
+            if (partesCusto.Any()) custoStr = string.Join(" ", partesCusto);
         }
-        catch (Exception ex)
+
+        var panel = ConfirmationPanel.Criar(
+            $"Construir **{tipoPredio}**?\nCusto: {custoStr}",
+            confirmId: $"cidade:construir_confirmar:{tipoPredio}"
+        );
+        await comp.UpdateAsync(m =>
         {
-            LogErr(ex, $"ConstruirPredio predio={tipoPredio}");
-            await comp.UpdateAsync(m => { m.Content = "❌ Erro interno ao construir. Veja o log."; m.Components = null; });
-        }
+            m.Embed = panel.Embed;
+            m.Components = panel.Components;
+            m.Content = "";
+        });
     }
 
     // ── Booster ───────────────────────────────────────────────────────────────────
@@ -695,14 +647,47 @@ public class CidadeCommand(CidadeService cidadeService, HeroiService heroiServic
 
     // ── Confirmação — implementado na Task 7 ──────────────────────────────────────
 
-    private async Task HandleDesalocarConfirmarAsync(SocketMessageComponent comp, string[] _)
+    private async Task HandleDesalocarConfirmarAsync(SocketMessageComponent comp, string[] parts)
     {
-        await comp.FollowupAsync("Em breve.", ephemeral: true);
+        // parts = ["cidade", "desalocar_confirmar", "{heroiId}"]
+        if (parts.Length < 3 || !Guid.TryParse(parts[2], out var heroiId))
+        {
+            await comp.UpdateAsync(m => { m.Content = "ID de herói inválido."; m.Embed = null; m.Components = new ComponentBuilder().Build(); });
+            return;
+        }
+
+        var userId = comp.User.Id;
+        var erro = await cidadeService.DesalocarHeroiAsync(userId, heroiId);
+        var (embed, comps) = await BuildPanelAsync(userId);
+        await comp.UpdateAsync(m =>
+        {
+            m.Content = erro == null ? "✅ Herói desalocado!" : $"❌ {erro}";
+            m.Embed = embed;
+            m.Components = comps;
+        });
     }
 
-    private async Task HandleConstruirConfirmarAsync(SocketMessageComponent comp, string[] _)
+    private async Task HandleConstruirConfirmarAsync(SocketMessageComponent comp, string[] parts)
     {
-        await comp.FollowupAsync("Em breve.", ephemeral: true);
+        // parts = ["cidade", "construir_confirmar", "{tipoPredio}"]
+        if (parts.Length < 3 || !Enum.TryParse<TipoPredio>(parts[2], out var tipoPredio))
+        {
+            await comp.UpdateAsync(m => { m.Content = "Prédio inválido."; m.Embed = null; m.Components = new ComponentBuilder().Build(); });
+            return;
+        }
+
+        var userId = comp.User.Id;
+        if (await cidadeService.ObterCidadePorUsuarioAsync(userId) == null)
+            await cidadeService.CriarCidadeAsync("Minha Cidade", userId);
+
+        var erro = await cidadeService.ConstruirPredioAsync(userId, tipoPredio);
+        var (embed, comps) = await BuildPanelAsync(userId);
+        await comp.UpdateAsync(m =>
+        {
+            m.Content = erro == null ? $"🏗️ **{tipoPredio}** construída!" : $"❌ {erro}";
+            m.Embed = embed;
+            m.Components = comps;
+        });
     }
 
     private async Task<(Embed embed, MessageComponent comps)> BuildPanelAsync(ulong usuarioId)
