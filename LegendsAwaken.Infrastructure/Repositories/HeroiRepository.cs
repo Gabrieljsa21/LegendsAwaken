@@ -3,6 +3,7 @@ using LegendsAwaken.Domain.Enum;
 using LegendsAwaken.Domain.Interfaces;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,10 +15,12 @@ namespace LegendsAwaken.Infrastructure.Repositories
     public class HeroiRepository : IHeroiRepository
     {
         private readonly LegendsAwakenDbContext _dbContext;
+        private readonly ILogger<HeroiRepository> _logger;
 
-        public HeroiRepository(LegendsAwakenDbContext dbContext)
+        public HeroiRepository(LegendsAwakenDbContext dbContext, ILogger<HeroiRepository> logger)
         {
             _dbContext = dbContext;
+            _logger = logger;
         }
 
         public async Task<Heroi?> ObterPorIdAsync(Guid heroiId)
@@ -61,8 +64,7 @@ namespace LegendsAwaken.Infrastructure.Repositories
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Erro ao adicionar heroi no banco de dados:");
-                Console.WriteLine(ex.ToString());
+                _logger.LogError(ex, "Erro ao adicionar herói no banco de dados");
                 throw;
             }
         }
@@ -80,8 +82,7 @@ namespace LegendsAwaken.Infrastructure.Repositories
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Erro ao atualizar heroi no banco de dados:");
-                Console.WriteLine(ex.ToString());
+                _logger.LogError(ex, "Erro ao atualizar herói no banco de dados");
                 throw;
             }
         }
