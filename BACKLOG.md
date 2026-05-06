@@ -4,18 +4,6 @@ Tarefas pendentes por área. Para progresso macro de fases, veja `ROADMAP.md`.
 
 ---
 
-## Alta Prioridade — Fase Q (fazer antes de 3B)
-
-- [ ] `ILogger<T>` substituindo `Console.WriteLine` nos serviços (parcial — CommandHandler já usa logging estruturado)
-- [ ] Guild ID movido para `appsettings.json`; caminho do banco via variável de ambiente ou relativo
-- [ ] Guard clauses centralizadas — padrão único para herói em missão / alocado / inativo / equipado
-- [ ] Testes unitários: `HeroiLevelUpService` (grants, totais, caps)
-- [ ] Testes unitários: `CombatService` (turnos, dano, crit)
-- [ ] Testes unitários: produção passiva da cidade
-- [ ] Teste de integração: fragmentos → recrutar → alocar → evoluir (SQLite in-memory)
-
----
-
 ---
 
 ## 3B — Torre

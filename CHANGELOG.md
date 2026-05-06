@@ -6,6 +6,30 @@ O formato segue o padrão [Keep a Changelog](https://keepachangelog.com/pt-BR/1.
 
 ---
 
+## [3.7.0] - 2026-05-06 · Fase Q — Fundações de Qualidade
+
+### Adicionado
+
+- `HeroiGuard` — classe estática em `Application/Services/` com `ValidarDisponivel(Heroi)→string?` e `ValidarTodosDisponiveis(IEnumerable<Heroi>)→string?`; centraliza checagem de `Degradado`/`Inativo` antes de qualquer ação de combate
+- **Testes unitários:** `HeroiLevelUpServiceTests` (8 testes — XP fórmula, caps por raridade, GanhoSuperação 5★, multiplicador racial Humano, grant de ascensão), `CombatServiceTests` (6 testes — burst cap, fórmula de mitigação, skillMult, mínimo 1, ExecutarRound), `CidadeServiceTests` (4 testes — produção após 2h, guard <1min, cap 24h, sem trabalhadores)
+- **Integration test** `FragmentosRecrutarIntegrationTests` — fluxo completo fragmentos → recrutar com SQLite in-memory real (SQLite `Cache=Shared`, `Guid` por instância, `EnsureDeleted` no teardown)
+
+### Alterado
+
+- `GeracaoDeDadosService` — 3 `Console.WriteLine` substituídos por `ILogger<GeracaoDeDadosService>` (LogDebug/LogInformation com structured logging)
+- `HeroiRepository` — 4 `Console.WriteLine` em blocos catch substituídos por `ILogger<HeroiRepository>` (`LogError(ex, ...)`)
+- `Program.cs` — `GUILD_ID` hardcoded removido; lido de `configuration["Discord:GuildId"]` com throw contextualizado
+- `appsettings.json` — DB path mudado de absoluto para relativo (`legendsawaken.db`); seção `Discord.GuildId` adicionada
+- `CombatService.CalcularDano` — visibilidade `internal → public` para testabilidade direta
+- `CombatService` — `private static readonly Random _random` substituído por `private static Random _random => Random.Shared` (thread-safe, net10.0+)
+- `ArenaCommand.DesafioAsync` — checagens inline de `Degradado`/`Inativo` substituídas por `HeroiGuard.ValidarTodosDisponiveis`
+
+### Corrigido
+
+- `RecruitmentServiceTests` / `TorreServiceExtensionTests` — `Mock<HeroiService>` inválido (HeroiService não tem construtor vazio) substituído por instância real com mocks das sub-dependências; 66 testes passando, 0 falhas
+
+---
+
 ## [3.6.0] - 2026-05-06 · UX-0 — Infraestrutura de Interação do Bot + Correções de Torre
 
 ### Adicionado

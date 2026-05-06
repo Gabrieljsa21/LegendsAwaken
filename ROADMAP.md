@@ -85,12 +85,16 @@ Visão macro de fases. Tarefas granulares pendentes estão no `BACKLOG.md`.
 
 ---
 
-## Fase Q — Fundações de Qualidade
+## Fase Q — Fundações de Qualidade ✅ concluída
 **Objetivo:** fechar a dívida técnica da 3A antes de construir a 3B sobre ela.
 
-**Pendente** — ver tarefas em `BACKLOG.md § Alta Prioridade — Fase Q`.
-
-**Sinal de saída:** build verde com cobertura nos serviços core; sem valores hardcoded de ambiente.
+- [x] `ILogger<T>` substituindo `Console.WriteLine` em `GeracaoDeDadosService` e `HeroiRepository`
+- [x] Guild ID e DB path externalizados para `appsettings.json` (path relativo, sem hardcode)
+- [x] `HeroiGuard` — guard centralizado de disponibilidade de herói; integrado no `ArenaCommand`
+- [x] Testes unitários: `HeroiLevelUpService` (8), `CombatService` (6), `CidadeService` produção passiva (4)
+- [x] Teste de integração: fragmentos → recrutar com SQLite in-memory real
+- [x] `Random.Shared` em `CombatService` (thread-safe); `CalcularDano` public
+- [x] 66 testes passando, 0 falhas, build 0 erros / 0 warnings
 
 ---
 
