@@ -25,3 +25,6 @@ obj/
 AI_INDEX.md
 CLAUDE.md
 SESSAO_*.md
+
+# Git worktrees
+.worktrees/
