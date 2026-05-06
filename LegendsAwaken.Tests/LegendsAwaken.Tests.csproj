@@ -36,6 +36,7 @@
 		<ProjectReference Include="..\LegendsAwaken.Bot\LegendsAwaken.Bot.csproj" />
 		<ProjectReference Include="..\LegendsAwaken.Application\LegendsAwaken.Application.csproj" />
 		<ProjectReference Include="..\LegendsAwaken.Domain\LegendsAwaken.Domain.csproj" />
+		<ProjectReference Include="..\LegendsAwaken.Infrastructure\LegendsAwaken.Infrastructure.csproj" />
 	</ItemGroup>
 
 </Project>
