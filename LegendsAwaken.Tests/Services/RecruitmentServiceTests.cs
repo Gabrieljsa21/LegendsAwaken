@@ -1,4 +1,7 @@
+using LegendsAwaken.Application.Interfaces;
 using LegendsAwaken.Application.Services;
+using LegendsAwaken.Domain.Entities;
+using LegendsAwaken.Domain.Entities.Auxiliares;
 using LegendsAwaken.Domain.Entities.Fragmento;
 using LegendsAwaken.Domain.Enum;
 using LegendsAwaken.Domain.Interfaces;
@@ -12,10 +15,34 @@ public class RecruitmentServiceTests
     private readonly Mock<IHeroiDesbloqueadoRepository> _desbloqueadoRepo = new();
     private readonly Mock<IHeroiConfigRepository>       _heroiConfigRepo  = new();
     private readonly Mock<IFragmentoRepository>          _fragmentoRepo    = new();
-    private readonly Mock<HeroiService>                  _heroiServiceMock = new();
+
+    private static HeroiService BuildHeroiService()
+    {
+        var heroiRepo = new Mock<IHeroiRepository>();
+        heroiRepo.Setup(r => r.AdicionarAsync(It.IsAny<Heroi>())).Returns(Task.CompletedTask);
+        heroiRepo.Setup(r => r.ObterPorUsuarioIdAsync(It.IsAny<ulong>())).ReturnsAsync(new List<Heroi>());
+
+        var habilidadeRepo = new Mock<IHabilidadeRepository>();
+        habilidadeRepo.Setup(r => r.ObterTodasAsync()).ReturnsAsync(new List<Habilidade>());
+
+        var atributoBonusService = new Mock<IAtributoBonusService>();
+        atributoBonusService
+            .Setup(s => s.ObterBonus(It.IsAny<List<HeroiHabilidade>>()))
+            .Returns(new AtributosBase());
+
+        var itemRepo = new Mock<IItemRepository>();
+        itemRepo.Setup(r => r.ObterPorProprietarioAsync(It.IsAny<ulong>())).ReturnsAsync(new List<Item>());
+
+        return new HeroiService(
+            heroiRepo.Object,
+            new HabilidadeService(habilidadeRepo.Object),
+            atributoBonusService.Object,
+            new HeroiLevelUpService(),
+            itemRepo.Object);
+    }
 
     private RecruitmentService CreateService() =>
-        new(_desbloqueadoRepo.Object, _heroiConfigRepo.Object, _fragmentoRepo.Object, _heroiServiceMock.Object);
+        new(_desbloqueadoRepo.Object, _heroiConfigRepo.Object, _fragmentoRepo.Object, BuildHeroiService());
 
     [Fact]
     public async Task TentarRecrutarPorFragmentosAsync_Falha_QuandoJaDesbloqueado()
