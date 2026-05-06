@@ -176,6 +176,17 @@ class Program
         );
 
         handler.Initialize();
+
+        // Register IInteractionHandler implementations with the router
+        var interactionRouter = services.GetRequiredService<InteractionRouter>();
+        var cidadeCommand = new CidadeCommand(
+            services.GetRequiredService<CidadeService>(),
+            services.GetRequiredService<HeroiService>(),
+            services.GetRequiredService<CidadeBoosterService>(),
+            services.GetRequiredService<ILogger<CidadeCommand>>()
+        );
+        interactionRouter.Register(cidadeCommand);
+
         await handler.SetupCommandsAsync();
 
         // Criação e população do banco de dados

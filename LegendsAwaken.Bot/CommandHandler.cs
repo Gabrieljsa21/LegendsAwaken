@@ -712,62 +712,6 @@ namespace LegendsAwaken.Bot
                 return;
             }
 
-            // ————— Cidade buttons/select menus —————
-            if (parts[0].StartsWith("cidade_"))
-            {
-                var cidadeCmd = new CidadeCommand(_cidadeService, _heroiService, _cidadeBoosterService, _logger);
-                try
-                {
-                    if (parts[0] == "cidade_coletar")
-                        { await cidadeCmd.HandleColetarAsync(comp); return; }
-
-                    if (parts[0] == "cidade_alocar_node")
-                        { await cidadeCmd.HandleAlocarNodeAsync(comp); return; }
-
-                    if (parts[0] == "cidade_alocar_heroi_para_node")
-                        { await cidadeCmd.HandleHeroiParaNodeAsync(comp); return; }
-
-                    if (parts[0] == "cidade_node_para_heroi" && parts.Length >= 2 && Guid.TryParse(parts[1], out var heroiNodeId))
-                        { await cidadeCmd.HandleNodeParaHeroiAsync(comp, heroiNodeId); return; }
-
-                    if (parts[0] == "cidade_alocar_predio")
-                        { await cidadeCmd.HandleAlocarPredioAsync(comp); return; }
-
-                    if (parts[0] == "cidade_alocar_heroi_para_predio")
-                        { await cidadeCmd.HandleHeroiParaPredioAsync(comp); return; }
-
-                    if (parts[0] == "cidade_predio_para_heroi" && parts.Length >= 2 && Guid.TryParse(parts[1], out var heroiPredioId))
-                        { await cidadeCmd.HandlePredioParaHeroiAsync(comp, heroiPredioId); return; }
-
-                    if (parts[0] == "cidade_desalocar")
-                        { await cidadeCmd.HandleDesalocarAsync(comp); return; }
-
-                    if (parts[0] == "cidade_desalocar_heroi")
-                        { await cidadeCmd.HandleDesalocarHeroiAsync(comp); return; }
-
-                    if (parts[0] == "cidade_construir")
-                        { await cidadeCmd.HandleConstruirAsync(comp); return; }
-
-                    if (parts[0] == "cidade_construir_predio")
-                        { await cidadeCmd.HandleConstruirPredioAsync(comp); return; }
-
-                    if (parts[0] == "cidade_atualizar")
-                        { await cidadeCmd.HandleAtualizarAsync(comp); return; }
-
-                    if (parts[0] == "cidade_booster")
-                        { await cidadeCmd.HandleBoosterAsync(comp); return; }
-
-                    if (comp.Data.Type == ComponentType.SelectMenu && parts[0] == "cidade_booster_ativar")
-                        { await cidadeCmd.HandleBoosterAtivarAsync(comp); return; }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "[Cidade] Exceção não tratada. CustomId={CustomId} User={User}",
-                        comp.Data.CustomId, comp.User.Username);
-                    try { await comp.FollowupAsync("❌ Erro interno. Tente novamente.", ephemeral: true); } catch { }
-                }
-                return;
-            }
         }
 
 

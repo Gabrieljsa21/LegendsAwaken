@@ -1,6 +1,7 @@
 using Discord;
 using Discord.WebSocket;
 using LegendsAwaken.Application.Services;
+using LegendsAwaken.Bot.Interactions;
 using LegendsAwaken.Bot.Panels;
 using LegendsAwaken.Domain.Entities;
 using LegendsAwaken.Domain.Enum;
@@ -12,8 +13,38 @@ using System.Threading.Tasks;
 
 namespace LegendsAwaken.Bot.Commands;
 
-public class CidadeCommand(CidadeService cidadeService, HeroiService heroiService, CidadeBoosterService boosterService, ILogger? logger = null)
+public class CidadeCommand(CidadeService cidadeService, HeroiService heroiService, CidadeBoosterService boosterService, ILogger? logger = null) : IInteractionHandler
 {
+    public string CustomIdPrefix => "cidade";
+
+    public async Task HandleAsync(SocketMessageComponent component, string[] parts)
+    {
+        var action = parts.Length > 1 ? parts[1] : string.Empty;
+
+        switch (action)
+        {
+            case "coletar":                    await HandleColetarAsync(component); break;
+            case "alocar_node":                await HandleAlocarNodeAsync(component); break;
+            case "alocar_heroi_para_node":     await HandleHeroiParaNodeAsync(component); break;
+            case "node_para_heroi":            await HandleNodeParaHeroiAsync(component, parts); break;
+            case "alocar_predio":              await HandleAlocarPredioAsync(component); break;
+            case "alocar_heroi_para_predio":   await HandleHeroiParaPredioAsync(component); break;
+            case "predio_para_heroi":          await HandlePredioParaHeroiAsync(component, parts); break;
+            case "desalocar":                  await HandleDesalocarAsync(component); break;
+            case "desalocar_heroi":            await HandleDesalocarHeroiAsync(component); break;
+            case "desalocar_confirmar":        await HandleDesalocarConfirmarAsync(component, parts); break;
+            case "construir":                  await HandleConstruirAsync(component); break;
+            case "construir_predio":           await HandleConstruirPredioAsync(component); break;
+            case "construir_confirmar":        await HandleConstruirConfirmarAsync(component, parts); break;
+            case "atualizar":                  await HandleAtualizarAsync(component); break;
+            case "booster":                    await HandleBoosterAsync(component); break;
+            case "booster_ativar":             await HandleBoosterAtivarAsync(component); break;
+            default:
+                await component.RespondAsync("Ação desconhecida.", ephemeral: true);
+                break;
+        }
+    }
+
     private void Log(string msg)                       => logger?.LogInformation("[Cidade] {Msg}", msg);
     private void LogWarn(string msg)                   => logger?.LogWarning("[Cidade] {Msg}", msg);
     private void LogErr(Exception ex, string ctx)      => logger?.LogError(ex, "[Cidade] ERRO em {Ctx}", ctx);
@@ -86,7 +117,7 @@ public class CidadeCommand(CidadeService cidadeService, HeroiService heroiServic
         }
 
         var select = new SelectMenuBuilder()
-            .WithCustomId("cidade_alocar_heroi_para_node")
+            .WithCustomId("cidade:alocar_heroi_para_node")
             .WithPlaceholder("Escolha o herói...")
             .WithMinValues(1).WithMaxValues(1);
 
@@ -116,7 +147,7 @@ public class CidadeCommand(CidadeService cidadeService, HeroiService heroiServic
         var cidade = await cidadeService.ObterCidadePorUsuarioAsync(comp.User.Id);
 
         var select = new SelectMenuBuilder()
-            .WithCustomId($"cidade_node_para_heroi|{heroiIdStr}")
+            .WithCustomId($"cidade:node_para_heroi:{heroiIdStr}")
             .WithPlaceholder("Escolha o node de recurso...")
             .WithMinValues(1).WithMaxValues(1);
 
@@ -156,8 +187,14 @@ public class CidadeCommand(CidadeService cidadeService, HeroiService heroiServic
         Log("HeroiParaNode: select de node enviado");
     }
 
-    public async Task HandleNodeParaHeroiAsync(SocketMessageComponent comp, Guid heroiId)
+    private async Task HandleNodeParaHeroiAsync(SocketMessageComponent comp, string[] parts)
     {
+        if (parts.Length < 3 || !Guid.TryParse(parts[2], out var heroiId))
+        {
+            await comp.UpdateAsync(m => { m.Content = "ID de herói inválido."; m.Components = null; });
+            return;
+        }
+
         var nodeStr = comp.Data.Values.FirstOrDefault();
         Log($"NodeParaHeroi — heroiId={heroiId} node={nodeStr} user={comp.User.Username}");
 
@@ -219,7 +256,7 @@ public class CidadeCommand(CidadeService cidadeService, HeroiService heroiServic
         }
 
         var select = new SelectMenuBuilder()
-            .WithCustomId("cidade_alocar_heroi_para_predio")
+            .WithCustomId("cidade:alocar_heroi_para_predio")
             .WithPlaceholder("Escolha o herói...")
             .WithMinValues(1).WithMaxValues(1);
 
@@ -254,7 +291,7 @@ public class CidadeCommand(CidadeService cidadeService, HeroiService heroiServic
         }
 
         var select = new SelectMenuBuilder()
-            .WithCustomId($"cidade_predio_para_heroi|{heroiIdStr}")
+            .WithCustomId($"cidade:predio_para_heroi:{heroiIdStr}")
             .WithPlaceholder("Escolha o prédio e tipo de slot...")
             .WithMinValues(1).WithMaxValues(1);
 
@@ -286,8 +323,14 @@ public class CidadeCommand(CidadeService cidadeService, HeroiService heroiServic
         });
     }
 
-    public async Task HandlePredioParaHeroiAsync(SocketMessageComponent comp, Guid heroiId)
+    private async Task HandlePredioParaHeroiAsync(SocketMessageComponent comp, string[] parts)
     {
+        if (parts.Length < 3 || !Guid.TryParse(parts[2], out var heroiId))
+        {
+            await comp.UpdateAsync(m => { m.Content = "ID de herói inválido."; m.Components = null; });
+            return;
+        }
+
         var valorStr = comp.Data.Values.FirstOrDefault();
         Log($"PredioParaHeroi — heroiId={heroiId} valor={valorStr} user={comp.User.Username}");
 
@@ -379,7 +422,7 @@ public class CidadeCommand(CidadeService cidadeService, HeroiService heroiServic
         }
 
         var select = new SelectMenuBuilder()
-            .WithCustomId("cidade_desalocar_heroi")
+            .WithCustomId("cidade:desalocar_heroi")
             .WithPlaceholder("Escolha o herói para desalocar...")
             .WithMinValues(1).WithMaxValues(1);
 
@@ -469,7 +512,7 @@ public class CidadeCommand(CidadeService cidadeService, HeroiService heroiServic
         var jaBuilt = cidade?.Construcoes.Select(c => c.TipoPredio).ToHashSet() ?? [];
 
         var select = new SelectMenuBuilder()
-            .WithCustomId("cidade_construir_predio")
+            .WithCustomId("cidade:construir_predio")
             .WithPlaceholder("Escolha o prédio para construir...")
             .WithMinValues(1).WithMaxValues(1);
 
@@ -584,7 +627,7 @@ public class CidadeCommand(CidadeService cidadeService, HeroiService heroiServic
             sb.AppendLine($"{CidadeBoosterService.IconeBooster(tipo)} {CidadeBoosterService.NomeBooster(tipo)} ×{qtd} — {CidadeBoosterService.DescricaoBooster(tipo)}");
 
         var menu = new SelectMenuBuilder()
-            .WithCustomId("cidade_booster_ativar")
+            .WithCustomId("cidade:booster_ativar")
             .WithPlaceholder("Ativar um booster...");
 
         foreach (var (tipo, qtd) in inventario.OrderBy(b => CidadeBoosterService.NomeBooster(b.Tipo)))
@@ -647,6 +690,18 @@ public class CidadeCommand(CidadeService cidadeService, HeroiService heroiServic
                 foreach (var s in slots) alocados.Add(s.HeroiId);
             }
         return alocados;
+    }
+
+    // ── Confirmação — implementado na Task 7 ──────────────────────────────────────
+
+    private async Task HandleDesalocarConfirmarAsync(SocketMessageComponent comp, string[] parts)
+    {
+        await comp.RespondAsync("Em breve.", ephemeral: true);
+    }
+
+    private async Task HandleConstruirConfirmarAsync(SocketMessageComponent comp, string[] parts)
+    {
+        await comp.RespondAsync("Em breve.", ephemeral: true);
     }
 
     private async Task<(Embed embed, MessageComponent comps)> BuildPanelAsync(ulong usuarioId)
