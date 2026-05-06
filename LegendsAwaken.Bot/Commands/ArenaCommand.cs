@@ -44,23 +44,17 @@ namespace LegendsAwaken.Bot.Commands
                 return;
             }
 
-            if (herois.Any(h => h.EstadoSustento == EstadoSustento.Degradado))
-            {
-                await command.RespondAsync("🔴 Seus heróis estão degradados (sem comida). Produza Comida no Campo antes de usar a Arena.", ephemeral: true);
-                return;
-            }
-
             // Top 5 heroes by level (higher rarity tie-break)
             var party = herois
-                .Where(h => h.EstadoSustento != EstadoSustento.Inativo)
                 .OrderByDescending(h => h.Nivel)
                 .ThenByDescending(h => (int)h.Raridade)
                 .Take(5)
                 .ToList();
 
-            if (!party.Any())
+            var guardErro = HeroiGuard.ValidarTodosDisponiveis(party);
+            if (guardErro != null)
             {
-                await command.RespondAsync("Nenhum herói ativo disponível para o desafio.", ephemeral: true);
+                await command.RespondAsync($"🔴 {guardErro}", ephemeral: true);
                 return;
             }
 
