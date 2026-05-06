@@ -12,9 +12,10 @@ public class RecruitmentServiceTests
     private readonly Mock<IHeroiDesbloqueadoRepository> _desbloqueadoRepo = new();
     private readonly Mock<IHeroiConfigRepository>       _heroiConfigRepo  = new();
     private readonly Mock<IFragmentoRepository>          _fragmentoRepo    = new();
+    private readonly Mock<HeroiService>                  _heroiServiceMock = new();
 
     private RecruitmentService CreateService() =>
-        new(_desbloqueadoRepo.Object, _heroiConfigRepo.Object, _fragmentoRepo.Object);
+        new(_desbloqueadoRepo.Object, _heroiConfigRepo.Object, _fragmentoRepo.Object, _heroiServiceMock.Object);
 
     [Fact]
     public async Task TentarRecrutarPorFragmentosAsync_Falha_QuandoJaDesbloqueado()

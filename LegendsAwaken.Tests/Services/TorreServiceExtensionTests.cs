@@ -26,7 +26,8 @@ public class TorreServiceExtensionTests
         var levelUpService     = new HeroiLevelUpService();
         var fragmentService    = new FragmentService(_biomaRepo.Object, _fragmentoRepo.Object, _contratoRepo.Object, _heroiConfigRepo.Object);
         var biomeService       = new BiomeService(_biomaRepo.Object);
-        var recruitmentService = new RecruitmentService(_desbloquRepo.Object, _heroiConfigRepo.Object, _fragmentoRepo.Object);
+        var heroiServiceMock   = new Mock<HeroiService>();
+        var recruitmentService = new RecruitmentService(_desbloquRepo.Object, _heroiConfigRepo.Object, _fragmentoRepo.Object, heroiServiceMock.Object);
         var rewardService      = new RewardDistributionService();
 
         return new TorreService(
