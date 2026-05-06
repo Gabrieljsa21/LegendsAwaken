@@ -463,7 +463,7 @@ public class CidadeCommand(CidadeService cidadeService, HeroiService heroiServic
         {
             m.Embed = panel.Embed;
             m.Components = panel.Components;
-            m.Content = "";
+            m.Content = null;
         });
     }
 
@@ -538,7 +538,7 @@ public class CidadeCommand(CidadeService cidadeService, HeroiService heroiServic
         {
             m.Embed = panel.Embed;
             m.Components = panel.Components;
-            m.Content = "";
+            m.Content = null;
         });
     }
 
@@ -649,19 +649,26 @@ public class CidadeCommand(CidadeService cidadeService, HeroiService heroiServic
 
     private async Task HandleDesalocarConfirmarAsync(SocketMessageComponent comp, string[] parts)
     {
+        Log($"DesalocarConfirmar — user={comp.User.Username}");
         // parts = ["cidade", "desalocar_confirmar", "{heroiId}"]
         if (parts.Length < 3 || !Guid.TryParse(parts[2], out var heroiId))
         {
-            await comp.UpdateAsync(m => { m.Content = "ID de herói inválido."; m.Embed = null; m.Components = new ComponentBuilder().Build(); });
+            await comp.UpdateAsync(m => { m.Content = "ID de herói inválido."; m.Embed = null; m.Components = null; });
             return;
         }
 
         var userId = comp.User.Id;
         var erro = await cidadeService.DesalocarHeroiAsync(userId, heroiId);
+        if (erro != null)
+        {
+            await comp.UpdateAsync(m => { m.Content = $"❌ {erro}"; m.Embed = null; m.Components = null; });
+            return;
+        }
+
         var (embed, comps) = await BuildPanelAsync(userId);
         await comp.UpdateAsync(m =>
         {
-            m.Content = erro == null ? "✅ Herói desalocado!" : $"❌ {erro}";
+            m.Content = "✅ Herói desalocado!";
             m.Embed = embed;
             m.Components = comps;
         });
@@ -669,22 +676,26 @@ public class CidadeCommand(CidadeService cidadeService, HeroiService heroiServic
 
     private async Task HandleConstruirConfirmarAsync(SocketMessageComponent comp, string[] parts)
     {
+        Log($"ConstruirConfirmar — user={comp.User.Username}");
         // parts = ["cidade", "construir_confirmar", "{tipoPredio}"]
         if (parts.Length < 3 || !Enum.TryParse<TipoPredio>(parts[2], out var tipoPredio))
         {
-            await comp.UpdateAsync(m => { m.Content = "Prédio inválido."; m.Embed = null; m.Components = new ComponentBuilder().Build(); });
+            await comp.UpdateAsync(m => { m.Content = "Prédio inválido."; m.Embed = null; m.Components = null; });
             return;
         }
 
         var userId = comp.User.Id;
-        if (await cidadeService.ObterCidadePorUsuarioAsync(userId) == null)
-            await cidadeService.CriarCidadeAsync("Minha Cidade", userId);
-
         var erro = await cidadeService.ConstruirPredioAsync(userId, tipoPredio);
+        if (erro != null)
+        {
+            await comp.UpdateAsync(m => { m.Content = $"❌ {erro}"; m.Embed = null; m.Components = null; });
+            return;
+        }
+
         var (embed, comps) = await BuildPanelAsync(userId);
         await comp.UpdateAsync(m =>
         {
-            m.Content = erro == null ? $"🏗️ **{tipoPredio}** construída!" : $"❌ {erro}";
+            m.Content = $"🏗️ **{tipoPredio}** construída!";
             m.Embed = embed;
             m.Components = comps;
         });
