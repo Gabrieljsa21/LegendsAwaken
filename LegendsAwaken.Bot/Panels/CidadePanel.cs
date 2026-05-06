@@ -145,12 +145,12 @@ public static class CidadePanel
 
     public static MessageComponent CriarComponentes()
         => new ComponentBuilder()
-            .WithButton("Coletar",       "cidade_coletar",       ButtonStyle.Success)
-            .WithButton("Alocar Node",   "cidade_alocar_node",   ButtonStyle.Primary)
-            .WithButton("Alocar Prédio", "cidade_alocar_predio", ButtonStyle.Primary)
-            .WithButton("Desalocar",     "cidade_desalocar",     ButtonStyle.Danger)
-            .WithButton("Construir",     "cidade_construir",     ButtonStyle.Secondary)
-            .WithButton("🧪 Booster",    "cidade_booster",       ButtonStyle.Secondary)
-            .WithButton("🔄",            "cidade_atualizar",     ButtonStyle.Secondary)
+            .WithButton("Coletar",       "cidade:coletar",       ButtonStyle.Success)
+            .WithButton("Alocar Node",   "cidade:alocar_node",   ButtonStyle.Primary)
+            .WithButton("Alocar Prédio", "cidade:alocar_predio", ButtonStyle.Primary)
+            .WithButton("Desalocar",     "cidade:desalocar",     ButtonStyle.Danger)
+            .WithButton("Construir",     "cidade:construir",     ButtonStyle.Secondary)
+            .WithButton("🧪 Booster",    "cidade:booster",       ButtonStyle.Secondary)
+            .WithButton("🔄",            "cidade:atualizar",     ButtonStyle.Secondary)
             .Build();
 }
