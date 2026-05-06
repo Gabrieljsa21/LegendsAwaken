@@ -62,7 +62,7 @@ public class CidadeCommand(CidadeService cidadeService, HeroiService heroiServic
 
     // ── Coletar ──────────────────────────────────────────────────────────────────
 
-    public async Task HandleColetarAsync(SocketMessageComponent comp)
+    private async Task HandleColetarAsync(SocketMessageComponent comp)
     {
         Log($"Coletar — user={comp.User.Username}");
         await comp.DeferAsync(ephemeral: true);
@@ -98,7 +98,7 @@ public class CidadeCommand(CidadeService cidadeService, HeroiService heroiServic
 
     // ── Alocar em Node de Recurso ─────────────────────────────────────────────────
 
-    public async Task HandleAlocarNodeAsync(SocketMessageComponent comp)
+    private async Task HandleAlocarNodeAsync(SocketMessageComponent comp)
     {
         Log($"AlocarNode (botão) — user={comp.User.Username}");
         await comp.DeferAsync(ephemeral: true);
@@ -131,7 +131,7 @@ public class CidadeCommand(CidadeService cidadeService, HeroiService heroiServic
         Log("AlocarNode: select de herói enviado");
     }
 
-    public async Task HandleHeroiParaNodeAsync(SocketMessageComponent comp)
+    private async Task HandleHeroiParaNodeAsync(SocketMessageComponent comp)
     {
         var heroiIdStr = comp.Data.Values.FirstOrDefault();
         Log($"HeroiParaNode — heroiId={heroiIdStr} user={comp.User.Username}");
@@ -231,7 +231,7 @@ public class CidadeCommand(CidadeService cidadeService, HeroiService heroiServic
 
     // ── Alocar em Prédio ──────────────────────────────────────────────────────────
 
-    public async Task HandleAlocarPredioAsync(SocketMessageComponent comp)
+    private async Task HandleAlocarPredioAsync(SocketMessageComponent comp)
     {
         Log($"AlocarPredio (botão) — user={comp.User.Username}");
         await comp.DeferAsync(ephemeral: true);
@@ -270,7 +270,7 @@ public class CidadeCommand(CidadeService cidadeService, HeroiService heroiServic
         Log("AlocarPredio: select de herói enviado");
     }
 
-    public async Task HandleHeroiParaPredioAsync(SocketMessageComponent comp)
+    private async Task HandleHeroiParaPredioAsync(SocketMessageComponent comp)
     {
         var heroiIdStr = comp.Data.Values.FirstOrDefault();
         Log($"HeroiParaPredio — heroiId={heroiIdStr} user={comp.User.Username}");
@@ -341,6 +341,7 @@ public class CidadeCommand(CidadeService cidadeService, HeroiService heroiServic
             return;
         }
 
+        // option value format: "{construcaoId}|{SlotTipo}" — '|' is an internal payload separator, not the customId delimiter
         var partes = valorStr.Split('|');
         if (partes.Length != 2 ||
             !Guid.TryParse(partes[0], out var construcaoId) ||
@@ -383,7 +384,7 @@ public class CidadeCommand(CidadeService cidadeService, HeroiService heroiServic
 
     // ── Desalocar ─────────────────────────────────────────────────────────────────
 
-    public async Task HandleDesalocarAsync(SocketMessageComponent comp)
+    private async Task HandleDesalocarAsync(SocketMessageComponent comp)
     {
         Log($"Desalocar (botão) — user={comp.User.Username}");
         await comp.DeferAsync(ephemeral: true);
@@ -440,7 +441,7 @@ public class CidadeCommand(CidadeService cidadeService, HeroiService heroiServic
             ephemeral: true);
     }
 
-    public async Task HandleDesalocarHeroiAsync(SocketMessageComponent comp)
+    private async Task HandleDesalocarHeroiAsync(SocketMessageComponent comp)
     {
         var heroiIdStr = comp.Data.Values.FirstOrDefault();
         Log($"DesalocarHeroi — heroiId={heroiIdStr} user={comp.User.Username}");
@@ -503,7 +504,7 @@ public class CidadeCommand(CidadeService cidadeService, HeroiService heroiServic
 
     // ── Construir ─────────────────────────────────────────────────────────────────
 
-    public async Task HandleConstruirAsync(SocketMessageComponent comp)
+    private async Task HandleConstruirAsync(SocketMessageComponent comp)
     {
         Log($"Construir (botão) — user={comp.User.Username}");
         await comp.DeferAsync(ephemeral: true);
@@ -541,7 +542,7 @@ public class CidadeCommand(CidadeService cidadeService, HeroiService heroiServic
             ephemeral: true);
     }
 
-    public async Task HandleConstruirPredioAsync(SocketMessageComponent comp)
+    private async Task HandleConstruirPredioAsync(SocketMessageComponent comp)
     {
         var predioStr = comp.Data.Values.FirstOrDefault();
         Log($"ConstruirPredio — predio={predioStr} user={comp.User.Username}");
@@ -591,7 +592,7 @@ public class CidadeCommand(CidadeService cidadeService, HeroiService heroiServic
 
     // ── Booster ───────────────────────────────────────────────────────────────────
 
-    public async Task HandleBoosterAsync(SocketMessageComponent comp)
+    private async Task HandleBoosterAsync(SocketMessageComponent comp)
     {
         Log($"Booster (botão) — user={comp.User.Username}");
         await comp.DeferAsync(ephemeral: true);
@@ -643,7 +644,7 @@ public class CidadeCommand(CidadeService cidadeService, HeroiService heroiServic
             ephemeral: true);
     }
 
-    public async Task HandleBoosterAtivarAsync(SocketMessageComponent comp)
+    private async Task HandleBoosterAtivarAsync(SocketMessageComponent comp)
     {
         var tipoStr = comp.Data.Values.FirstOrDefault();
         Log($"BoosterAtivar — tipo={tipoStr} user={comp.User.Username}");
@@ -670,7 +671,7 @@ public class CidadeCommand(CidadeService cidadeService, HeroiService heroiServic
 
     // ── Atualizar painel ──────────────────────────────────────────────────────────
 
-    public async Task HandleAtualizarAsync(SocketMessageComponent comp)
+    private async Task HandleAtualizarAsync(SocketMessageComponent comp)
     {
         Log($"Atualizar — user={comp.User.Username}");
         await comp.DeferAsync();
@@ -694,14 +695,14 @@ public class CidadeCommand(CidadeService cidadeService, HeroiService heroiServic
 
     // ── Confirmação — implementado na Task 7 ──────────────────────────────────────
 
-    private async Task HandleDesalocarConfirmarAsync(SocketMessageComponent comp, string[] parts)
+    private async Task HandleDesalocarConfirmarAsync(SocketMessageComponent comp, string[] _)
     {
-        await comp.RespondAsync("Em breve.", ephemeral: true);
+        await comp.FollowupAsync("Em breve.", ephemeral: true);
     }
 
-    private async Task HandleConstruirConfirmarAsync(SocketMessageComponent comp, string[] parts)
+    private async Task HandleConstruirConfirmarAsync(SocketMessageComponent comp, string[] _)
     {
-        await comp.RespondAsync("Em breve.", ephemeral: true);
+        await comp.FollowupAsync("Em breve.", ephemeral: true);
     }
 
     private async Task<(Embed embed, MessageComponent comps)> BuildPanelAsync(ulong usuarioId)
