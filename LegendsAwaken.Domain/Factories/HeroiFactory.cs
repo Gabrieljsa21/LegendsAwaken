@@ -21,7 +21,8 @@ namespace LegendsAwaken.Domain.Factories
             List<HeroiAfinidadeElemental> afinidade,
             List<HeroiHabilidade> habilidades,
             AtributosBase atributosBase,
-            FuncaoTatica? funcao = null
+            FuncaoTatica? funcao = null,
+            string? titulo = null
         )
         {
             var heroi = new Heroi
@@ -29,6 +30,7 @@ namespace LegendsAwaken.Domain.Factories
                 Id = Guid.NewGuid(),
                 UsuarioId = usuarioId,
                 Nome = nome,
+                Titulo = titulo,
                 Raridade = raridade,
                 Raca = raca,
                 Antecedente = antecedente,

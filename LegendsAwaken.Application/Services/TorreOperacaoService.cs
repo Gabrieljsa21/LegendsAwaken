@@ -13,15 +13,21 @@ namespace LegendsAwaken.Application.Services
         private readonly ITorreOperacaoRepository _repo;
         private readonly ITorreRepository         _torreRepo;
         private readonly IUsuarioRepository       _usuarioRepo;
+        private readonly RecursoService           _recursoService;
+        private readonly JogadorItemService       _itemService;
 
         public TorreOperacaoService(
             ITorreOperacaoRepository repo,
             ITorreRepository torreRepo,
-            IUsuarioRepository usuarioRepo)
+            IUsuarioRepository usuarioRepo,
+            RecursoService recursoService,
+            JogadorItemService itemService)
         {
-            _repo      = repo;
-            _torreRepo = torreRepo;
-            _usuarioRepo = usuarioRepo;
+            _repo           = repo;
+            _torreRepo      = torreRepo;
+            _usuarioRepo    = usuarioRepo;
+            _recursoService = recursoService;
+            _itemService    = itemService;
         }
 
         public async Task<int> ObterAndarAtualNumeroAsync(Guid usuarioId)
@@ -112,6 +118,13 @@ namespace LegendsAwaken.Application.Services
             {
                 if (op.ResultadoOuro is > 0)
                     ouroTotal += op.ResultadoOuro.Value;
+
+                if (op.ResultadoRecursoNome != null && op.ResultadoRecursoQtd is > 0)
+                    await _recursoService.AdicionarAsync(usuarioId, op.ResultadoRecursoNome, op.ResultadoRecursoQtd.Value);
+
+                var itemDef = AndarItemConfig.ObterItemDoAndar(op.AndarNumero);
+                if (itemDef != null)
+                    await _itemService.AdicionarAsync(usuarioId, itemDef);
 
                 op.Status = StatusOperacao.Expirada;
                 await _repo.AtualizarAsync(op);

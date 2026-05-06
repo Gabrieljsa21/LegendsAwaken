@@ -220,6 +220,8 @@ public class TorreExploracaoService
                 throw new InvalidOperationException($"Heroi {id} nao encontrado.");
             if (h.EstadoSustento == EstadoSustento.Inativo)
                 throw new InvalidOperationException($"Heroi {h.Nome} esta inativo.");
+            if (h.EstadoSustento == EstadoSustento.Degradado)
+                throw new InvalidOperationException($"Heroi {h.Nome} esta degradado (sem comida). Produza Comida no Campo antes de explorar.");
             herois.Add(h);
         }
 

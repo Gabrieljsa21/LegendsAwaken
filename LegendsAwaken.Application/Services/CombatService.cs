@@ -18,7 +18,7 @@ namespace LegendsAwaken.Application.Services
 
         // ── Iniciar combate ────────────────────────────────────────────────────
 
-        public CombatEncounter IniciarCombate(List<Heroi> herois, List<Inimigo> inimigos)
+        public CombatEncounter IniciarCombate(List<Heroi> herois, List<InimigoAndar> inimigos)
         {
             var encounter = new CombatEncounter();
 

@@ -6,6 +6,136 @@ O formato segue o padrão [Keep a Changelog](https://keepachangelog.com/pt-BR/1.
 
 ---
 
+## [3.6.0] - 2026-05-06 · UX-0 — Infraestrutura de Interação do Bot + Correções de Torre
+
+### Adicionado
+
+**Bot — Infraestrutura de Interação (UX-0) — `LegendsAwaken.Bot/Interactions/`**
+- `PanelResult` record — ViewModel `(Embed, MessageComponent)` para separar construção de painel de exibição
+- `IInteractionHandler` — interface com `CustomIdPrefix` + `HandleAsync(component, parts[])`; convenção de customId `sistema:acao[:p1:p2]` com `:` como separador
+- `InteractionRouter` — roteador thread-safe (`ConcurrentDictionary`) que parseia `customId`, localiza handler pelo prefixo e despacha; 5 testes unitários (`InteractionRouterTests.cs`)
+- `ConfirmationPanel.Criar(mensagem, confirmId, cancelId)` — fábrica estática de painel efêmero `[Confirmar] [Cancelar]` com embed laranja; `global:cancelar` como escape hatch universal
+- `CidadeCommand : IInteractionHandler` — migrado para o router com 16 handlers internos (`coletar`, `alocar_node`, `alocar_predio`, `desalocar`, `desalocar_confirmar`, `construir`, `construir_predio`, `construir_confirmar`, `booster`, `atualizar`, `node_para_heroi`, `predio_para_heroi`)
+- Confirmação de desalocação: `HandleDesalocarAsync` exibe `ConfirmationPanel`; `HandleDesalocarConfirmarAsync` executa e recarrega painel só no sucesso
+- Confirmação de construção: `HandleConstruirPredioAsync` exibe custo + `ConfirmationPanel`; `HandleConstruirConfirmarAsync` executa e recarrega painel só no sucesso
+
+### Alterado
+
+- `CommandHandler` — `InteractionRouter` integrado antes do bloco legacy; bloco legacy `cidade_*` removido; `global:cancelar` tratado diretamente como escape hatch global
+- `Program.cs` — `InteractionRouter` registrado como Singleton; `CidadeCommand` instanciado e registrado no router após `handler.Initialize()`
+- `CidadePanel` — 7 botões migrados para convenção `:` (ex: `cidade_coletar` → `cidade:coletar`)
+- Todos os sub-handlers de `CidadeCommand` tornados `private`
+
+### Corrigido
+
+- `ConfirmationPanel.Criar` — guard `ArgumentException.ThrowIfNullOrWhiteSpace(confirmId)` contra confirmId nulo
+- `CommandHandler.HandleButtonExecutedAsync` — `TryRouteAsync` envolto em try/catch com `LogError` e resposta efêmera de fallback
+- Handlers de confirmação — painel recarregado **apenas** no caminho de sucesso (path de erro retorna mensagem simples)
+- `Andares` (SQLite) — migration `TorreNivelDificuldade` não tinha `.Designer.cs`; EF Core não descobria a migration e a coluna `NivelDificuldade` nunca era aplicada → `.Designer.cs` criado com `[Migration]` + `[DbContext]`
+- `GeracaoDeDadosService.CriarTabelasAsync` — coluna `Inimigos` em `Andares` é excluída do EF (`.Ignore`) e não tem migration; adicionado `EnsureAndaresColunaInimigosAsync` com `PRAGMA table_info` + `ALTER TABLE` idempotente no startup
+
+---
+
+## [Sessão Design — 2026-05-06] · Torre: Framework de Arcos Narrativos + Skill analyze-folder-for-la
+
+### Adicionado
+
+**Skill**
+- `/analyze-folder-for-la` — skill de análise de design: recebe um caminho de pasta, lê todos os `.txt`, produz análise por arquivo (6 seções: resumo, conceitos, elementos aproveitáveis, sugestões LA, nível de relevância) + sumário final (padrões recorrentes, melhores ideias, recomendações estratégicas); utiliza análise em paralelo via sub-agentes
+- Executado em `C:\Workspace\D&D` (57 arquivos) e `C:\Workspace\Ideias` (2 arquivos); resultados compilados em `ANALISE_DND_PARA_LA.md`
+
+**Design — Torre Arcos Narrativos**
+- `DESIGN_TORRE_ARCOS.md` — documento de design completo: framework de objetivos 3-tier (A/B/C), sistema de flags (simples + compostas), 5 categorias de colecionável (Lore/Economia/Build/Chave/Arquivo), regra 70/30 para objetivos secundários, calibração de bônus por tier de andar, camada de Design vs camada de Display
+- **Arco 1 — Torre em Ruínas** (Andares 1–4): boss Carniçal, flags `[grimorio_encontrado]`/`[altar_destruido]`/`[identidade_revelada]` (composta), 3 colecionáveis
+- **Arco 2 — A Praga Ardente** (Andares 5–10): boss Jakk, mecânica de altar (invoca zumbis/turno), flags de investigação desbloqueiam rota alternativa via `[rota_alternativa]` (composta), item tradeoff `pedra_mana_contaminada`
+- **Arco 3 — A Cabana dos Experimentos** (Andares 11–15): boss Golem de Calzone (absorve fogo), seed de villain recorrente Woganpuck via `[woganpuck_revelado]`, NPC permanente `[andolyn_aliada]` (composta), item tradeoff `frasco_molho_fervente`
+
+### Decisões de Design
+
+- Boss states: apenas `bossDerrotado` / `bossFugiu`; "ignorado" descartado (boss é portão obrigatório)
+- Bosses que fogem retornam em arco futuro com +15–20% stats + nova mecânica adquirida
+- Objetivos secundários têm estado `expirado` se o grupo avança sem completar
+- Flags inter-arco (ex.: `[woganpuck_rastreado]`) só ativam efeito quando o trigger futuro ocorre — sem bônus antecipado
+
+---
+
+## [3.5.0] - 2026-04-27 · Sessão — Inventário (RecursoEstoque + JogadorItem), Enforcement de Sustento e Correção de Migration
+
+### Adicionado
+
+**Domínio**
+- `IRecursoEstoqueRepository` — interface com `EnsureTableAsync`, `UpsertAsync`, `ObterAsync`, `ListarAsync`
+- `IJogadorItemRepository` — interface com `EnsureTableAsync`, `UpsertAsync`, `ListarAsync`, `ObterPorConfigAsync`
+
+**Infraestrutura**
+- `RecursoEstoqueRepository` — repositório SQLite puro; tabela `RecursoEstoque(Id, UsuarioId, Recurso, Quantidade, UNIQUE(UsuarioId, Recurso))`; upsert via `ON CONFLICT DO UPDATE SET Quantidade += excluded.Quantidade`
+- `JogadorItemRepository` — repositório SQLite puro; tabela `JogadorItens(Id, UsuarioId, ItemConfigId, Nome, Tipo, Icone, Efeito, Quantidade, ObtidoEm, ExtraData)`; upsert via `ON CONFLICT(UsuarioId, ItemConfigId)` acumulando quantidade
+
+**Aplicação**
+- `RecursoService` — fachada de estoque: `AdicionarAsync`, `ObterAsync`, `ListarEstoqueAsync`
+- `AndarItemConfig` — config estática de 25 itens (andares 1–25, Bioma A); distribuição: 6 ComponenteCrafting, 6 Consumivel, 7 Equipamento, 6 ItemProgressao; item de destaque: Pedra-Chave do Bioma (andar 25, desbloqueia Bioma B) e Cristal de Sombra (andar 20, crafting de relíquias)
+- `JogadorItemService` — fachada de itens únicos: `AdicionarAsync(def, quantidade)`, `ListarAsync`, `ObterPorConfigAsync`
+
+**Bot**
+- `TorreModoOperacaoPanel.CriarBoard` — novos parâmetros opcionais `estoque`, `itens`, `estadoSustento`, `horasComidaRestantes`; banner de aviso de sustento (🔴 Degradado / ⚠️ Instável com horas restantes); campos "📦 Estoque de Recursos" e "🎒 Itens" no embed; dropdown de andar exibe `{icone} {recurso} ×qtd | 🎁 {item}` por andar
+
+### Alterado
+
+**Aplicação**
+- `TorreOperacaoService.ColetarTodasAsync` — crédita recursos não-Ouro em `RecursoEstoque` via `RecursoService` e concede item do andar via `AndarItemConfig` + `JogadorItemService`
+- `GeracaoDeDadosService` — `CriarTabelasAsync` chama `EnsureTableAsync` dos dois novos repositórios; recebe `IRecursoEstoqueRepository` e `IJogadorItemRepository` no construtor
+- `TorreExploracaoService` — bloco de início de exploração: `EstadoSustento.Degradado` agora lança `InvalidOperationException` (equiparado ao `Inativo`)
+
+**Bot**
+- `TorreCommand.HandleModoOperacaoAsync` — busca estoque + itens + estado de sustento e os repassa ao painel
+- `TorreCommand.HandleOpAndarSelAsync` — verifica `EstadoSustento.Degradado` em todos os heróis; bloqueia início de operação se qualquer um estiver degradado
+- `ArenaCommand` — verifica Degradado antes de `DesafioOndasAsync`; filtra heróis `Inativo` da party; guard de party vazia após filtro
+- `Program.cs` — registra `IRecursoEstoqueRepository`, `IJogadorItemRepository`, `RecursoService`, `JogadorItemService`
+- `CommandHandler` — campos e injeção de `_recursoService` e `_jogadorItemService`; todas as instanciações de `TorreCommand` atualizadas
+
+### Corrigido
+- **Migration `AddInimigoCatalogo`** — reordenação de `Up()`: `CreateIndex` e `AddForeignKey` movidos para ANTES dos blocos `InsertData`; corrige `SQLite Error 19: NOT NULL constraint failed: Inimigo.Atributos_Forca` causado por EF Core executar INSERTs enquanto a reconstrução da tabela (causada por `DropColumn`) ainda estava pendente
+
+---
+
+## [3.4.0] - 2026-04-27 · Sessão — Imagens de Heróis via R2, Limpeza de Personagens Legados e Desbloqueios Iniciais
+
+### Adicionado
+
+**Infraestrutura / Cloudflare R2**
+- `R2ImageService` — serviço que acessa imagens privadas no Cloudflare R2 via API S3 (`AWSSDK.S3`); credenciais lidas de variáveis de ambiente `R2_ACCESS_KEY_ID` / `R2_SECRET_KEY`; endpoint configurado em `appsettings.json` (`R2:Endpoint`, `R2:Bucket`)
+- `appsettings.json` — seção `R2` substituída (`BaseUrl` → `Endpoint` + `Bucket`); endpoint aponta para bucket `game-assets`
+- Variáveis de ambiente de sistema: `R2_ACCESS_KEY_ID`, `R2_SECRET_KEY`
+
+**Conversor de Imagens (`Converter.js`)**
+- Upload automático para R2 ao final da conversão via `@aws-sdk/client-s3`
+- Credenciais lidas de `.env` local (via `dotenv`); `.env.example` adicionado
+- Nomes de saída migrados para 3 dígitos zero-padded: `001.webp` … `030.webp`
+
+**Domínio / Aplicação**
+- `HeroiConfig.ImageUrl` e `HeroiConfig.ImageUrlThumb` — comentários atualizados: campos agora armazenam chaves R2 (`heroes/display/001.webp`) em vez de URLs públicas
+- `HeroiDataLoader` — derivação de chave R2 com zero-padding 3 dígitos (`"D3"`); removida dependência de `IConfiguration` para `R2:BaseUrl`
+
+**Bot — exibição de imagem no detalhe de herói**
+- `HeroisPanel.CriarEmbedDetalhe` — parâmetro opcional `bool comImagem`; adiciona `.WithImageUrl("attachment://hero.webp")` quando `true`
+- `HeroisCommand.HandleVerDetalhesAsync` — busca `HeroiConfig` por nome, faz download da imagem via `R2ImageService` e envia como `FileAttachment`; degrada graciosamente (sem imagem) se o arquivo não existir no R2
+- `HeroisCommand` — recebe `IHeroiConfigRepository` e `R2ImageService` como dependências opcionais
+- `CommandHandler` — campo e injeção de `R2ImageService`; `HeroisCommand` instanciado com os novos parâmetros
+- `Program.cs` — `R2ImageService` registrado como `Singleton`; passado ao `CommandHandler`
+
+**Desbloqueios iniciais**
+- `UsuarioService` — injeta `IHeroiDesbloqueadoRepository` e `IHeroiConfigRepository`; ao criar novo usuário, desbloqueia automaticamente Kaeryn (#16), Elize (#29) e Aegis (#9)
+- `DiscordToGuid` — conversão `ulong → Guid` internalizada em `UsuarioService` (sem dependência do `DiscordIdHelper` do Bot)
+
+### Alterado
+- `HeroisCommand` — construtor migrado de primary-constructor simples para primary-constructor com parâmetros opcionais para `R2ImageService` e `IHeroiConfigRepository`
+
+### Removido
+- `PersonagensFixos` (Aldric, Yuzara, Thorvald, Kaen, Nyra, Seraph, Mira, Grom, Hana) — array e método `PopularPersonagensFixosAsync` removidos de `GeracaoDeDadosService`
+- Startup limpa automaticamente heróis legados (`UsuarioId == 0`) do banco na primeira execução após atualização
+
+---
+
 ## [3.3.0] - 2026-04-25 · Sessão — Bioma Panel, Cidade UX e Torre Modo Operação v2
 
 ### Corrigido

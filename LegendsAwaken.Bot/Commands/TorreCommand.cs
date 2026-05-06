@@ -22,6 +22,8 @@ public class TorreCommand(
     CidadeService cidadeService,
     TorreExploracaoService exploracaoService,
     PartyService partyService,
+    RecursoService recursoService,
+    JogadorItemService itemService,
     ILogger? logger = null)
 {
     private void Log(string msg)                  => logger?.LogInformation("[Torre] {Msg}", msg);
@@ -101,7 +103,17 @@ public class TorreCommand(
         var concluidas = await operacaoService.ListarConcluidasAsync(usuarioId);
         int maxSlots   = TorreOperacaoConfig.CalcularMaxSlots(construcoes);
 
-        var (embed, comps) = TorreModoOperacaoPanel.CriarBoard(ativas, concluidas, andarAtual, maxSlots);
+        var estoque = await recursoService.ListarEstoqueAsync(usuarioId);
+        var itens   = await itemService.ListarAsync(usuarioId);
+
+        var todosHerois = await heroiService.ObterHeroisPorUsuarioAsync(comp.User.Id);
+        var (_, horasComida, estadoSustento) = SustentoService.ObterResumo(
+            cidade ?? new Domain.Entities.Cidade { Nome = "", UsuarioId = comp.User.Id, Recursos = new() },
+            todosHerois);
+
+        var (embed, comps) = TorreModoOperacaoPanel.CriarBoard(
+            ativas, concluidas, andarAtual, maxSlots,
+            estoque, itens, estadoSustento, horasComida);
         await comp.FollowupAsync(embed: embed, components: comps, ephemeral: true);
     }
 
@@ -150,6 +162,18 @@ public class TorreCommand(
         var usuarioId = DiscordIdHelper.ToGuid(comp.User.Id);
         var cidade    = await cidadeService.ObterCidadePorUsuarioAsync(comp.User.Id);
         var construcoes = cidade?.Construcoes ?? new System.Collections.Generic.List<Construcao>();
+
+        var heroisDaOp = await heroiService.ObterHeroisPorUsuarioAsync(comp.User.Id);
+        if (heroisDaOp.Any(h => h.EstadoSustento == EstadoSustento.Degradado))
+        {
+            await comp.ModifyOriginalResponseAsync(m =>
+            {
+                m.Content    = "🔴 Seus heróis estão **degradados** (sem comida). Produza Comida no Campo antes de iniciar novas operações.";
+                m.Embed      = null;
+                m.Components = new ComponentBuilder().Build();
+            });
+            return;
+        }
 
         try
         {

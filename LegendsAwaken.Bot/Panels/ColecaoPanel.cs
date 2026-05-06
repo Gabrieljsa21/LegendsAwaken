@@ -4,6 +4,7 @@ using LegendsAwaken.Domain.Enum;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 namespace LegendsAwaken.Bot.Panels;
 
@@ -16,32 +17,42 @@ public static class ColecaoPanel
         List<HeroiUnlockConfig> unlockConfigs)
     {
         var builder = new EmbedBuilder()
-            .WithTitle("Sua Colecao")
+            .WithTitle("Sua Coleção")
             .WithColor(Color.Purple);
 
-        foreach (var heroi in todosHerois)
+        // Group by Tag so we stay well under the 25-field Discord limit
+        var grupos = todosHerois
+            .GroupBy(h => h.Tag ?? "Outros")
+            .OrderBy(g => g.Key);
+
+        foreach (var grupo in grupos)
         {
-            bool desbloqueado = desbloqueados.Any(d => d.HeroiId == heroi.Id);
-            var progresso     = progressos.FirstOrDefault(p => p.HeroiId == heroi.Id);
-            var unlock        = unlockConfigs.FirstOrDefault(u => u.HeroiId == heroi.Id);
+            var sb = new StringBuilder();
 
-            string estado = desbloqueado ? "+" : "-";
-            string barra  = GerarBarra(progresso?.Quantidade ?? 0, unlock?.QuantidadeFragmentos ?? 0);
-            string valor  = desbloqueado
-                ? "Recrutado"
-                : unlock?.TipoUnlock switch
-                {
-                    TipoUnlock.Fragmentos   => $"{barra} {progresso?.Quantidade ?? 0}/{unlock.QuantidadeFragmentos}",
-                    TipoUnlock.MarcoTorre    => $"Andar {unlock.AndarMarco}",
-                    TipoUnlock.CondicaoUnica => "Condicao especial",
-                    _ => "?"
-                };
+            foreach (var heroi in grupo.OrderBy(h => h.NomeCompleto))
+            {
+                bool desbloqueado = desbloqueados.Any(d => d.HeroiId == heroi.Id);
+                var progresso     = progressos.FirstOrDefault(p => p.HeroiId == heroi.Id);
+                var unlock        = unlockConfigs.FirstOrDefault(u => u.HeroiId == heroi.Id);
 
-            builder.AddField(
-                $"{estado} {heroi.Nome} ({new string('*', (int)heroi.RaridadeBase)})",
-                valor,
-                inline: true);
+                string estado = desbloqueado ? "+" : "-";
+                string info   = desbloqueado
+                    ? "Recrutado"
+                    : unlock?.TipoUnlock switch
+                    {
+                        TipoUnlock.Fragmentos   => $"{progresso?.Quantidade ?? 0}/{unlock.QuantidadeFragmentos} frags",
+                        TipoUnlock.MarcoTorre    => $"Andar {unlock.AndarMarco}",
+                        TipoUnlock.CondicaoUnica => "Condição especial",
+                        _ => "?"
+                    };
+
+                sb.AppendLine($"{estado} **{heroi.NomeCompleto}** — {info}");
+            }
+
+            builder.AddField(grupo.Key, sb.Length > 0 ? sb.ToString() : "—", inline: false);
         }
+
+        builder.WithFooter($"{desbloqueados.Count}/{todosHerois.Count} heróis recrutados");
 
         return builder.Build();
     }
@@ -54,7 +65,7 @@ public static class ColecaoPanel
         {
             var select = new SelectMenuBuilder()
                 .WithCustomId("colecao_recrutar")
-                .WithPlaceholder("Recrutar heroi...")
+                .WithPlaceholder("Recrutar herói...")
                 .WithMinValues(1)
                 .WithMaxValues(1);
 
@@ -65,13 +76,5 @@ public static class ColecaoPanel
         }
 
         return builder.Build();
-    }
-
-    private static string GerarBarra(int atual, int maximo)
-    {
-        if (maximo == 0) return string.Empty;
-        int preenchido = (int)Math.Round((double)atual / maximo * 10);
-        preenchido = Math.Min(10, preenchido);
-        return $"[{new string('#', preenchido).PadRight(10, '.')}]";
     }
 }

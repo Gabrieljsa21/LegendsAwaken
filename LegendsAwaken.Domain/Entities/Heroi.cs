@@ -11,7 +11,10 @@ namespace LegendsAwaken.Domain.Entities
         public ulong UsuarioId { get; set; }
 
         public required string Nome { get; set; }
+        public string? Titulo { get; set; }
         public Raridade Raridade { get; set; }
+
+        public string NomeCompleto => Titulo is null ? Nome : $"{Nome}, {Titulo}";
         public required Raca Raca { get; set; }
         public Profissao? Profissao { get; set; }
         public string? Antecedente { get; set; }

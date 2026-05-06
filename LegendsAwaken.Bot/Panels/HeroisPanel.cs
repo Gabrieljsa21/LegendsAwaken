@@ -77,7 +77,7 @@ public static class HeroisPanel
         return builder.Build();
     }
 
-    public static Embed CriarEmbedDetalhe(Heroi heroi)
+    public static Embed CriarEmbedDetalhe(Heroi heroi, bool comImagem = false)
     {
         var estrelas = new string('⭐', (int)heroi.Raridade);
 
@@ -125,6 +125,9 @@ public static class HeroisPanel
         embedBuilder.AddField("Sustento",
             $"{IconeSustento(heroi.EstadoSustento)} {NomeSustento(heroi.EstadoSustento)}",
             inline: true);
+
+        if (comImagem)
+            embedBuilder.WithImageUrl("attachment://hero.webp");
 
         return embedBuilder.Build();
     }

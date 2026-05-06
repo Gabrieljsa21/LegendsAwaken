@@ -52,7 +52,9 @@ namespace LegendsAwaken.Domain.Enum
         Anao,
         Elfo,
         Draconato,
-        Fada
+        Fada,
+        AnjoCaido,
+        Serafim
     }
 
     public enum Profissao
@@ -63,6 +65,8 @@ namespace LegendsAwaken.Domain.Enum
         Ladino,
         Paladino,
         Clerigo,
+        Bardo,
+        Invocador,
 
         Agricultor,
         Pescador,
@@ -165,8 +169,28 @@ namespace LegendsAwaken.Domain.Enum
 
     public enum StatusExploracao { Ativa, Concluida, Falha, Coletada }
 
+    public enum TipoInimigo
+    {
+        Besta,
+        Humanoide,
+        Monstruosidade,
+        MortoVivo,
+        Elemental,
+        Celestial,
+        Corruptor,
+        Fada,
+        Planta,
+        Limo,
+        Gigante,
+        Dragao,
+        Constructo,
+        Aberracao
+    }
+
     public enum TipoBooster { Progresso, Fragmento, Eficiencia, XP, Ouro, Materiais, Checkpoint }
 
     public enum TipoBoosterCidade { Producao, Rendimento, Eficiencia, Qualidade, Especializacao, Conversao }
+
+    public enum TipoItemJogador { Equipamento = 0, Consumivel = 1, ComponenteCrafting = 2, ItemProgressao = 3, Reliquia = 4 }
 
 }

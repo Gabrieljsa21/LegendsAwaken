@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <PackageReference Include="AWSSDK.S3" Version="3.7.400.3" />
     <PackageReference Include="Discord.Net" Version="3.19.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.5" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.5" />

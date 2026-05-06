@@ -1,6 +1,7 @@
 using Discord;
 using LegendsAwaken.Application.Services;
 using LegendsAwaken.Domain.Entities;
+using LegendsAwaken.Domain.Enum;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,9 +17,28 @@ public static class TorreModoOperacaoPanel
         List<TorreOperacao> ativas,
         List<TorreOperacao> concluidas,
         int andarAtual,
-        int maxSlots)
+        int maxSlots,
+        List<RecursoEstoque>? estoque = null,
+        List<JogadorItem>? itens = null,
+        EstadoSustento estadoSustento = EstadoSustento.Ativo,
+        double horasComidaRestantes = double.MaxValue)
     {
         var sb = new StringBuilder();
+
+        // Sustento warning banner
+        if (estadoSustento == EstadoSustento.Degradado)
+        {
+            sb.AppendLine("🔴 **ATENÇÃO — Heróis Degradados!** Sem comida: novas operações bloqueadas.");
+            sb.AppendLine();
+        }
+        else if (estadoSustento == EstadoSustento.Instavel)
+        {
+            var hStr = horasComidaRestantes < double.MaxValue
+                ? $"~{horasComidaRestantes:F0}h restantes"
+                : "estoque baixo";
+            sb.AppendLine($"⚠️ **Sustento Instável** — {hStr}. Produza mais Comida no Campo.");
+            sb.AppendLine();
+        }
 
         // Slot usage
         int emUso = ativas.Count;
@@ -65,12 +85,29 @@ public static class TorreModoOperacaoPanel
             }
         }
 
-        var embed = new EmbedBuilder()
+        var builder = new EmbedBuilder()
             .WithTitle("🏭 Modo Operação")
             .WithDescription(sb.ToString())
             .WithColor(Color.DarkTeal)
-            .WithFooter($"Andares conquistados: 1–{andarAtual - 1} | Duração fixa: {TorreOperacaoConfig.DuracaoHoras}h")
-            .Build();
+            .WithFooter($"Andares conquistados: 1–{andarAtual - 1} | Duração fixa: {TorreOperacaoConfig.DuracaoHoras}h");
+
+        if (estoque is { Count: > 0 })
+        {
+            var sbRecursos = new StringBuilder();
+            foreach (var r in estoque.Take(8))
+                sbRecursos.AppendLine($"**{r.Recurso}** ×{r.Quantidade}");
+            builder.AddField("📦 Estoque de Recursos", sbRecursos.ToString().TrimEnd(), inline: true);
+        }
+
+        if (itens is { Count: > 0 })
+        {
+            var sbItens = new StringBuilder();
+            foreach (var item in itens.Take(8))
+                sbItens.AppendLine($"{item.Icone} **{item.Nome}** ×{item.Quantidade}");
+            builder.AddField("🎒 Itens", sbItens.ToString().TrimEnd(), inline: true);
+        }
+
+        var embed = builder.Build();
 
         var cb = new ComponentBuilder();
         if (emUso < maxSlots)
@@ -124,7 +161,11 @@ public static class TorreModoOperacaoPanel
         {
             if (andaresBloqueados.Contains(i)) continue;
             var (recurso, qtd, icone) = TorreOperacaoConfig.ObterProducao(i);
-            menu.AddOption($"Andar {i}", i.ToString(), $"{icone} {recurso} ×{qtd} por operação");
+            var itemDef = AndarItemConfig.ObterItemDoAndar(i);
+            var descricao = itemDef != null
+                ? $"{icone} {recurso} ×{qtd} | 🎁 {itemDef.Nome}"
+                : $"{icone} {recurso} ×{qtd} por operação";
+            menu.AddOption($"Andar {i}", i.ToString(), descricao);
         }
 
         if (menu.Options.Count == 0)

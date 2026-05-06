@@ -20,7 +20,7 @@ public class CombatCommand
         var userId = cmd.User.Id;
         var herois = await _heroiService.ObterHeroisPorUsuarioAsync(userId);
         // TODO: carregar inimigos do andar via TorreService
-        var inimigos = new List<Inimigo> { /* ... */ };
+        var inimigos = new List<InimigoAndar> { /* ... */ };
 
         var encounter = _combatService.IniciarCombate(herois, inimigos);
 

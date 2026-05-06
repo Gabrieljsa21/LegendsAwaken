@@ -773,7 +773,50 @@ Ativação de Arquétipo:
 
 ---
 
-## 12. Referência Rápida de Fórmulas
+## 12. Sistema de Vitalidade — Ferimento Persistente (design candidato, Fase 3B-TorreExp)
+
+> Inspiração: D&D UA Regras Variantes — sistema de Vitalidade. Endereça o pedido de "heróis feridos" após falha na Torre de forma mais rica do que simples cooldown.
+
+### 12.1 Conceito
+
+Heróis que falham em missões sofrem **ferimento persistente**: o HP máximo efetivo é reduzido até a recuperação completa. Cria necessidade real de downtime/recuperação e torna falhas mais consequentes sem ser punitivo demais.
+
+### 12.2 Fórmula
+
+```
+HP_máximo_efetivo = HP_base × (1 - FerimentoFator)
+
+FerimentoFator  = danoRecebidoNaRun / HP_base   (clamp 0.0–0.8)
+RecuperacaoBase = 0.10 por hora de descanso      (herói Inativo ou em cidade)
+RecuperacaoMult = 1.0 | 1.5 (Banhos/Santuário)  (futuro building)
+```
+
+**Estado derivado do FerimentoFator:**
+
+| FerimentoFator | Estado | Símbolo | Efeito visível |
+|---|---|---|---|
+| 0.00 | Íntegro | ✅ | Normal |
+| 0.01–0.24 | Levemente ferido | 🩹 | HP máx -5% a -24% |
+| 0.25–0.49 | Ferido | 🩸 | HP máx -25% a -49%; bloqueado na Arena |
+| 0.50–0.80 | Gravemente ferido | ☠️ | HP máx -50%+; bloqueado em Torre e Arena |
+
+### 12.3 Integração com Sistemas Existentes
+
+- `Heroi.FerimentoFator` (float, 0.0–0.8) — campo a adicionar na migração 3B-TorreExp
+- `SustentoService.ProcessarAsync` já roda em todo comando — tick de cura natural integrado aqui
+- `HeroPowerScore` usa `HP_máximo_efetivo` no lugar de `HP_base` (reflete poder real do herói)
+- Heróis Inativos (`EstadoSustento.Inativo`) recuperam mais rápido (não consomem Comida = mais repouso)
+
+### 12.4 Por que não usar cooldown simples?
+
+Cooldown simples (N horas bloqueado) não afeta o poder do herói — um guerreiro com 4h de cooldown ainda entra com HP cheio. Vitalidade persistente:
+- Torna cada falha mensurável no próximo combate
+- Cria decisão tática: "entro ferido ou espero recuperação?"
+- Liga naturalmente aos buildings de cidade (Banhos, Santuário) como utilidade real
+
+---
+
+## 13. Referência Rápida de Fórmulas
 
 | Sistema | Fórmula |
 |---|---|
@@ -790,3 +833,7 @@ Ativação de Arquétipo:
 | Drop de fragmento | `Random(0,1) < 0.30` por andar limpo |
 | Quantidade de fragmentos | `Ceiling(QuantidadeBase × (1.0 + ΣContratoBonus))` |
 | Multiplicador de contrato | `1.0 + 0.30 (arquétipo) + 0.50 (nomeado)` — aditivo |
+| HP efetivo (ferimento) | `HP_base × (1 - FerimentoFator)` — clamp 0.0–0.8 |
+| Recuperação de ferimento | `FerimentoFator -= 0.10/hora` quando herói Inativo ou em cidade |
+| Juros do Tesouro | `OuroArmazenado × 0.05` a cada 60 dias (requer 10+ guardas qualificados) |
+| Produção do Moinho | `Random(1,10) × 100 Ouro/30 dias` (requer recurso bruto + 10 NQ + 3 Q) |

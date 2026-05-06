@@ -72,9 +72,15 @@ namespace LegendsAwaken.Infrastructure
             modelBuilder.Entity<Heroi>()
                 .OwnsOne(h => h.Treinamento);
 
-            // Configura atributos do inimigo como tipo incorporado.
+            // Inimigo → Bioma FK
             modelBuilder.Entity<Inimigo>()
-                .OwnsOne(i => i.Atributos);
+                .HasOne(i => i.Bioma)
+                .WithMany()
+                .HasForeignKey(i => i.BiomaId);
+
+            // TorreAndar.Inimigos is managed via raw SQL JSON — exclude from EF
+            modelBuilder.Entity<TorreAndar>()
+                .Ignore(t => t.Inimigos);
 
             // Configura os recursos da cidade como objeto complexo embutido.
             modelBuilder.Entity<Cidade>()
@@ -250,6 +256,8 @@ namespace LegendsAwaken.Infrastructure
             modelBuilder.Entity<HeroiUnlockConfig>().HasData(FragmentoSeed.UnlockConfigs());
             modelBuilder.Entity<Bioma>().HasData(FragmentoSeed.Biomas());
             modelBuilder.Entity<BiomHeroPool>().HasData(FragmentoSeed.BiomHeroPools());
+            modelBuilder.Entity<Bioma>().HasData(InimigoCatalogoSeed.NovoBiomas());
+            modelBuilder.Entity<Inimigo>().HasData(InimigoCatalogoSeed.Inimigos());
         }
     }
 }

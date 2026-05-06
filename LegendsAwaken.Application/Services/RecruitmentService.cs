@@ -2,13 +2,15 @@ using LegendsAwaken.Application.DTOs;
 using LegendsAwaken.Domain.Entities.Fragmento;
 using LegendsAwaken.Domain.Enum;
 using LegendsAwaken.Domain.Interfaces;
+using System.Buffers.Binary;
 
 namespace LegendsAwaken.Application.Services;
 
 public class RecruitmentService(
     IHeroiDesbloqueadoRepository desbloqueadoRepository,
     IHeroiConfigRepository heroiConfigRepository,
-    IFragmentoRepository fragmentoRepository)
+    IFragmentoRepository fragmentoRepository,
+    HeroiService heroiService)
 {
     public async Task<RecruitmentResult> TentarRecrutarPorFragmentosAsync(Guid usuarioId, Guid heroiId)
     {
@@ -79,5 +81,20 @@ public class RecruitmentService(
             Heroi = heroi,
             DesbloqueadoEm = DateTime.UtcNow
         });
+
+        var discordId = BinaryPrimitives.ReadUInt64LittleEndian(usuarioId.ToByteArray());
+        var heroisExistentes = await heroiService.ObterHeroisPorUsuarioAsync(discordId);
+        if (!heroisExistentes.Any(h => h.Nome == heroi.Nome))
+        {
+            await heroiService.CriarHeroiAsync(
+                discordId,
+                heroi.Nome,
+                heroi.RaridadeBase,
+                UsuarioService.RacaDeTag(heroi.Tag),
+                "",
+                [],
+                UsuarioService.FuncaoDeArquetipo(heroi.Arquetipo),
+                heroi.Titulo);
+        }
     }
 }

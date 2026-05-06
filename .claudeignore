@@ -1,8 +1,9 @@
 # Heavy reference docs — loaded on demand only, not auto-included in context
 GDD.md
-TODO.md
+BACKLOG.md
 ROADMAP.md
 DESIGN_SISTEMAS.md
+DESIGN_TORRE_ARCOS.md
 CHANGELOG.md
 
 # Build output

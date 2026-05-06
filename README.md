@@ -126,11 +126,12 @@ Clean Architecture + DDD organizado em 6 projetos:
 
 | Arquivo | Conteúdo |
 |---|---|
-| `GDD.md` | Game Design Document — sistemas, mecânicas, balanceamento |
+| `GDD.md` | Game Design Document — sistemas, mecânicas, personagens |
 | `DESIGN_SISTEMAS.md` | Frameworks matemáticos de todos os sistemas |
-| `ROADMAP.md` | Fases de desenvolvimento macro |
-| `TODO.md` | Tarefas granulares por área |
+| `DESIGN_TORRE_ARCOS.md` | Arcos narrativos da Torre: framework de flags, colecionáveis e catálogo de arcos |
+| `ROADMAP.md` | Fases de desenvolvimento e status |
+| `BACKLOG.md` | Tarefas pendentes por área |
 | `CHANGELOG.md` | Histórico de mudanças por versão |
-| `docs/COMMANDS.md` | Referência completa dos 12 slash commands — parâmetros, valores, interações |
-| `AI_INDEX.md` | Índice de navegação de código para AI assistants |
-| `Estrutura.md` | Estrutura de pastas do projeto |
+| `docs/COMMANDS.md` | Referência completa dos slash commands |
+| `docs/ARCHITECTURE.md` | Arquitetura técnica: stack, camadas, decisões |
+| `docs/AI_INDEX.md` | Índice de navegação de código para AI assistants |

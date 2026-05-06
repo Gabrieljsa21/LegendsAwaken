@@ -5,6 +5,32 @@
 
 ---
 
+## Sumário
+
+- [1. Visão Geral](#1-visão-geral)
+- [2. Loop de Jogo](#2-loop-de-jogo)
+- [3. Sistema de Fragmentos (Aquisição de Heróis)](#3-sistema-de-fragmentos-aquisição-de-heróis)
+- [4. Sistema de Heróis](#4-sistema-de-heróis)
+- [5. Sistema de Torre (já implementado)](#5-sistema-de-torre-já-implementado)
+- [6. Sistema de Cidade](#6-sistema-de-cidade)
+- [7. Sistema de Missões (Guilda)](#7-sistema-de-missões-guilda)
+- [8. Sistema de Crafting (Forja / Ateliê / Laboratório)](#8-sistema-de-crafting-forja--ateliê--laboratório)
+- [9. Arena de Combate](#9-arena-de-combate)
+- [10. Sistema de Relíquias](#10-sistema-de-relíquias)
+- [11. Sistema de Conversão de Heróis (Fase 3B)](#11-sistema-de-conversão-de-heróis--fase-3b)
+- [12. Sistema de Sustento (Fase 3B)](#12-sistema-de-sustento--fase-3b)
+- [13. Sistema de Invasão, Traição e Expedições (Pós-lançamento)](#13-sistema-de-invasão-traição-e-expedições-pós-lançamento)
+- [14. Nível do Mestre e Meta Progressão (Fase 3B)](#14-nível-do-mestre-e-meta-progressão--fase-3b)
+- [15. Princípios de Design e UX](#15-princípios-de-design-e-ux)
+- [16. Comandos e Interações](#16-comandos-e-interações)
+- [17. Progressão e Endgame](#17-progressão-e-endgame)
+- [18. Status de Implementação](#18-status-de-implementação)
+- [19. Sistema de Mercado P2P (Fase 3B-Mercado)](#19-sistema-de-mercado-p2p--fase-3b-mercado)
+- [20. Sistema de Mercenários + Treinamento como Serviço](#20-sistema-de-mercenários--treinamento-como-serviço)
+- [21. Prioridades e Escopo por Fase](#21-prioridades-e-escopo-por-fase)
+
+---
+
 ## 1. Visão Geral
 
 O jogador é um **Mestre** que coleciona heróis de forma determinística — por fragmentos, conquistas e contratos — enquanto escala uma Torre infinita e gerencia uma **Cidade** que cresce conforme sua coleção evolui. O loop central é: **progredir → coletar fragmentos → recrutar → alocar**.
@@ -33,14 +59,16 @@ O jogador é um **Mestre** que coleciona heróis de forma determinística — po
 
 ## 3. Sistema de Fragmentos (Aquisição de Heróis)
 
+> **Status:** ✅ Implementado
+
 > O sistema de gacha foi substituído por aquisição determinística. Nenhum RNG de raridade — o jogador sabe exatamente o que precisa para obter cada herói.
 
 ### 3.1. Modelo de Raridade
 
 | Raridade | Tipo | Arte | Identidade |
 |---|---|---|---|
-| 5★ | Personagem fixo nomeado (gacha) ou herói ascendido | Arte IA única / customizada pelo jogador | Nome, lore, habilidade exclusiva |
-| 4★ | Personagem fixo nomeado (gacha) ou herói ascendido | Arte IA única / customizada pelo jogador | Nome, lore, habilidade exclusiva |
+| 5★ | Personagem fixo nomeado ou herói ascendido | Arte IA única / customizada pelo jogador | Nome, lore, habilidade exclusiva |
+| 4★ | Personagem fixo nomeado ou herói ascendido | Arte IA única / customizada pelo jogador | Nome, lore, habilidade exclusiva |
 | 3★ | Procedural por arquétipo | Arte por classe/raça (compartilhada) | Nome gerado, stats variados |
 | 2★ | Procedural | Ícone por classe | Genérico |
 | 1★ | Procedural | Ícone por classe | Genérico |
@@ -110,6 +138,8 @@ Contratos são bônus de drop ativados pelo jogador, sem prazo de validade.
 ---
 
 ## 4. Sistema de Heróis
+
+> **Status:** ✅ Implementado (parcial)
 
 ### 4.1. Atributos Base (já implementado)
 - **Força** — dano físico, carga
@@ -339,6 +369,9 @@ Qualquer herói pode receber um **apelido** e uma **arte customizada** a qualque
 
 ## 5. Sistema de Torre (já implementado)
 
+> **Status:** 🚧 MVP implementado — IA tática e posicionamento pendentes  
+> **Design de Arcos Narrativos:** ver [`DESIGN_TORRE_ARCOS.md`](DESIGN_TORRE_ARCOS.md) — framework de flags, colecionáveis e catálogo de arcos (Andares 1–15)
+
 - Torre infinita com andares em sequência por usuário.
 - Tipos de andar: `Subjugação | Fuga | Escolta | Defesa | Armadilha | EventoEspecial`
 - Bosses em andares múltiplos de 5 (fácil), 10 (médio), 25 (difícil).
@@ -487,6 +520,8 @@ Durante a Operação:
 ---
 
 ## 6. Sistema de Cidade
+
+> **Status:** ✅ Implementado
 
 O jogador possui uma cidade que cresce com seus heróis. Heróis alocados em prédios produzem recursos passivamente. O jogador coleta periodicamente com `/cidade coletar`.
 
@@ -711,6 +746,8 @@ Um slot de cada prédio pode ser designado como "Líder". Heróis com Confiança
 
 ## 7. Sistema de Missões (Guilda)
 
+> **Status:** 📋 Planejado
+
 Heróis alocados na Guilda saem em missões automáticas periódicas. A Guilda tem um **Rank próprio** que cresce independente do nível do prédio e determina o tipo e qualidade das missões disponíveis.
 
 ### 7.1. Rank da Guilda
@@ -770,6 +807,8 @@ Missões têm **prazo de aceitação**: se não forem aceitas até o próximo ci
 ---
 
 ## 8. Sistema de Crafting (Forja / Ateliê / Laboratório)
+
+> **Status:** ✅ MVP implementado
 
 ### 8.1. Equipamentos
 - Heróis alocados na Forja produzem itens ao longo do tempo (produção passiva, como outros prédios).
@@ -869,6 +908,8 @@ Upgrades custam recursos e são desbloqueados conforme o nível do prédio.
 
 ## 9. Arena de Combate
 
+> **Status:** ✅ Implementado
+
 A Arena é um prédio especial da cidade — não produz recursos, mas é a principal fonte de **XP acelerado** e **prestígio** para heróis de combate.
 
 ### 9.1. Treino
@@ -961,6 +1002,8 @@ A combinação de 3 slots permite builds focadas:
 
 ## 11. Sistema de Conversão de Heróis *(Fase 3B)*
 
+> **Status:** 📋 Planejado
+
 Heróis de baixa utilidade podem ser convertidos em valor estratégico. O sistema resolve o acúmulo estrutural de 1★/2★ sem microgerenciamento — são válvulas de economia controlada, não descarte.
 
 ### 11.1. Venda (Conversão em Ouro)
@@ -1005,6 +1048,8 @@ Herói excedente
 ---
 
 ## 12. Sistema de Sustento *(Fase 3B)*
+
+> **Status:** 📋 Planejado
 
 Heróis não são ativos estáticos — exigem manutenção contínua. O Sustento cria pressão de gestão sem punir, forçando decisões de priorização e dando valor natural ao sistema de Conversão.
 
@@ -1064,6 +1109,8 @@ Isso elimina o risco de "jogador volta e tudo está quebrado" — a punição é
 ---
 
 ## 13. Sistema de Invasão, Traição e Expedições *(Pós-lançamento)*
+
+> **Status:** 📋 Planejado
 
 Este sistema cria três pressões simultâneas sobre o jogador: crescer a cidade aumenta o risco de invasão; a fraqueza interna (Confiança baixa) abre brechas para traição; e as Expedições oferecem uma saída ofensiva de alto risco/recompensa que pode gerar retaliação.
 
@@ -1198,6 +1245,8 @@ INVOCAR → SUBIR TORRE → FORTALECER CIDADE → FAZER EXPEDIÇÕES
 ---
 
 ## 14. Nível do Mestre e Meta Progressão *(Fase 3B)*
+
+> **Status:** 📋 Planejado
 
 O jogador (Mestre) tem sua própria progressão independente dos heróis.
 
@@ -1470,6 +1519,8 @@ Longo prazo:
 
 ## 19. Sistema de Mercado P2P *(Fase 3B-Mercado)*
 
+> **Status:** 📋 Planejado
+
 Mercado de itens entre jogadores via canal Discord dedicado. Heróis **não são negociáveis** — apenas equipamentos e consumíveis craftados ou obtidos na Torre.
 
 ### 19.1. Superfícies e Responsabilidades
@@ -1569,6 +1620,8 @@ Quando resolvida, a mensagem é editada para mostrar o estado (`✅ VENDIDO` / `
 ---
 
 ## 20. Sistema de Mercenários + Treinamento como Serviço
+
+> **Status:** 📋 Planejado
 
 Dois sistemas integrados que criam economia de heróis entre jogadores: empréstimo temporário (Mercenários) e XP offline contratado (Treinamento). Compartilham infraestrutura de snapshot e lock.
 

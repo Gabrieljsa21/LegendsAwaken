@@ -217,7 +217,7 @@ namespace LegendsAwaken.Infrastructure.Repositories
                 NivelDificuldade = ordNivelDif >= 0 && reader[ordNivelDif] != DBNull.Value ? Convert.ToInt32(reader[ordNivelDif]) : 0,
                 ObjetivoCumprido = Convert.ToBoolean(reader["ObjetivoCumprido"]),
                 Inimigos = reader["Inimigos"] != DBNull.Value && !string.IsNullOrEmpty(reader["Inimigos"].ToString())
-                    ? JsonSerializer.Deserialize<List<Inimigo>>(reader["Inimigos"].ToString()!) ?? new()
+                    ? JsonSerializer.Deserialize<List<InimigoAndar>>(reader["Inimigos"].ToString()!) ?? new()
                     : new(),
                 RecompensaTipo = reader["RecompensaTipo"] == DBNull.Value ? null : reader["RecompensaTipo"].ToString(),
                 RecompensaQuantidade = Convert.ToInt32(reader["RecompensaQuantidade"]),

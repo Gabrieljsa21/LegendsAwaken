@@ -2,15 +2,23 @@ using Discord;
 using Discord.WebSocket;
 using LegendsAwaken.Application.Services;
 using LegendsAwaken.Bot.Panels;
+using LegendsAwaken.Domain.Interfaces;
 using Microsoft.Extensions.Logging;
 using System;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using LegendsAwaken.Domain.Enum;
 
 namespace LegendsAwaken.Bot.Commands;
 
-public class HeroisCommand(HeroiService heroiService, SustentoService sustentoService, PartyService? partyService = null, ILogger? logger = null)
+public class HeroisCommand(
+    HeroiService heroiService,
+    SustentoService sustentoService,
+    PartyService? partyService = null,
+    ILogger? logger = null,
+    IHeroiConfigRepository? heroiConfigRepo = null,
+    R2ImageService? r2 = null)
 {
     private void Log(string msg)                  => logger?.LogInformation("[Herois] {Msg}", msg);
     private void LogErr(Exception ex, string ctx) => logger?.LogError(ex, "[Herois] ERRO em {Ctx}", ctx);
@@ -50,10 +58,33 @@ public class HeroisCommand(HeroiService heroiService, SustentoService sustentoSe
                 return;
             }
 
-            await comp.FollowupAsync(
-                embed: HeroisPanel.CriarEmbedDetalhe(heroi),
-                components: HeroisPanel.CriarComponentesDetalhe(heroi),
-                ephemeral: true);
+            // Tenta buscar a imagem do herói no R2
+            Stream? imageStream = null;
+            if (r2 != null && heroiConfigRepo != null)
+            {
+                var config = await heroiConfigRepo.ObterPorNomeAsync(heroi.Nome);
+                if (config?.ImageUrl is not null)
+                    imageStream = await r2.GetAsync(config.ImageUrl);
+            }
+
+            if (imageStream is not null)
+            {
+                using var ms = new MemoryStream();
+                await imageStream.CopyToAsync(ms);
+                ms.Position = 0;
+                await comp.FollowupWithFileAsync(
+                    new FileAttachment(ms, "hero.webp"),
+                    embed: HeroisPanel.CriarEmbedDetalhe(heroi, comImagem: true),
+                    components: HeroisPanel.CriarComponentesDetalhe(heroi),
+                    ephemeral: true);
+            }
+            else
+            {
+                await comp.FollowupAsync(
+                    embed: HeroisPanel.CriarEmbedDetalhe(heroi),
+                    components: HeroisPanel.CriarComponentesDetalhe(heroi),
+                    ephemeral: true);
+            }
         }
         catch (Exception ex)
         {

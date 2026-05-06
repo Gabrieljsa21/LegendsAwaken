@@ -39,7 +39,8 @@ namespace LegendsAwaken.Application.Services
             Raca raca,
             string antecedente,
             List<HeroiAfinidadeElemental> afinidade,
-            FuncaoTatica? funcao = null)
+            FuncaoTatica? funcao = null,
+            string? titulo = null)
         {
 
             var habilidades = await GerarHabilidadesIniciaisAsync(raridade, _habilidadeService);
@@ -58,7 +59,8 @@ namespace LegendsAwaken.Application.Services
                 afinidade,
                 habilidades,
                 atributosBase,
-                funcao);
+                funcao,
+                titulo);
 
             heroi.DataCriacao = DateTime.UtcNow;
             heroi.DataAlteracao = DateTime.UtcNow;

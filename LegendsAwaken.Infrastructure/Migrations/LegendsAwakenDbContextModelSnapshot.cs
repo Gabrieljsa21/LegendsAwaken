@@ -184,74 +184,182 @@ namespace LegendsAwaken.Infrastructure.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("c1000000-0000-0000-0000-000000000001"),
+                            Id = new Guid("c2000000-0000-0000-0000-000000000001"),
                             BiomeId = new Guid("b1000000-0000-0000-0000-000000000001"),
-                            DropWeight = 30,
+                            DropWeight = 35,
                             EHeroPrincipal = true,
-                            HeroiId = new Guid("a1000000-0000-0000-0000-000000000004"),
-                            Raridade = 4
+                            HeroiId = new Guid("a2000000-0000-0000-0000-000000000001"),
+                            Raridade = 3
                         },
                         new
                         {
-                            Id = new Guid("c1000000-0000-0000-0000-000000000002"),
+                            Id = new Guid("c2000000-0000-0000-0000-000000000002"),
                             BiomeId = new Guid("b1000000-0000-0000-0000-000000000001"),
-                            DropWeight = 70,
+                            DropWeight = 35,
                             EHeroPrincipal = false,
-                            HeroiId = new Guid("a1000000-0000-0000-0000-000000000009"),
+                            HeroiId = new Guid("a2000000-0000-0000-0000-000000000002"),
+                            Raridade = 3
+                        },
+                        new
+                        {
+                            Id = new Guid("c2000000-0000-0000-0000-000000000003"),
+                            BiomeId = new Guid("b1000000-0000-0000-0000-000000000001"),
+                            DropWeight = 20,
+                            EHeroPrincipal = false,
+                            HeroiId = new Guid("a2000000-0000-0000-0000-000000000004"),
+                            Raridade = 3
+                        },
+                        new
+                        {
+                            Id = new Guid("c2000000-0000-0000-0000-000000000004"),
+                            BiomeId = new Guid("b1000000-0000-0000-0000-000000000001"),
+                            DropWeight = 10,
+                            EHeroPrincipal = false,
+                            HeroiId = new Guid("a2000000-0000-0000-0000-000000000005"),
                             Raridade = 4
                         },
                         new
                         {
-                            Id = new Guid("c1000000-0000-0000-0000-000000000003"),
+                            Id = new Guid("c2000000-0000-0000-0000-000000000005"),
                             BiomeId = new Guid("b1000000-0000-0000-0000-000000000002"),
                             DropWeight = 30,
                             EHeroPrincipal = true,
-                            HeroiId = new Guid("a1000000-0000-0000-0000-000000000006"),
+                            HeroiId = new Guid("a2000000-0000-0000-0000-000000000007"),
                             Raridade = 4
                         },
                         new
                         {
-                            Id = new Guid("c1000000-0000-0000-0000-000000000004"),
+                            Id = new Guid("c2000000-0000-0000-0000-000000000006"),
                             BiomeId = new Guid("b1000000-0000-0000-0000-000000000002"),
-                            DropWeight = 70,
+                            DropWeight = 30,
                             EHeroPrincipal = false,
-                            HeroiId = new Guid("a1000000-0000-0000-0000-000000000005"),
+                            HeroiId = new Guid("a2000000-0000-0000-0000-000000000009"),
                             Raridade = 4
                         },
                         new
                         {
-                            Id = new Guid("c1000000-0000-0000-0000-000000000005"),
+                            Id = new Guid("c2000000-0000-0000-0000-000000000007"),
+                            BiomeId = new Guid("b1000000-0000-0000-0000-000000000002"),
+                            DropWeight = 25,
+                            EHeroPrincipal = false,
+                            HeroiId = new Guid("a2000000-0000-0000-0000-000000000011"),
+                            Raridade = 4
+                        },
+                        new
+                        {
+                            Id = new Guid("c2000000-0000-0000-0000-000000000008"),
+                            BiomeId = new Guid("b1000000-0000-0000-0000-000000000002"),
+                            DropWeight = 15,
+                            EHeroPrincipal = false,
+                            HeroiId = new Guid("a2000000-0000-0000-0000-000000000012"),
+                            Raridade = 4
+                        },
+                        new
+                        {
+                            Id = new Guid("c2000000-0000-0000-0000-000000000009"),
+                            BiomeId = new Guid("b1000000-0000-0000-0000-000000000003"),
+                            DropWeight = 35,
+                            EHeroPrincipal = true,
+                            HeroiId = new Guid("a2000000-0000-0000-0000-000000000014"),
+                            Raridade = 4
+                        },
+                        new
+                        {
+                            Id = new Guid("c2000000-0000-0000-0000-000000000010"),
+                            BiomeId = new Guid("b1000000-0000-0000-0000-000000000003"),
+                            DropWeight = 30,
+                            EHeroPrincipal = false,
+                            HeroiId = new Guid("a2000000-0000-0000-0000-000000000015"),
+                            Raridade = 4
+                        },
+                        new
+                        {
+                            Id = new Guid("c2000000-0000-0000-0000-000000000011"),
                             BiomeId = new Guid("b1000000-0000-0000-0000-000000000003"),
                             DropWeight = 20,
-                            EHeroPrincipal = true,
-                            HeroiId = new Guid("a1000000-0000-0000-0000-000000000001"),
+                            EHeroPrincipal = false,
+                            HeroiId = new Guid("a2000000-0000-0000-0000-000000000018"),
+                            Raridade = 4
+                        },
+                        new
+                        {
+                            Id = new Guid("c2000000-0000-0000-0000-000000000012"),
+                            BiomeId = new Guid("b1000000-0000-0000-0000-000000000003"),
+                            DropWeight = 15,
+                            EHeroPrincipal = false,
+                            HeroiId = new Guid("a2000000-0000-0000-0000-000000000017"),
                             Raridade = 5
                         },
                         new
                         {
-                            Id = new Guid("c1000000-0000-0000-0000-000000000006"),
-                            BiomeId = new Guid("b1000000-0000-0000-0000-000000000003"),
-                            DropWeight = 45,
+                            Id = new Guid("c2000000-0000-0000-0000-000000000013"),
+                            BiomeId = new Guid("b1000000-0000-0000-0000-000000000004"),
+                            DropWeight = 30,
+                            EHeroPrincipal = true,
+                            HeroiId = new Guid("a2000000-0000-0000-0000-000000000020"),
+                            Raridade = 5
+                        },
+                        new
+                        {
+                            Id = new Guid("c2000000-0000-0000-0000-000000000014"),
+                            BiomeId = new Guid("b1000000-0000-0000-0000-000000000004"),
+                            DropWeight = 30,
                             EHeroPrincipal = false,
-                            HeroiId = new Guid("a1000000-0000-0000-0000-000000000007"),
+                            HeroiId = new Guid("a2000000-0000-0000-0000-000000000021"),
                             Raridade = 4
                         },
                         new
                         {
-                            Id = new Guid("c1000000-0000-0000-0000-000000000007"),
-                            BiomeId = new Guid("b1000000-0000-0000-0000-000000000003"),
-                            DropWeight = 35,
+                            Id = new Guid("c2000000-0000-0000-0000-000000000015"),
+                            BiomeId = new Guid("b1000000-0000-0000-0000-000000000004"),
+                            DropWeight = 25,
                             EHeroPrincipal = false,
-                            HeroiId = new Guid("a1000000-0000-0000-0000-000000000008"),
-                            Raridade = 4
+                            HeroiId = new Guid("a2000000-0000-0000-0000-000000000023"),
+                            Raridade = 5
                         },
                         new
                         {
-                            Id = new Guid("c1000000-0000-0000-0000-000000000008"),
-                            BiomeId = new Guid("b1000000-0000-0000-0000-000000000003"),
-                            DropWeight = 10,
+                            Id = new Guid("c2000000-0000-0000-0000-000000000016"),
+                            BiomeId = new Guid("b1000000-0000-0000-0000-000000000004"),
+                            DropWeight = 15,
                             EHeroPrincipal = false,
-                            HeroiId = new Guid("a1000000-0000-0000-0000-000000000003"),
+                            HeroiId = new Guid("a2000000-0000-0000-0000-000000000022"),
+                            Raridade = 5
+                        },
+                        new
+                        {
+                            Id = new Guid("c2000000-0000-0000-0000-000000000017"),
+                            BiomeId = new Guid("b1000000-0000-0000-0000-000000000005"),
+                            DropWeight = 30,
+                            EHeroPrincipal = true,
+                            HeroiId = new Guid("a2000000-0000-0000-0000-000000000026"),
+                            Raridade = 5
+                        },
+                        new
+                        {
+                            Id = new Guid("c2000000-0000-0000-0000-000000000018"),
+                            BiomeId = new Guid("b1000000-0000-0000-0000-000000000005"),
+                            DropWeight = 25,
+                            EHeroPrincipal = false,
+                            HeroiId = new Guid("a2000000-0000-0000-0000-000000000027"),
+                            Raridade = 5
+                        },
+                        new
+                        {
+                            Id = new Guid("c2000000-0000-0000-0000-000000000019"),
+                            BiomeId = new Guid("b1000000-0000-0000-0000-000000000005"),
+                            DropWeight = 25,
+                            EHeroPrincipal = false,
+                            HeroiId = new Guid("a2000000-0000-0000-0000-000000000028"),
+                            Raridade = 5
+                        },
+                        new
+                        {
+                            Id = new Guid("c2000000-0000-0000-0000-000000000020"),
+                            BiomeId = new Guid("b1000000-0000-0000-0000-000000000005"),
+                            DropWeight = 20,
+                            EHeroPrincipal = false,
+                            HeroiId = new Guid("a2000000-0000-0000-0000-000000000029"),
                             Raridade = 5
                         });
                 });
@@ -287,7 +395,7 @@ namespace LegendsAwaken.Infrastructure.Migrations
                         new
                         {
                             Id = new Guid("b1000000-0000-0000-0000-000000000001"),
-                            AndarFim = 10,
+                            AndarFim = 25,
                             AndarInicio = 1,
                             Descricao = "Uma floresta antiga onde aventureiros escrevem suas primeiras histórias.",
                             Nome = "Floresta de Aelindra",
@@ -296,8 +404,8 @@ namespace LegendsAwaken.Infrastructure.Migrations
                         new
                         {
                             Id = new Guid("b1000000-0000-0000-0000-000000000002"),
-                            AndarFim = 25,
-                            AndarInicio = 11,
+                            AndarFim = 50,
+                            AndarInicio = 26,
                             Descricao = "Ruínas de uma civilização esquecida, repletas de armadilhas e segredos.",
                             Nome = "Ruínas de Valdrek",
                             Tag = "Ruinas"
@@ -305,11 +413,101 @@ namespace LegendsAwaken.Infrastructure.Migrations
                         new
                         {
                             Id = new Guid("b1000000-0000-0000-0000-000000000003"),
-                            AndarFim = 50,
-                            AndarInicio = 26,
+                            AndarFim = 75,
+                            AndarInicio = 51,
                             Descricao = "O cume incandescente onde os guerreiros mais duros são forjados.",
                             Nome = "Pico Vulcânico",
                             Tag = "Vulcanico"
+                        },
+                        new
+                        {
+                            Id = new Guid("b1000000-0000-0000-0000-000000000004"),
+                            AndarFim = 100,
+                            AndarInicio = 76,
+                            Descricao = "Um abismo de trevas onde anjos caídos e magos do vazio travam suas guerras eternas.",
+                            Nome = "Abismo Sombrio",
+                            Tag = "Abismo"
+                        },
+                        new
+                        {
+                            Id = new Guid("b1000000-0000-0000-0000-000000000005"),
+                            AndarFim = 125,
+                            AndarInicio = 101,
+                            Descricao = "O palco final do conflito entre Serafins e Anjos Caídos pelo destino do mundo mortal.",
+                            Nome = "Domínio Celestial",
+                            Tag = "Celestial"
+                        },
+                        new
+                        {
+                            Id = new Guid("b2000000-0000-0000-0000-000000000001"),
+                            AndarFim = 150,
+                            AndarInicio = 126,
+                            Descricao = "Campos abertos onde hordas se formam no horizonte e não há onde se esconder.",
+                            Nome = "Planície dos Confrontos",
+                            Tag = "Planicie"
+                        },
+                        new
+                        {
+                            Id = new Guid("b2000000-0000-0000-0000-000000000002"),
+                            AndarFim = 175,
+                            AndarInicio = 151,
+                            Descricao = "Penhascos sobre um mar furioso, dominado por sahuagins e dragões da tempestade.",
+                            Nome = "Costa de Ferro",
+                            Tag = "Costa"
+                        },
+                        new
+                        {
+                            Id = new Guid("b2000000-0000-0000-0000-000000000003"),
+                            AndarFim = 200,
+                            AndarInicio = 176,
+                            Descricao = "Névoa que consome memórias. Yuan-tis e trolls habitam este lugar de podridão.",
+                            Nome = "Pântano do Esquecimento",
+                            Tag = "Pantano"
+                        },
+                        new
+                        {
+                            Id = new Guid("b2000000-0000-0000-0000-000000000004"),
+                            AndarFim = 225,
+                            AndarInicio = 201,
+                            Descricao = "Areia negra e calor eterno. Múmias e efreetis guardam segredos de eras extintas.",
+                            Nome = "Deserto das Cinzas",
+                            Tag = "Deserto"
+                        },
+                        new
+                        {
+                            Id = new Guid("b2000000-0000-0000-0000-000000000005"),
+                            AndarFim = 250,
+                            AndarInicio = 226,
+                            Descricao = "Tempestades eternas de neve onde yetis e dragões brancos reinam sobre o silêncio.",
+                            Nome = "Ártico das Almas",
+                            Tag = "Artico"
+                        },
+                        new
+                        {
+                            Id = new Guid("b2000000-0000-0000-0000-000000000006"),
+                            AndarFim = 275,
+                            AndarInicio = 251,
+                            Descricao = "Abismo subaquático sem luz. O Kraken dorme aqui e algo pior o vigia.",
+                            Nome = "As Profundezas",
+                            Tag = "Profundezas"
+                        },
+                        new
+                        {
+                            Id = new Guid("b2000000-0000-0000-0000-000000000007"),
+                            AndarFim = 300,
+                            AndarInicio = 276,
+                            Descricao = "A Underdark: cidades Drow, devouradores de mentes e liches em seus covos eternas.",
+                            Nome = "O Submundo",
+                            Tag = "Submundo"
+                        },
+                        new
+                        {
+                            Id = new Guid("b2000000-0000-0000-0000-000000000008"),
+                            AndarFim = 325,
+                            AndarInicio = 301,
+                            Descricao = "Uma metrópole tomada por vampiros, rakshasas e arquimagos sem escrúpulos.",
+                            Nome = "A Cidade Corrompida",
+                            Tag = "Cidade"
                         });
                 });
 
@@ -399,6 +597,12 @@ namespace LegendsAwaken.Infrastructure.Migrations
                     b.Property<int>("Arquetipo")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("ImageUrl")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ImageUrlThumb")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Nome")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -409,6 +613,9 @@ namespace LegendsAwaken.Infrastructure.Migrations
                     b.Property<string>("Tag")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("Titulo")
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
                     b.ToTable("HeroiConfigs");
@@ -416,66 +623,273 @@ namespace LegendsAwaken.Infrastructure.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("a1000000-0000-0000-0000-000000000001"),
-                            Arquetipo = 0,
-                            Nome = "Aldric, o Sem-Corrente",
-                            RaridadeBase = 5
-                        },
-                        new
-                        {
-                            Id = new Guid("a1000000-0000-0000-0000-000000000002"),
-                            Arquetipo = 2,
-                            Nome = "Yuzara, a Tecelã do Destino",
-                            RaridadeBase = 5
-                        },
-                        new
-                        {
-                            Id = new Guid("a1000000-0000-0000-0000-000000000003"),
-                            Arquetipo = 12,
-                            Nome = "Thorvald, o Arquiteto das Eras",
-                            RaridadeBase = 5
-                        },
-                        new
-                        {
-                            Id = new Guid("a1000000-0000-0000-0000-000000000004"),
+                            Id = new Guid("a2000000-0000-0000-0000-000000000001"),
                             Arquetipo = 1,
-                            Nome = "Kaen",
-                            RaridadeBase = 4
+                            Nome = "Lira",
+                            RaridadeBase = 3,
+                            Tag = "B1",
+                            Titulo = "Flecha Dourada"
                         },
                         new
                         {
-                            Id = new Guid("a1000000-0000-0000-0000-000000000005"),
+                            Id = new Guid("a2000000-0000-0000-0000-000000000002"),
+                            Arquetipo = 7,
+                            Nome = "Korin",
+                            RaridadeBase = 3,
+                            Tag = "B1",
+                            Titulo = "Guardã do Bosque"
+                        },
+                        new
+                        {
+                            Id = new Guid("a2000000-0000-0000-0000-000000000003"),
+                            Arquetipo = 6,
+                            Nome = "Rinzi",
+                            RaridadeBase = 4,
+                            Tag = "B1",
+                            Titulo = "Filha do Mercado"
+                        },
+                        new
+                        {
+                            Id = new Guid("a2000000-0000-0000-0000-000000000004"),
+                            Arquetipo = 2,
+                            Nome = "Selva",
+                            RaridadeBase = 3,
+                            Tag = "B1",
+                            Titulo = "Filha da Raiz"
+                        },
+                        new
+                        {
+                            Id = new Guid("a2000000-0000-0000-0000-000000000005"),
+                            Arquetipo = 7,
+                            Nome = "Lune",
+                            RaridadeBase = 4,
+                            Tag = "B1",
+                            Titulo = "Voz da Alcateia"
+                        },
+                        new
+                        {
+                            Id = new Guid("a2000000-0000-0000-0000-000000000006"),
+                            Arquetipo = 0,
+                            Nome = "Sera",
+                            RaridadeBase = 4,
+                            Tag = "B1",
+                            Titulo = "Caçadora das Neves"
+                        },
+                        new
+                        {
+                            Id = new Guid("a2000000-0000-0000-0000-000000000007"),
+                            Arquetipo = 0,
+                            Nome = "Igara",
+                            RaridadeBase = 4,
+                            Tag = "B2",
+                            Titulo = "Ruído do Vulcão"
+                        },
+                        new
+                        {
+                            Id = new Guid("a2000000-0000-0000-0000-000000000008"),
+                            Arquetipo = 0,
+                            Nome = "Varga",
+                            RaridadeBase = 4,
+                            Tag = "B2",
+                            Titulo = "a Corrente Solta"
+                        },
+                        new
+                        {
+                            Id = new Guid("a2000000-0000-0000-0000-000000000009"),
+                            Arquetipo = 0,
+                            Nome = "Skaara",
+                            RaridadeBase = 4,
+                            Tag = "B2",
+                            Titulo = "Fogo Desperto"
+                        },
+                        new
+                        {
+                            Id = new Guid("a2000000-0000-0000-0000-000000000010"),
                             Arquetipo = 3,
-                            Nome = "Nyra",
-                            RaridadeBase = 4
+                            Nome = "Velara",
+                            RaridadeBase = 5,
+                            Tag = "B2",
+                            Titulo = "a Sombra sem Nome"
                         },
                         new
                         {
-                            Id = new Guid("a1000000-0000-0000-0000-000000000006"),
+                            Id = new Guid("a2000000-0000-0000-0000-000000000011"),
+                            Arquetipo = 7,
+                            Nome = "Nara",
+                            RaridadeBase = 4,
+                            Tag = "B2",
+                            Titulo = "Maestrina Noturna"
+                        },
+                        new
+                        {
+                            Id = new Guid("a2000000-0000-0000-0000-000000000012"),
+                            Arquetipo = 2,
+                            Nome = "Elisse",
+                            RaridadeBase = 4,
+                            Tag = "B2",
+                            Titulo = "a Ordem Perfeita"
+                        },
+                        new
+                        {
+                            Id = new Guid("a2000000-0000-0000-0000-000000000013"),
                             Arquetipo = 4,
-                            Nome = "Seraph",
-                            RaridadeBase = 4
+                            Nome = "Draxa",
+                            RaridadeBase = 4,
+                            Tag = "B3",
+                            Titulo = "a Fortaleza Viva"
                         },
                         new
                         {
-                            Id = new Guid("a1000000-0000-0000-0000-000000000007"),
-                            Arquetipo = 15,
-                            Nome = "Mira",
-                            RaridadeBase = 4
+                            Id = new Guid("a2000000-0000-0000-0000-000000000014"),
+                            Arquetipo = 3,
+                            Nome = "Kira",
+                            RaridadeBase = 4,
+                            Tag = "B3",
+                            Titulo = "Lâmina do Crepúsculo"
                         },
                         new
                         {
-                            Id = new Guid("a1000000-0000-0000-0000-000000000008"),
-                            Arquetipo = 10,
-                            Nome = "Grom",
-                            RaridadeBase = 4
+                            Id = new Guid("a2000000-0000-0000-0000-000000000015"),
+                            Arquetipo = 2,
+                            Nome = "Marev",
+                            RaridadeBase = 4,
+                            Tag = "B3",
+                            Titulo = "a Maré Eterna"
                         },
                         new
                         {
-                            Id = new Guid("a1000000-0000-0000-0000-000000000009"),
-                            Arquetipo = 11,
-                            Nome = "Hana",
-                            RaridadeBase = 4
+                            Id = new Guid("a2000000-0000-0000-0000-000000000016"),
+                            Arquetipo = 2,
+                            Nome = "Zara",
+                            RaridadeBase = 4,
+                            Tag = "B3",
+                            Titulo = "a Bruxa do Vazio"
+                        },
+                        new
+                        {
+                            Id = new Guid("a2000000-0000-0000-0000-000000000017"),
+                            Arquetipo = 0,
+                            Nome = "Valdara",
+                            RaridadeBase = 5,
+                            Tag = "B3",
+                            Titulo = "a Herança Negra"
+                        },
+                        new
+                        {
+                            Id = new Guid("a2000000-0000-0000-0000-000000000018"),
+                            Arquetipo = 2,
+                            Nome = "Lilith",
+                            RaridadeBase = 4,
+                            Tag = "B3",
+                            Titulo = "Camareira do Caos"
+                        },
+                        new
+                        {
+                            Id = new Guid("a2000000-0000-0000-0000-000000000019"),
+                            Arquetipo = 0,
+                            Nome = "Zarael",
+                            RaridadeBase = 5,
+                            Tag = "B4",
+                            Titulo = "a Acorrentada"
+                        },
+                        new
+                        {
+                            Id = new Guid("a2000000-0000-0000-0000-000000000020"),
+                            Arquetipo = 2,
+                            Nome = "Moira",
+                            RaridadeBase = 5,
+                            Tag = "B4",
+                            Titulo = "a Ceifeira"
+                        },
+                        new
+                        {
+                            Id = new Guid("a2000000-0000-0000-0000-000000000021"),
+                            Arquetipo = 2,
+                            Nome = "Zephirael",
+                            RaridadeBase = 4,
+                            Tag = "B4",
+                            Titulo = "a Tempestade Caída"
+                        },
+                        new
+                        {
+                            Id = new Guid("a2000000-0000-0000-0000-000000000022"),
+                            Arquetipo = 4,
+                            Nome = "Malachiel",
+                            RaridadeBase = 5,
+                            Tag = "B4",
+                            Titulo = "a Muralha Quebrada"
+                        },
+                        new
+                        {
+                            Id = new Guid("a2000000-0000-0000-0000-000000000023"),
+                            Arquetipo = 2,
+                            Nome = "Vesper",
+                            RaridadeBase = 5,
+                            Tag = "B4",
+                            Titulo = "o Abismo Vestido"
+                        },
+                        new
+                        {
+                            Id = new Guid("a2000000-0000-0000-0000-000000000024"),
+                            Arquetipo = 7,
+                            Nome = "Vrael",
+                            RaridadeBase = 5,
+                            Tag = "B4",
+                            Titulo = "a Voz do Vácuo"
+                        },
+                        new
+                        {
+                            Id = new Guid("a2000000-0000-0000-0000-000000000025"),
+                            Arquetipo = 4,
+                            Nome = "Aelia",
+                            RaridadeBase = 5,
+                            Tag = "B5",
+                            Titulo = "Sentinela do Limiar"
+                        },
+                        new
+                        {
+                            Id = new Guid("a2000000-0000-0000-0000-000000000026"),
+                            Arquetipo = 6,
+                            Nome = "Elyriel",
+                            RaridadeBase = 5,
+                            Tag = "B5",
+                            Titulo = "a Última Canção"
+                        },
+                        new
+                        {
+                            Id = new Guid("a2000000-0000-0000-0000-000000000027"),
+                            Arquetipo = 0,
+                            Nome = "Seraphael",
+                            RaridadeBase = 5,
+                            Tag = "B5",
+                            Titulo = "a Chama Corrompida"
+                        },
+                        new
+                        {
+                            Id = new Guid("a2000000-0000-0000-0000-000000000028"),
+                            Arquetipo = 5,
+                            Nome = "Lumira",
+                            RaridadeBase = 5,
+                            Tag = "B5",
+                            Titulo = "Bênção da Alvorada"
+                        },
+                        new
+                        {
+                            Id = new Guid("a2000000-0000-0000-0000-000000000029"),
+                            Arquetipo = 0,
+                            Nome = "Aurael",
+                            RaridadeBase = 5,
+                            Tag = "B5",
+                            Titulo = "o Punho do Éden"
+                        },
+                        new
+                        {
+                            Id = new Guid("a2000000-0000-0000-0000-000000000030"),
+                            Arquetipo = 3,
+                            Nome = "Nyx",
+                            RaridadeBase = 5,
+                            Tag = "B5",
+                            Titulo = "Umbraveil"
                         });
                 });
 
@@ -521,56 +935,182 @@ namespace LegendsAwaken.Infrastructure.Migrations
                     b.HasData(
                         new
                         {
-                            HeroiId = new Guid("a1000000-0000-0000-0000-000000000001"),
-                            AndarMarco = 30,
-                            TipoUnlock = 2
-                        },
-                        new
-                        {
-                            HeroiId = new Guid("a1000000-0000-0000-0000-000000000002"),
-                            AndarMarco = 60,
-                            TipoUnlock = 2
-                        },
-                        new
-                        {
-                            HeroiId = new Guid("a1000000-0000-0000-0000-000000000003"),
-                            QuantidadeFragmentos = 60,
+                            HeroiId = new Guid("a2000000-0000-0000-0000-000000000001"),
+                            QuantidadeFragmentos = 20,
                             TipoUnlock = 1
                         },
                         new
                         {
-                            HeroiId = new Guid("a1000000-0000-0000-0000-000000000004"),
-                            AndarMarco = 10,
+                            HeroiId = new Guid("a2000000-0000-0000-0000-000000000002"),
+                            QuantidadeFragmentos = 20,
+                            TipoUnlock = 1
+                        },
+                        new
+                        {
+                            HeroiId = new Guid("a2000000-0000-0000-0000-000000000003"),
+                            AndarMarco = 8,
                             TipoUnlock = 2
                         },
                         new
                         {
-                            HeroiId = new Guid("a1000000-0000-0000-0000-000000000006"),
-                            QuantidadeFragmentos = 40,
+                            HeroiId = new Guid("a2000000-0000-0000-0000-000000000004"),
+                            QuantidadeFragmentos = 25,
                             TipoUnlock = 1
                         },
                         new
                         {
-                            HeroiId = new Guid("a1000000-0000-0000-0000-000000000007"),
-                            QuantidadeFragmentos = 35,
-                            TipoUnlock = 1
-                        },
-                        new
-                        {
-                            HeroiId = new Guid("a1000000-0000-0000-0000-000000000008"),
+                            HeroiId = new Guid("a2000000-0000-0000-0000-000000000005"),
                             QuantidadeFragmentos = 30,
                             TipoUnlock = 1
                         },
                         new
                         {
-                            HeroiId = new Guid("a1000000-0000-0000-0000-000000000005"),
-                            CondicaoDescricao = "Completar o andar 15 com a party completa sem nenhum herói ser derrotado",
+                            HeroiId = new Guid("a2000000-0000-0000-0000-000000000006"),
+                            AndarMarco = 20,
+                            TipoUnlock = 2
+                        },
+                        new
+                        {
+                            HeroiId = new Guid("a2000000-0000-0000-0000-000000000007"),
+                            QuantidadeFragmentos = 35,
+                            TipoUnlock = 1
+                        },
+                        new
+                        {
+                            HeroiId = new Guid("a2000000-0000-0000-0000-000000000008"),
+                            AndarMarco = 26,
+                            TipoUnlock = 2
+                        },
+                        new
+                        {
+                            HeroiId = new Guid("a2000000-0000-0000-0000-000000000009"),
+                            QuantidadeFragmentos = 38,
+                            TipoUnlock = 1
+                        },
+                        new
+                        {
+                            HeroiId = new Guid("a2000000-0000-0000-0000-000000000010"),
+                            AndarMarco = 36,
+                            TipoUnlock = 2
+                        },
+                        new
+                        {
+                            HeroiId = new Guid("a2000000-0000-0000-0000-000000000011"),
+                            QuantidadeFragmentos = 42,
+                            TipoUnlock = 1
+                        },
+                        new
+                        {
+                            HeroiId = new Guid("a2000000-0000-0000-0000-000000000012"),
+                            QuantidadeFragmentos = 45,
+                            TipoUnlock = 1
+                        },
+                        new
+                        {
+                            HeroiId = new Guid("a2000000-0000-0000-0000-000000000013"),
+                            AndarMarco = 51,
+                            TipoUnlock = 2
+                        },
+                        new
+                        {
+                            HeroiId = new Guid("a2000000-0000-0000-0000-000000000014"),
+                            QuantidadeFragmentos = 50,
+                            TipoUnlock = 1
+                        },
+                        new
+                        {
+                            HeroiId = new Guid("a2000000-0000-0000-0000-000000000015"),
+                            QuantidadeFragmentos = 52,
+                            TipoUnlock = 1
+                        },
+                        new
+                        {
+                            HeroiId = new Guid("a2000000-0000-0000-0000-000000000016"),
+                            AndarMarco = 60,
+                            TipoUnlock = 2
+                        },
+                        new
+                        {
+                            HeroiId = new Guid("a2000000-0000-0000-0000-000000000017"),
+                            AndarMarco = 68,
+                            TipoUnlock = 2
+                        },
+                        new
+                        {
+                            HeroiId = new Guid("a2000000-0000-0000-0000-000000000018"),
+                            QuantidadeFragmentos = 56,
+                            TipoUnlock = 1
+                        },
+                        new
+                        {
+                            HeroiId = new Guid("a2000000-0000-0000-0000-000000000019"),
+                            AndarMarco = 76,
+                            TipoUnlock = 2
+                        },
+                        new
+                        {
+                            HeroiId = new Guid("a2000000-0000-0000-0000-000000000020"),
+                            QuantidadeFragmentos = 58,
+                            TipoUnlock = 1
+                        },
+                        new
+                        {
+                            HeroiId = new Guid("a2000000-0000-0000-0000-000000000021"),
+                            QuantidadeFragmentos = 60,
+                            TipoUnlock = 1
+                        },
+                        new
+                        {
+                            HeroiId = new Guid("a2000000-0000-0000-0000-000000000022"),
+                            AndarMarco = 88,
+                            TipoUnlock = 2
+                        },
+                        new
+                        {
+                            HeroiId = new Guid("a2000000-0000-0000-0000-000000000023"),
+                            QuantidadeFragmentos = 62,
+                            TipoUnlock = 1
+                        },
+                        new
+                        {
+                            HeroiId = new Guid("a2000000-0000-0000-0000-000000000024"),
+                            CondicaoDescricao = "Completar o Bioma 3 com 3 ou mais Bestiais na mesma party",
                             TipoUnlock = 3
                         },
                         new
                         {
-                            HeroiId = new Guid("a1000000-0000-0000-0000-000000000009"),
-                            CondicaoDescricao = "Ter pelo menos 3 heróis com Humor >= 80 na cidade ao mesmo tempo",
+                            HeroiId = new Guid("a2000000-0000-0000-0000-000000000025"),
+                            AndarMarco = 101,
+                            TipoUnlock = 2
+                        },
+                        new
+                        {
+                            HeroiId = new Guid("a2000000-0000-0000-0000-000000000026"),
+                            QuantidadeFragmentos = 65,
+                            TipoUnlock = 1
+                        },
+                        new
+                        {
+                            HeroiId = new Guid("a2000000-0000-0000-0000-000000000027"),
+                            AndarMarco = 108,
+                            TipoUnlock = 2
+                        },
+                        new
+                        {
+                            HeroiId = new Guid("a2000000-0000-0000-0000-000000000028"),
+                            QuantidadeFragmentos = 68,
+                            TipoUnlock = 1
+                        },
+                        new
+                        {
+                            HeroiId = new Guid("a2000000-0000-0000-0000-000000000029"),
+                            QuantidadeFragmentos = 70,
+                            TipoUnlock = 1
+                        },
+                        new
+                        {
+                            HeroiId = new Guid("a2000000-0000-0000-0000-000000000030"),
+                            CondicaoDescricao = "Derrotar o chefe do Andar 120 sem perder nenhum herói na tentativa",
                             TipoUnlock = 3
                         });
                 });
@@ -690,6 +1230,9 @@ namespace LegendsAwaken.Infrastructure.Migrations
                     b.Property<int>("Raridade")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("Titulo")
+                        .HasColumnType("TEXT");
+
                     b.Property<ulong>("UsuarioId")
                         .HasColumnType("INTEGER");
 
@@ -737,29 +1280,1554 @@ namespace LegendsAwaken.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
-                    b.PrimitiveCollection<string>("Habilidades")
-                        .IsRequired()
+                    b.Property<int>("AndarMaximo")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("AndarMinimo")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("BiomaId")
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("Nivel")
+                    b.Property<bool>("EChefe")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("ElementoAfinidade")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("ElementoFraqueza")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Nome")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("Tipo")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid?>("TorreAndarId")
-                        .HasColumnType("TEXT");
+                    b.Property<int>("Tipo")
+                        .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("TorreAndarId");
+                    b.HasIndex("BiomaId");
 
                     b.ToTable("Inimigo");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("e0000101-0000-0000-0000-000000000000"),
+                            AndarMaximo = 12,
+                            AndarMinimo = 1,
+                            BiomaId = new Guid("b1000000-0000-0000-0000-000000000001"),
+                            EChefe = false,
+                            ElementoAfinidade = 5,
+                            ElementoFraqueza = 4,
+                            Nome = "Goblin",
+                            Tipo = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000102-0000-0000-0000-000000000000"),
+                            AndarMaximo = 10,
+                            AndarMinimo = 1,
+                            BiomaId = new Guid("b1000000-0000-0000-0000-000000000001"),
+                            EChefe = false,
+                            ElementoAfinidade = 0,
+                            ElementoFraqueza = 1,
+                            Nome = "Kobold",
+                            Tipo = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000103-0000-0000-0000-000000000000"),
+                            AndarMaximo = 15,
+                            AndarMinimo = 3,
+                            BiomaId = new Guid("b1000000-0000-0000-0000-000000000001"),
+                            EChefe = false,
+                            ElementoAfinidade = 8,
+                            ElementoFraqueza = 0,
+                            Nome = "Lobo",
+                            Tipo = 0
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000104-0000-0000-0000-000000000000"),
+                            AndarMaximo = 18,
+                            AndarMinimo = 8,
+                            BiomaId = new Guid("b1000000-0000-0000-0000-000000000001"),
+                            EChefe = false,
+                            ElementoAfinidade = 5,
+                            ElementoFraqueza = 4,
+                            Nome = "Aranha Gigante",
+                            Tipo = 0
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000105-0000-0000-0000-000000000000"),
+                            AndarMaximo = 16,
+                            AndarMinimo = 6,
+                            BiomaId = new Guid("b1000000-0000-0000-0000-000000000001"),
+                            EChefe = false,
+                            ElementoAfinidade = 8,
+                            ElementoFraqueza = 5,
+                            Nome = "Sprite",
+                            Tipo = 7
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000106-0000-0000-0000-000000000000"),
+                            AndarMaximo = 22,
+                            AndarMinimo = 12,
+                            BiomaId = new Guid("b1000000-0000-0000-0000-000000000001"),
+                            EChefe = false,
+                            ElementoAfinidade = 5,
+                            ElementoFraqueza = 4,
+                            Nome = "Bugbear",
+                            Tipo = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000107-0000-0000-0000-000000000000"),
+                            AndarMaximo = 22,
+                            AndarMinimo = 12,
+                            BiomaId = new Guid("b1000000-0000-0000-0000-000000000001"),
+                            EChefe = false,
+                            ElementoAfinidade = 8,
+                            ElementoFraqueza = 0,
+                            Nome = "Dríade",
+                            Tipo = 7
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000108-0000-0000-0000-000000000000"),
+                            AndarMaximo = 24,
+                            AndarMinimo = 15,
+                            BiomaId = new Guid("b1000000-0000-0000-0000-000000000001"),
+                            EChefe = false,
+                            ElementoAfinidade = 5,
+                            Nome = "Ettercap",
+                            Tipo = 2
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000109-0000-0000-0000-000000000000"),
+                            AndarMaximo = 24,
+                            AndarMinimo = 16,
+                            BiomaId = new Guid("b1000000-0000-0000-0000-000000000001"),
+                            EChefe = false,
+                            ElementoAfinidade = 5,
+                            Nome = "Gnoll",
+                            Tipo = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000110-0000-0000-0000-000000000000"),
+                            AndarMaximo = 25,
+                            AndarMinimo = 25,
+                            BiomaId = new Guid("b1000000-0000-0000-0000-000000000001"),
+                            EChefe = true,
+                            ElementoAfinidade = 8,
+                            ElementoFraqueza = 4,
+                            Nome = "Druida Corrompido",
+                            Tipo = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000201-0000-0000-0000-000000000000"),
+                            AndarMaximo = 36,
+                            AndarMinimo = 26,
+                            BiomaId = new Guid("b1000000-0000-0000-0000-000000000002"),
+                            EChefe = false,
+                            ElementoAfinidade = 5,
+                            ElementoFraqueza = 4,
+                            Nome = "Orc",
+                            Tipo = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000202-0000-0000-0000-000000000000"),
+                            AndarMaximo = 38,
+                            AndarMinimo = 26,
+                            BiomaId = new Guid("b1000000-0000-0000-0000-000000000002"),
+                            EChefe = false,
+                            ElementoAfinidade = 9,
+                            Nome = "Hobgoblin",
+                            Tipo = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000203-0000-0000-0000-000000000000"),
+                            AndarMaximo = 40,
+                            AndarMinimo = 28,
+                            BiomaId = new Guid("b1000000-0000-0000-0000-000000000002"),
+                            EChefe = false,
+                            ElementoAfinidade = 5,
+                            ElementoFraqueza = 4,
+                            Nome = "Esqueleto",
+                            Tipo = 3
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000204-0000-0000-0000-000000000000"),
+                            AndarMaximo = 40,
+                            AndarMinimo = 28,
+                            BiomaId = new Guid("b1000000-0000-0000-0000-000000000002"),
+                            EChefe = false,
+                            ElementoAfinidade = 5,
+                            ElementoFraqueza = 4,
+                            Nome = "Zumbi",
+                            Tipo = 3
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000205-0000-0000-0000-000000000000"),
+                            AndarMaximo = 44,
+                            AndarMinimo = 34,
+                            BiomaId = new Guid("b1000000-0000-0000-0000-000000000002"),
+                            EChefe = false,
+                            ElementoAfinidade = 2,
+                            Nome = "Ogro",
+                            Tipo = 10
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000206-0000-0000-0000-000000000000"),
+                            AndarMaximo = 46,
+                            AndarMinimo = 36,
+                            BiomaId = new Guid("b1000000-0000-0000-0000-000000000002"),
+                            EChefe = false,
+                            ElementoAfinidade = 5,
+                            ElementoFraqueza = 4,
+                            Nome = "Carniçal",
+                            Tipo = 3
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000207-0000-0000-0000-000000000000"),
+                            AndarMaximo = 48,
+                            AndarMinimo = 38,
+                            BiomaId = new Guid("b1000000-0000-0000-0000-000000000002"),
+                            EChefe = false,
+                            ElementoAfinidade = 5,
+                            Nome = "Gnoll Líder de Matilha",
+                            Tipo = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000208-0000-0000-0000-000000000000"),
+                            AndarMaximo = 48,
+                            AndarMinimo = 40,
+                            BiomaId = new Guid("b1000000-0000-0000-0000-000000000002"),
+                            EChefe = false,
+                            ElementoAfinidade = 2,
+                            ElementoFraqueza = 5,
+                            Nome = "Gárgula",
+                            Tipo = 2
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000209-0000-0000-0000-000000000000"),
+                            AndarMaximo = 47,
+                            AndarMinimo = 43,
+                            BiomaId = new Guid("b1000000-0000-0000-0000-000000000002"),
+                            EChefe = true,
+                            ElementoAfinidade = 5,
+                            ElementoFraqueza = 4,
+                            Nome = "Banshee",
+                            Tipo = 3
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000210-0000-0000-0000-000000000000"),
+                            AndarMaximo = 50,
+                            AndarMinimo = 50,
+                            BiomaId = new Guid("b1000000-0000-0000-0000-000000000002"),
+                            EChefe = true,
+                            ElementoAfinidade = 5,
+                            ElementoFraqueza = 4,
+                            Nome = "Ressurgido",
+                            Tipo = 3
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000301-0000-0000-0000-000000000000"),
+                            AndarMaximo = 62,
+                            AndarMinimo = 51,
+                            BiomaId = new Guid("b1000000-0000-0000-0000-000000000003"),
+                            EChefe = false,
+                            ElementoAfinidade = 0,
+                            ElementoFraqueza = 6,
+                            Nome = "Mephit do Magma",
+                            Tipo = 4
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000302-0000-0000-0000-000000000000"),
+                            AndarMaximo = 62,
+                            AndarMinimo = 51,
+                            BiomaId = new Guid("b1000000-0000-0000-0000-000000000003"),
+                            EChefe = false,
+                            ElementoAfinidade = 0,
+                            ElementoFraqueza = 1,
+                            Nome = "Magmin",
+                            Tipo = 4
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000303-0000-0000-0000-000000000000"),
+                            AndarMaximo = 66,
+                            AndarMinimo = 54,
+                            BiomaId = new Guid("b1000000-0000-0000-0000-000000000003"),
+                            EChefe = false,
+                            ElementoAfinidade = 0,
+                            ElementoFraqueza = 1,
+                            Nome = "Salamandra",
+                            Tipo = 4
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000304-0000-0000-0000-000000000000"),
+                            AndarMaximo = 66,
+                            AndarMinimo = 56,
+                            BiomaId = new Guid("b1000000-0000-0000-0000-000000000003"),
+                            EChefe = false,
+                            ElementoAfinidade = 0,
+                            ElementoFraqueza = 1,
+                            Nome = "Cão Infernal",
+                            Tipo = 6
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000305-0000-0000-0000-000000000000"),
+                            AndarMaximo = 70,
+                            AndarMinimo = 58,
+                            BiomaId = new Guid("b1000000-0000-0000-0000-000000000003"),
+                            EChefe = false,
+                            ElementoAfinidade = 0,
+                            Nome = "Manticora",
+                            Tipo = 2
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000306-0000-0000-0000-000000000000"),
+                            AndarMaximo = 72,
+                            AndarMinimo = 60,
+                            BiomaId = new Guid("b1000000-0000-0000-0000-000000000003"),
+                            EChefe = false,
+                            ElementoAfinidade = 0,
+                            ElementoFraqueza = 1,
+                            Nome = "Elemental do Fogo",
+                            Tipo = 4
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000307-0000-0000-0000-000000000000"),
+                            AndarMaximo = 73,
+                            AndarMinimo = 62,
+                            BiomaId = new Guid("b1000000-0000-0000-0000-000000000003"),
+                            EChefe = false,
+                            ElementoAfinidade = 0,
+                            ElementoFraqueza = 6,
+                            Nome = "Wyvern",
+                            Tipo = 11
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000308-0000-0000-0000-000000000000"),
+                            AndarMaximo = 73,
+                            AndarMinimo = 64,
+                            BiomaId = new Guid("b1000000-0000-0000-0000-000000000003"),
+                            EChefe = false,
+                            ElementoAfinidade = 0,
+                            ElementoFraqueza = 1,
+                            Nome = "Gigante do Fogo",
+                            Tipo = 10
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000309-0000-0000-0000-000000000000"),
+                            AndarMaximo = 74,
+                            AndarMinimo = 70,
+                            BiomaId = new Guid("b1000000-0000-0000-0000-000000000003"),
+                            EChefe = true,
+                            ElementoAfinidade = 0,
+                            ElementoFraqueza = 6,
+                            Nome = "Dragão Cromático Jovem",
+                            Tipo = 11
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000310-0000-0000-0000-000000000000"),
+                            AndarMaximo = 75,
+                            AndarMinimo = 75,
+                            BiomaId = new Guid("b1000000-0000-0000-0000-000000000003"),
+                            EChefe = true,
+                            ElementoAfinidade = 0,
+                            ElementoFraqueza = 6,
+                            Nome = "Dragão Vermelho Adulto",
+                            Tipo = 11
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000401-0000-0000-0000-000000000000"),
+                            AndarMaximo = 86,
+                            AndarMinimo = 76,
+                            BiomaId = new Guid("b1000000-0000-0000-0000-000000000004"),
+                            EChefe = false,
+                            ElementoAfinidade = 5,
+                            ElementoFraqueza = 4,
+                            Nome = "Demônio das Sombras",
+                            Tipo = 6
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000402-0000-0000-0000-000000000000"),
+                            AndarMaximo = 86,
+                            AndarMinimo = 76,
+                            BiomaId = new Guid("b1000000-0000-0000-0000-000000000004"),
+                            EChefe = false,
+                            ElementoAfinidade = 5,
+                            ElementoFraqueza = 4,
+                            Nome = "Dretch",
+                            Tipo = 6
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000403-0000-0000-0000-000000000000"),
+                            AndarMaximo = 88,
+                            AndarMinimo = 78,
+                            BiomaId = new Guid("b1000000-0000-0000-0000-000000000004"),
+                            EChefe = false,
+                            ElementoAfinidade = 5,
+                            Nome = "Capitão Hobgoblin",
+                            Tipo = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000404-0000-0000-0000-000000000000"),
+                            AndarMaximo = 92,
+                            AndarMinimo = 82,
+                            BiomaId = new Guid("b1000000-0000-0000-0000-000000000004"),
+                            EChefe = false,
+                            ElementoAfinidade = 5,
+                            Nome = "Duplo",
+                            Tipo = 2
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000405-0000-0000-0000-000000000000"),
+                            AndarMaximo = 94,
+                            AndarMinimo = 84,
+                            BiomaId = new Guid("b1000000-0000-0000-0000-000000000004"),
+                            EChefe = false,
+                            ElementoAfinidade = 5,
+                            Nome = "Devorador de Mentes",
+                            Tipo = 13
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000406-0000-0000-0000-000000000000"),
+                            AndarMaximo = 96,
+                            AndarMinimo = 86,
+                            BiomaId = new Guid("b1000000-0000-0000-0000-000000000004"),
+                            EChefe = false,
+                            ElementoAfinidade = 5,
+                            ElementoFraqueza = 4,
+                            Nome = "Hezrou",
+                            Tipo = 6
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000407-0000-0000-0000-000000000000"),
+                            AndarMaximo = 95,
+                            AndarMinimo = 88,
+                            BiomaId = new Guid("b1000000-0000-0000-0000-000000000004"),
+                            EChefe = true,
+                            ElementoAfinidade = 5,
+                            ElementoFraqueza = 4,
+                            Nome = "Naga dos Ossos",
+                            Tipo = 3
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000408-0000-0000-0000-000000000000"),
+                            AndarMaximo = 98,
+                            AndarMinimo = 88,
+                            BiomaId = new Guid("b1000000-0000-0000-0000-000000000004"),
+                            EChefe = false,
+                            ElementoAfinidade = 5,
+                            ElementoFraqueza = 4,
+                            Nome = "Glabrezu",
+                            Tipo = 6
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000409-0000-0000-0000-000000000000"),
+                            AndarMaximo = 99,
+                            AndarMinimo = 92,
+                            BiomaId = new Guid("b1000000-0000-0000-0000-000000000004"),
+                            EChefe = false,
+                            ElementoAfinidade = 5,
+                            ElementoFraqueza = 4,
+                            Nome = "Dragão das Sombras",
+                            Tipo = 11
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000410-0000-0000-0000-000000000000"),
+                            AndarMaximo = 100,
+                            AndarMinimo = 100,
+                            BiomaId = new Guid("b1000000-0000-0000-0000-000000000004"),
+                            EChefe = true,
+                            ElementoAfinidade = 0,
+                            ElementoFraqueza = 4,
+                            Nome = "Balor",
+                            Tipo = 6
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000501-0000-0000-0000-000000000000"),
+                            AndarMaximo = 112,
+                            AndarMinimo = 101,
+                            BiomaId = new Guid("b1000000-0000-0000-0000-000000000005"),
+                            EChefe = false,
+                            ElementoAfinidade = 0,
+                            ElementoFraqueza = 4,
+                            Nome = "Erínia",
+                            Tipo = 6
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000502-0000-0000-0000-000000000000"),
+                            AndarMaximo = 112,
+                            AndarMinimo = 101,
+                            BiomaId = new Guid("b1000000-0000-0000-0000-000000000005"),
+                            EChefe = false,
+                            ElementoAfinidade = 5,
+                            ElementoFraqueza = 4,
+                            Nome = "Cria Vampírica",
+                            Tipo = 3
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000503-0000-0000-0000-000000000000"),
+                            AndarMaximo = 114,
+                            AndarMinimo = 104,
+                            BiomaId = new Guid("b1000000-0000-0000-0000-000000000005"),
+                            EChefe = false,
+                            ElementoAfinidade = 5,
+                            ElementoFraqueza = 4,
+                            Nome = "Deva Corrompida",
+                            Tipo = 5
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000504-0000-0000-0000-000000000000"),
+                            AndarMaximo = 120,
+                            AndarMinimo = 108,
+                            BiomaId = new Guid("b1000000-0000-0000-0000-000000000005"),
+                            EChefe = false,
+                            ElementoAfinidade = 6,
+                            ElementoFraqueza = 4,
+                            Nome = "Cavaleiro da Morte",
+                            Tipo = 3
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000505-0000-0000-0000-000000000000"),
+                            AndarMaximo = 120,
+                            AndarMinimo = 110,
+                            BiomaId = new Guid("b1000000-0000-0000-0000-000000000005"),
+                            EChefe = false,
+                            ElementoAfinidade = 0,
+                            ElementoFraqueza = 4,
+                            Nome = "Diabo dos Chifres",
+                            Tipo = 6
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000506-0000-0000-0000-000000000000"),
+                            AndarMaximo = 122,
+                            AndarMinimo = 112,
+                            BiomaId = new Guid("b1000000-0000-0000-0000-000000000005"),
+                            EChefe = false,
+                            ElementoAfinidade = 5,
+                            ElementoFraqueza = 4,
+                            Nome = "Dracolich",
+                            Tipo = 11
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000507-0000-0000-0000-000000000000"),
+                            AndarMaximo = 122,
+                            AndarMinimo = 114,
+                            BiomaId = new Guid("b1000000-0000-0000-0000-000000000005"),
+                            EChefe = false,
+                            ElementoAfinidade = 5,
+                            ElementoFraqueza = 4,
+                            Nome = "Lich",
+                            Tipo = 3
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000508-0000-0000-0000-000000000000"),
+                            AndarMaximo = 124,
+                            AndarMinimo = 116,
+                            BiomaId = new Guid("b1000000-0000-0000-0000-000000000005"),
+                            EChefe = true,
+                            ElementoAfinidade = 5,
+                            ElementoFraqueza = 4,
+                            Nome = "Solar Caído",
+                            Tipo = 5
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000509-0000-0000-0000-000000000000"),
+                            AndarMaximo = 125,
+                            AndarMinimo = 125,
+                            BiomaId = new Guid("b1000000-0000-0000-0000-000000000005"),
+                            EChefe = true,
+                            ElementoAfinidade = 5,
+                            ElementoFraqueza = 4,
+                            Nome = "Planetário Corrompido",
+                            Tipo = 5
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000601-0000-0000-0000-000000000000"),
+                            AndarMaximo = 136,
+                            AndarMinimo = 126,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000001"),
+                            EChefe = false,
+                            ElementoAfinidade = 8,
+                            Nome = "Centauro",
+                            Tipo = 2
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000602-0000-0000-0000-000000000000"),
+                            AndarMaximo = 138,
+                            AndarMinimo = 126,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000001"),
+                            EChefe = false,
+                            ElementoAfinidade = 3,
+                            Nome = "Grifo",
+                            Tipo = 2
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000603-0000-0000-0000-000000000000"),
+                            AndarMaximo = 138,
+                            AndarMinimo = 128,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000001"),
+                            EChefe = false,
+                            ElementoAfinidade = 2,
+                            Nome = "Tricerátops",
+                            Tipo = 0
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000604-0000-0000-0000-000000000000"),
+                            AndarMaximo = 140,
+                            AndarMinimo = 130,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000001"),
+                            EChefe = false,
+                            ElementoAfinidade = 2,
+                            Nome = "Ankheg",
+                            Tipo = 2
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000605-0000-0000-0000-000000000000"),
+                            AndarMaximo = 144,
+                            AndarMinimo = 132,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000001"),
+                            EChefe = false,
+                            ElementoAfinidade = 5,
+                            ElementoFraqueza = 4,
+                            Nome = "Gnoll Presa de Yeenoghu",
+                            Tipo = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000606-0000-0000-0000-000000000000"),
+                            AndarMaximo = 146,
+                            AndarMinimo = 136,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000001"),
+                            EChefe = false,
+                            ElementoAfinidade = 9,
+                            Nome = "Gorgão",
+                            Tipo = 2
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000607-0000-0000-0000-000000000000"),
+                            AndarMaximo = 148,
+                            AndarMinimo = 138,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000001"),
+                            EChefe = false,
+                            ElementoAfinidade = 0,
+                            ElementoFraqueza = 6,
+                            Nome = "Quimera",
+                            Tipo = 2
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000608-0000-0000-0000-000000000000"),
+                            AndarMaximo = 149,
+                            AndarMinimo = 140,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000001"),
+                            EChefe = true,
+                            ElementoAfinidade = 2,
+                            Nome = "Tiranossauro",
+                            Tipo = 0
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000609-0000-0000-0000-000000000000"),
+                            AndarMaximo = 149,
+                            AndarMinimo = 144,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000001"),
+                            EChefe = false,
+                            ElementoAfinidade = 4,
+                            ElementoFraqueza = 5,
+                            Nome = "Dragão de Ouro Jovem",
+                            Tipo = 11
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000610-0000-0000-0000-000000000000"),
+                            AndarMaximo = 150,
+                            AndarMinimo = 150,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000001"),
+                            EChefe = true,
+                            ElementoAfinidade = 4,
+                            ElementoFraqueza = 5,
+                            Nome = "Dragão Ouro Adulto",
+                            Tipo = 11
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000701-0000-0000-0000-000000000000"),
+                            AndarMaximo = 162,
+                            AndarMinimo = 151,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000002"),
+                            EChefe = false,
+                            ElementoAfinidade = 1,
+                            ElementoFraqueza = 7,
+                            Nome = "Sahuagin",
+                            Tipo = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000702-0000-0000-0000-000000000000"),
+                            AndarMaximo = 162,
+                            AndarMinimo = 151,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000002"),
+                            EChefe = false,
+                            ElementoAfinidade = 1,
+                            ElementoFraqueza = 0,
+                            Nome = "Bruxa do Mar",
+                            Tipo = 7
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000703-0000-0000-0000-000000000000"),
+                            AndarMaximo = 164,
+                            AndarMinimo = 152,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000002"),
+                            EChefe = false,
+                            ElementoAfinidade = 3,
+                            Nome = "Harpia",
+                            Tipo = 2
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000704-0000-0000-0000-000000000000"),
+                            AndarMaximo = 166,
+                            AndarMinimo = 156,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000002"),
+                            EChefe = false,
+                            ElementoAfinidade = 1,
+                            ElementoFraqueza = 7,
+                            Nome = "Merrow",
+                            Tipo = 2
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000705-0000-0000-0000-000000000000"),
+                            AndarMaximo = 168,
+                            AndarMinimo = 158,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000002"),
+                            EChefe = false,
+                            ElementoAfinidade = 1,
+                            ElementoFraqueza = 7,
+                            Nome = "Sacerdotisa Sahuagin",
+                            Tipo = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000706-0000-0000-0000-000000000000"),
+                            AndarMaximo = 172,
+                            AndarMinimo = 162,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000002"),
+                            EChefe = false,
+                            ElementoAfinidade = 1,
+                            ElementoFraqueza = 7,
+                            Nome = "Barão Sahuagin",
+                            Tipo = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000707-0000-0000-0000-000000000000"),
+                            AndarMaximo = 174,
+                            AndarMinimo = 164,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000002"),
+                            EChefe = false,
+                            ElementoAfinidade = 1,
+                            ElementoFraqueza = 7,
+                            Nome = "Elemental da Água",
+                            Tipo = 4
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000708-0000-0000-0000-000000000000"),
+                            AndarMaximo = 173,
+                            AndarMinimo = 164,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000002"),
+                            EChefe = true,
+                            ElementoAfinidade = 7,
+                            ElementoFraqueza = 2,
+                            Nome = "Djinni",
+                            Tipo = 4
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000709-0000-0000-0000-000000000000"),
+                            AndarMaximo = 174,
+                            AndarMinimo = 168,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000002"),
+                            EChefe = false,
+                            ElementoAfinidade = 7,
+                            Nome = "Dragão de Bronze Jovem",
+                            Tipo = 11
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000710-0000-0000-0000-000000000000"),
+                            AndarMaximo = 175,
+                            AndarMinimo = 175,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000002"),
+                            EChefe = true,
+                            ElementoAfinidade = 7,
+                            ElementoFraqueza = 2,
+                            Nome = "Dragão Azul Jovem",
+                            Tipo = 11
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000801-0000-0000-0000-000000000000"),
+                            AndarMaximo = 186,
+                            AndarMinimo = 176,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000003"),
+                            EChefe = false,
+                            ElementoAfinidade = 1,
+                            ElementoFraqueza = 0,
+                            Nome = "Bullywug",
+                            Tipo = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000802-0000-0000-0000-000000000000"),
+                            AndarMaximo = 188,
+                            AndarMinimo = 176,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000003"),
+                            EChefe = false,
+                            ElementoAfinidade = 5,
+                            Nome = "Yuan-Ti Puro-Sangue",
+                            Tipo = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000803-0000-0000-0000-000000000000"),
+                            AndarMaximo = 192,
+                            AndarMinimo = 178,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000003"),
+                            EChefe = false,
+                            ElementoAfinidade = 1,
+                            ElementoFraqueza = 7,
+                            Nome = "Crocodilo Gigante",
+                            Tipo = 0
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000804-0000-0000-0000-000000000000"),
+                            AndarMaximo = 194,
+                            AndarMinimo = 182,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000003"),
+                            EChefe = false,
+                            ElementoAfinidade = 5,
+                            ElementoFraqueza = 4,
+                            Nome = "Lívido",
+                            Tipo = 3
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000805-0000-0000-0000-000000000000"),
+                            AndarMaximo = 194,
+                            AndarMinimo = 180,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000003"),
+                            EChefe = false,
+                            ElementoAfinidade = 2,
+                            ElementoFraqueza = 0,
+                            Nome = "Troll",
+                            Tipo = 10
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000806-0000-0000-0000-000000000000"),
+                            AndarMaximo = 198,
+                            AndarMinimo = 184,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000003"),
+                            EChefe = false,
+                            ElementoAfinidade = 5,
+                            Nome = "Bruxa Verde (Convenção)",
+                            Tipo = 7
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000807-0000-0000-0000-000000000000"),
+                            AndarMaximo = 198,
+                            AndarMinimo = 186,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000003"),
+                            EChefe = false,
+                            ElementoAfinidade = 5,
+                            Nome = "Yuan-Ti Mestiço",
+                            Tipo = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000808-0000-0000-0000-000000000000"),
+                            AndarMaximo = 198,
+                            AndarMinimo = 190,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000003"),
+                            EChefe = true,
+                            ElementoAfinidade = 1,
+                            ElementoFraqueza = 0,
+                            Nome = "Hidra",
+                            Tipo = 2
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000809-0000-0000-0000-000000000000"),
+                            AndarMaximo = 199,
+                            AndarMinimo = 190,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000003"),
+                            EChefe = false,
+                            ElementoAfinidade = 5,
+                            Nome = "Yuan-Ti Abominação",
+                            Tipo = 2
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000810-0000-0000-0000-000000000000"),
+                            AndarMaximo = 200,
+                            AndarMinimo = 200,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000003"),
+                            EChefe = true,
+                            ElementoAfinidade = 5,
+                            ElementoFraqueza = 4,
+                            Nome = "Dragão Negro Adulto",
+                            Tipo = 11
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000901-0000-0000-0000-000000000000"),
+                            AndarMaximo = 212,
+                            AndarMinimo = 201,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000004"),
+                            EChefe = false,
+                            ElementoAfinidade = 0,
+                            ElementoFraqueza = 1,
+                            Nome = "Gnoll",
+                            Tipo = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000902-0000-0000-0000-000000000000"),
+                            AndarMaximo = 214,
+                            AndarMinimo = 202,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000004"),
+                            EChefe = false,
+                            ElementoAfinidade = 5,
+                            Nome = "Yuan-Ti Mestiço",
+                            Tipo = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000903-0000-0000-0000-000000000000"),
+                            AndarMaximo = 216,
+                            AndarMinimo = 204,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000004"),
+                            EChefe = false,
+                            ElementoAfinidade = 5,
+                            ElementoFraqueza = 4,
+                            Nome = "Múmia",
+                            Tipo = 3
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000904-0000-0000-0000-000000000000"),
+                            AndarMaximo = 218,
+                            AndarMinimo = 206,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000004"),
+                            EChefe = false,
+                            ElementoAfinidade = 2,
+                            Nome = "Escorpião Gigante",
+                            Tipo = 0
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000905-0000-0000-0000-000000000000"),
+                            AndarMaximo = 222,
+                            AndarMinimo = 210,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000004"),
+                            EChefe = false,
+                            ElementoAfinidade = 0,
+                            ElementoFraqueza = 6,
+                            Nome = "Efreeti",
+                            Tipo = 4
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000906-0000-0000-0000-000000000000"),
+                            AndarMaximo = 222,
+                            AndarMinimo = 212,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000004"),
+                            EChefe = false,
+                            ElementoAfinidade = 5,
+                            ElementoFraqueza = 4,
+                            Nome = "Naga Guardiã",
+                            Tipo = 2
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000907-0000-0000-0000-000000000000"),
+                            AndarMaximo = 224,
+                            AndarMinimo = 214,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000004"),
+                            EChefe = false,
+                            ElementoAfinidade = 4,
+                            ElementoFraqueza = 5,
+                            Nome = "Androesfinge",
+                            Tipo = 2
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000908-0000-0000-0000-000000000000"),
+                            AndarMaximo = 224,
+                            AndarMinimo = 216,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000004"),
+                            EChefe = true,
+                            ElementoAfinidade = 5,
+                            ElementoFraqueza = 4,
+                            Nome = "Senhor das Múmias",
+                            Tipo = 3
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000909-0000-0000-0000-000000000000"),
+                            AndarMaximo = 224,
+                            AndarMinimo = 218,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000004"),
+                            EChefe = false,
+                            ElementoAfinidade = 7,
+                            ElementoFraqueza = 2,
+                            Nome = "Dragão Azul Adulto",
+                            Tipo = 11
+                        },
+                        new
+                        {
+                            Id = new Guid("e0000910-0000-0000-0000-000000000000"),
+                            AndarMaximo = 225,
+                            AndarMinimo = 225,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000004"),
+                            EChefe = true,
+                            ElementoAfinidade = 7,
+                            ElementoFraqueza = 2,
+                            Nome = "Dragão Azul Ancião",
+                            Tipo = 11
+                        },
+                        new
+                        {
+                            Id = new Guid("e0001001-0000-0000-0000-000000000000"),
+                            AndarMaximo = 236,
+                            AndarMinimo = 226,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000005"),
+                            EChefe = false,
+                            ElementoAfinidade = 6,
+                            ElementoFraqueza = 0,
+                            Nome = "Mephit do Gelo",
+                            Tipo = 4
+                        },
+                        new
+                        {
+                            Id = new Guid("e0001002-0000-0000-0000-000000000000"),
+                            AndarMaximo = 236,
+                            AndarMinimo = 226,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000005"),
+                            EChefe = false,
+                            ElementoAfinidade = 6,
+                            ElementoFraqueza = 0,
+                            Nome = "Yeti",
+                            Tipo = 2
+                        },
+                        new
+                        {
+                            Id = new Guid("e0001003-0000-0000-0000-000000000000"),
+                            AndarMaximo = 238,
+                            AndarMinimo = 226,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000005"),
+                            EChefe = false,
+                            ElementoAfinidade = 6,
+                            ElementoFraqueza = 0,
+                            Nome = "Lobo Invernal",
+                            Tipo = 2
+                        },
+                        new
+                        {
+                            Id = new Guid("e0001004-0000-0000-0000-000000000000"),
+                            AndarMaximo = 242,
+                            AndarMinimo = 228,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000005"),
+                            EChefe = false,
+                            ElementoAfinidade = 6,
+                            ElementoFraqueza = 0,
+                            Nome = "Remorhaz Jovem",
+                            Tipo = 2
+                        },
+                        new
+                        {
+                            Id = new Guid("e0001005-0000-0000-0000-000000000000"),
+                            AndarMaximo = 244,
+                            AndarMinimo = 232,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000005"),
+                            EChefe = false,
+                            ElementoAfinidade = 6,
+                            ElementoFraqueza = 0,
+                            Nome = "Gigante do Gelo",
+                            Tipo = 10
+                        },
+                        new
+                        {
+                            Id = new Guid("e0001006-0000-0000-0000-000000000000"),
+                            AndarMaximo = 248,
+                            AndarMinimo = 234,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000005"),
+                            EChefe = false,
+                            ElementoAfinidade = 6,
+                            ElementoFraqueza = 0,
+                            Nome = "Yeti Abominável",
+                            Tipo = 2
+                        },
+                        new
+                        {
+                            Id = new Guid("e0001007-0000-0000-0000-000000000000"),
+                            AndarMaximo = 248,
+                            AndarMinimo = 238,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000005"),
+                            EChefe = true,
+                            ElementoAfinidade = 2,
+                            ElementoFraqueza = 7,
+                            Nome = "Roca",
+                            Tipo = 2
+                        },
+                        new
+                        {
+                            Id = new Guid("e0001008-0000-0000-0000-000000000000"),
+                            AndarMaximo = 249,
+                            AndarMinimo = 238,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000005"),
+                            EChefe = false,
+                            ElementoAfinidade = 6,
+                            ElementoFraqueza = 0,
+                            Nome = "Remorhaz",
+                            Tipo = 2
+                        },
+                        new
+                        {
+                            Id = new Guid("e0001009-0000-0000-0000-000000000000"),
+                            AndarMaximo = 249,
+                            AndarMinimo = 242,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000005"),
+                            EChefe = false,
+                            ElementoAfinidade = 6,
+                            ElementoFraqueza = 0,
+                            Nome = "Dragão Branco Adulto",
+                            Tipo = 11
+                        },
+                        new
+                        {
+                            Id = new Guid("e0001010-0000-0000-0000-000000000000"),
+                            AndarMaximo = 250,
+                            AndarMinimo = 250,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000005"),
+                            EChefe = true,
+                            ElementoAfinidade = 6,
+                            ElementoFraqueza = 0,
+                            Nome = "Dragão Branco Ancião",
+                            Tipo = 11
+                        },
+                        new
+                        {
+                            Id = new Guid("e0001101-0000-0000-0000-000000000000"),
+                            AndarMaximo = 260,
+                            AndarMinimo = 251,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000006"),
+                            EChefe = false,
+                            ElementoAfinidade = 1,
+                            ElementoFraqueza = 7,
+                            Nome = "Povo do Mar",
+                            Tipo = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("e0001102-0000-0000-0000-000000000000"),
+                            AndarMaximo = 262,
+                            AndarMinimo = 251,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000006"),
+                            EChefe = false,
+                            ElementoAfinidade = 1,
+                            ElementoFraqueza = 7,
+                            Nome = "Polvo Gigante",
+                            Tipo = 0
+                        },
+                        new
+                        {
+                            Id = new Guid("e0001103-0000-0000-0000-000000000000"),
+                            AndarMaximo = 266,
+                            AndarMinimo = 254,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000006"),
+                            EChefe = false,
+                            ElementoAfinidade = 1,
+                            Nome = "Sirenídeo",
+                            Tipo = 2
+                        },
+                        new
+                        {
+                            Id = new Guid("e0001104-0000-0000-0000-000000000000"),
+                            AndarMaximo = 268,
+                            AndarMinimo = 256,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000006"),
+                            EChefe = false,
+                            ElementoAfinidade = 1,
+                            ElementoFraqueza = 7,
+                            Nome = "Tubarão Gigante",
+                            Tipo = 0
+                        },
+                        new
+                        {
+                            Id = new Guid("e0001105-0000-0000-0000-000000000000"),
+                            AndarMaximo = 272,
+                            AndarMinimo = 260,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000006"),
+                            EChefe = false,
+                            ElementoAfinidade = 1,
+                            ElementoFraqueza = 7,
+                            Nome = "Marid",
+                            Tipo = 4
+                        },
+                        new
+                        {
+                            Id = new Guid("e0001106-0000-0000-0000-000000000000"),
+                            AndarMaximo = 272,
+                            AndarMinimo = 262,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000006"),
+                            EChefe = true,
+                            ElementoAfinidade = 1,
+                            Nome = "Abolete",
+                            Tipo = 13
+                        },
+                        new
+                        {
+                            Id = new Guid("e0001107-0000-0000-0000-000000000000"),
+                            AndarMaximo = 274,
+                            AndarMinimo = 264,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000006"),
+                            EChefe = false,
+                            ElementoAfinidade = 7,
+                            Nome = "Gigante da Tempestade",
+                            Tipo = 10
+                        },
+                        new
+                        {
+                            Id = new Guid("e0001108-0000-0000-0000-000000000000"),
+                            AndarMaximo = 274,
+                            AndarMinimo = 264,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000006"),
+                            EChefe = false,
+                            ElementoAfinidade = 1,
+                            ElementoFraqueza = 7,
+                            Nome = "Tartaruga-Dragão",
+                            Tipo = 11
+                        },
+                        new
+                        {
+                            Id = new Guid("e0001109-0000-0000-0000-000000000000"),
+                            AndarMaximo = 274,
+                            AndarMinimo = 268,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000006"),
+                            EChefe = false,
+                            ElementoAfinidade = 7,
+                            ElementoFraqueza = 2,
+                            Nome = "Dragão Azul Ancião",
+                            Tipo = 11
+                        },
+                        new
+                        {
+                            Id = new Guid("e0001110-0000-0000-0000-000000000000"),
+                            AndarMaximo = 275,
+                            AndarMinimo = 275,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000006"),
+                            EChefe = true,
+                            ElementoAfinidade = 1,
+                            ElementoFraqueza = 7,
+                            Nome = "Kraken",
+                            Tipo = 2
+                        },
+                        new
+                        {
+                            Id = new Guid("e0001201-0000-0000-0000-000000000000"),
+                            AndarMaximo = 288,
+                            AndarMinimo = 276,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000007"),
+                            EChefe = false,
+                            ElementoAfinidade = 5,
+                            ElementoFraqueza = 4,
+                            Nome = "Drow Guerreiro de Elite",
+                            Tipo = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("e0001202-0000-0000-0000-000000000000"),
+                            AndarMaximo = 290,
+                            AndarMinimo = 278,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000007"),
+                            EChefe = false,
+                            ElementoAfinidade = 5,
+                            ElementoFraqueza = 4,
+                            Nome = "Drow Arcano",
+                            Tipo = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("e0001203-0000-0000-0000-000000000000"),
+                            AndarMaximo = 292,
+                            AndarMinimo = 280,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000007"),
+                            EChefe = false,
+                            ElementoAfinidade = 5,
+                            ElementoFraqueza = 4,
+                            Nome = "Drow Sacerdotisa de Lolth",
+                            Tipo = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("e0001204-0000-0000-0000-000000000000"),
+                            AndarMaximo = 292,
+                            AndarMinimo = 280,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000007"),
+                            EChefe = false,
+                            ElementoAfinidade = 5,
+                            ElementoFraqueza = 4,
+                            Nome = "Drider",
+                            Tipo = 2
+                        },
+                        new
+                        {
+                            Id = new Guid("e0001205-0000-0000-0000-000000000000"),
+                            AndarMaximo = 296,
+                            AndarMinimo = 284,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000007"),
+                            EChefe = false,
+                            ElementoAfinidade = 5,
+                            Nome = "Devorador de Mentes Arcanista",
+                            Tipo = 13
+                        },
+                        new
+                        {
+                            Id = new Guid("e0001206-0000-0000-0000-000000000000"),
+                            AndarMaximo = 298,
+                            AndarMinimo = 286,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000007"),
+                            EChefe = false,
+                            ElementoAfinidade = 5,
+                            Nome = "Observador",
+                            Tipo = 13
+                        },
+                        new
+                        {
+                            Id = new Guid("e0001207-0000-0000-0000-000000000000"),
+                            AndarMaximo = 298,
+                            AndarMinimo = 288,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000007"),
+                            EChefe = true,
+                            ElementoAfinidade = 5,
+                            ElementoFraqueza = 4,
+                            Nome = "Lich",
+                            Tipo = 3
+                        },
+                        new
+                        {
+                            Id = new Guid("e0001208-0000-0000-0000-000000000000"),
+                            AndarMaximo = 299,
+                            AndarMinimo = 290,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000007"),
+                            EChefe = false,
+                            ElementoAfinidade = 5,
+                            ElementoFraqueza = 4,
+                            Nome = "Tirano da Morte",
+                            Tipo = 3
+                        },
+                        new
+                        {
+                            Id = new Guid("e0001209-0000-0000-0000-000000000000"),
+                            AndarMaximo = 299,
+                            AndarMinimo = 294,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000007"),
+                            EChefe = false,
+                            ElementoAfinidade = 5,
+                            ElementoFraqueza = 4,
+                            Nome = "Demilich",
+                            Tipo = 3
+                        },
+                        new
+                        {
+                            Id = new Guid("e0001210-0000-0000-0000-000000000000"),
+                            AndarMaximo = 300,
+                            AndarMinimo = 300,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000007"),
+                            EChefe = true,
+                            ElementoAfinidade = 5,
+                            ElementoFraqueza = 4,
+                            Nome = "Lich Ancião",
+                            Tipo = 3
+                        },
+                        new
+                        {
+                            Id = new Guid("e0001301-0000-0000-0000-000000000000"),
+                            AndarMaximo = 312,
+                            AndarMinimo = 301,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000008"),
+                            EChefe = false,
+                            ElementoAfinidade = 5,
+                            ElementoFraqueza = 4,
+                            Nome = "Vampiro Vassalo",
+                            Tipo = 3
+                        },
+                        new
+                        {
+                            Id = new Guid("e0001302-0000-0000-0000-000000000000"),
+                            AndarMaximo = 314,
+                            AndarMinimo = 302,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000008"),
+                            EChefe = false,
+                            ElementoAfinidade = 5,
+                            Nome = "Rakshasa",
+                            Tipo = 6
+                        },
+                        new
+                        {
+                            Id = new Guid("e0001303-0000-0000-0000-000000000000"),
+                            AndarMaximo = 316,
+                            AndarMinimo = 304,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000008"),
+                            EChefe = false,
+                            ElementoAfinidade = 0,
+                            ElementoFraqueza = 4,
+                            Nome = "Cambion",
+                            Tipo = 6
+                        },
+                        new
+                        {
+                            Id = new Guid("e0001304-0000-0000-0000-000000000000"),
+                            AndarMaximo = 318,
+                            AndarMinimo = 306,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000008"),
+                            EChefe = false,
+                            ElementoAfinidade = 5,
+                            ElementoFraqueza = 4,
+                            Nome = "Súcubo",
+                            Tipo = 6
+                        },
+                        new
+                        {
+                            Id = new Guid("e0001305-0000-0000-0000-000000000000"),
+                            AndarMaximo = 320,
+                            AndarMinimo = 308,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000008"),
+                            EChefe = false,
+                            ElementoAfinidade = 5,
+                            ElementoFraqueza = 4,
+                            Nome = "Vampiro",
+                            Tipo = 3
+                        },
+                        new
+                        {
+                            Id = new Guid("e0001306-0000-0000-0000-000000000000"),
+                            AndarMaximo = 322,
+                            AndarMinimo = 310,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000008"),
+                            EChefe = false,
+                            ElementoAfinidade = 5,
+                            Nome = "Arquimago Corrompido",
+                            Tipo = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("e0001307-0000-0000-0000-000000000000"),
+                            AndarMaximo = 322,
+                            AndarMinimo = 312,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000008"),
+                            EChefe = true,
+                            ElementoAfinidade = 5,
+                            ElementoFraqueza = 4,
+                            Nome = "Oni",
+                            Tipo = 2
+                        },
+                        new
+                        {
+                            Id = new Guid("e0001308-0000-0000-0000-000000000000"),
+                            AndarMaximo = 323,
+                            AndarMinimo = 312,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000008"),
+                            EChefe = false,
+                            ElementoAfinidade = 5,
+                            ElementoFraqueza = 4,
+                            Nome = "Vampiro Conjurador",
+                            Tipo = 3
+                        },
+                        new
+                        {
+                            Id = new Guid("e0001309-0000-0000-0000-000000000000"),
+                            AndarMaximo = 324,
+                            AndarMinimo = 316,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000008"),
+                            EChefe = false,
+                            ElementoAfinidade = 5,
+                            ElementoFraqueza = 4,
+                            Nome = "Dragão de Prata Corrompido",
+                            Tipo = 11
+                        },
+                        new
+                        {
+                            Id = new Guid("e0001310-0000-0000-0000-000000000000"),
+                            AndarMaximo = 325,
+                            AndarMinimo = 325,
+                            BiomaId = new Guid("b2000000-0000-0000-0000-000000000008"),
+                            EChefe = true,
+                            Nome = "Tarrasque",
+                            Tipo = 2
+                        });
                 });
 
             modelBuilder.Entity("LegendsAwaken.Domain.Entities.Item", b =>
@@ -1324,40 +3392,13 @@ namespace LegendsAwaken.Infrastructure.Migrations
 
             modelBuilder.Entity("LegendsAwaken.Domain.Entities.Inimigo", b =>
                 {
-                    b.HasOne("LegendsAwaken.Domain.Entities.TorreAndar", null)
-                        .WithMany("Inimigos")
-                        .HasForeignKey("TorreAndarId");
-
-                    b.OwnsOne("LegendsAwaken.Domain.Entities.AtributosBase", "Atributos", b1 =>
-                        {
-                            b1.Property<Guid>("InimigoId")
-                                .HasColumnType("TEXT");
-
-                            b1.Property<int>("Agilidade")
-                                .HasColumnType("INTEGER");
-
-                            b1.Property<int>("Forca")
-                                .HasColumnType("INTEGER");
-
-                            b1.Property<int>("Inteligencia")
-                                .HasColumnType("INTEGER");
-
-                            b1.Property<int>("Percepcao")
-                                .HasColumnType("INTEGER");
-
-                            b1.Property<int>("Vitalidade")
-                                .HasColumnType("INTEGER");
-
-                            b1.HasKey("InimigoId");
-
-                            b1.ToTable("Inimigo");
-
-                            b1.WithOwner()
-                                .HasForeignKey("InimigoId");
-                        });
-
-                    b.Navigation("Atributos")
+                    b.HasOne("LegendsAwaken.Domain.Entities.Fragmento.Bioma", "Bioma")
+                        .WithMany()
+                        .HasForeignKey("BiomaId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Bioma");
                 });
 
             modelBuilder.Entity("LegendsAwaken.Domain.Entities.ItemBonus", b =>
@@ -1444,11 +3485,6 @@ namespace LegendsAwaken.Infrastructure.Migrations
             modelBuilder.Entity("LegendsAwaken.Domain.Entities.Party", b =>
                 {
                     b.Navigation("Membros");
-                });
-
-            modelBuilder.Entity("LegendsAwaken.Domain.Entities.TorreAndar", b =>
-                {
-                    b.Navigation("Inimigos");
                 });
 #pragma warning restore 612, 618
         }

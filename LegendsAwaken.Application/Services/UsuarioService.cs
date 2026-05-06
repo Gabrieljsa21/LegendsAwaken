@@ -1,41 +1,123 @@
-﻿using LegendsAwaken.Domain.Entities;
-using LegendsAwaken.Domain.Interfaces;
 using Discord;
+using LegendsAwaken.Domain.Entities;
+using LegendsAwaken.Domain.Entities.Auxiliares;
+using LegendsAwaken.Domain.Entities.Fragmento;
+using LegendsAwaken.Domain.Enum;
+using LegendsAwaken.Domain.Interfaces;
+using System.Buffers.Binary;
 
-namespace LegendsAwaken.Application.Services
+namespace LegendsAwaken.Application.Services;
+
+public class UsuarioService(
+    IUsuarioRepository usuarioRepository,
+    IHeroiDesbloqueadoRepository desbloqueadoRepository,
+    IHeroiConfigRepository heroiConfigRepository,
+    HeroiService heroiService)
 {
-    public class UsuarioService
+    // Kaeryn (#16), Elize (#29), Aegis (#9)
+    private static readonly Guid[] HeroisIniciais =
+    [
+        new("a2000000-0000-0000-0000-000000000016"),
+        new("a2000000-0000-0000-0000-000000000029"),
+        new("a2000000-0000-0000-0000-000000000009"),
+    ];
+
+    public async Task<Usuario> ObterOuCriarAsync(IUser discordUser)
     {
-        private readonly IUsuarioRepository _usuarioRepository;
+        var usuario = await usuarioRepository.ObterPorIdAsync(discordUser.Id);
 
-        public UsuarioService(IUsuarioRepository usuarioRepository)
+        if (usuario == null)
         {
-            _usuarioRepository = usuarioRepository;
+            usuario = new Usuario
+            {
+                Id          = discordUser.Id,
+                Nome        = discordUser.Username,
+                DataCriacao = DateTime.UtcNow,
+                UltimoLogin = DateTime.UtcNow
+            };
+
+            await usuarioRepository.AdicionarAsync(usuario);
+            await DesbloquearHeroisIniciaisAsync(discordUser.Id);
+        }
+        else
+        {
+            usuario.UltimoLogin = DateTime.UtcNow;
+            await usuarioRepository.AtualizarAsync(usuario);
+
+            // Repair: ensure initial heroes have Heroi instances (one-time migration for existing accounts)
+            var heroisExistentes = await heroiService.ObterHeroisPorUsuarioAsync(discordUser.Id);
+            if (!heroisExistentes.Any())
+                await DesbloquearHeroisIniciaisAsync(discordUser.Id);
         }
 
-        public async Task<Usuario> ObterOuCriarAsync(IUser discordUser)
-        {
-            var usuario = await _usuarioRepository.ObterPorIdAsync(discordUser.Id);
+        return usuario;
+    }
 
-            if (usuario == null)
+    private async Task DesbloquearHeroisIniciaisAsync(ulong discordId)
+    {
+        var usuarioGuid = DiscordToGuid(discordId);
+        var heroisExistentes = await heroiService.ObterHeroisPorUsuarioAsync(discordId);
+
+        foreach (var heroiId in HeroisIniciais)
+        {
+            var config = await heroiConfigRepository.ObterPorIdAsync(heroiId);
+            if (config is null) continue;
+
+            if (!await desbloqueadoRepository.JaDesbloqueadoAsync(usuarioGuid, heroiId))
             {
-                usuario = new Usuario
+                await desbloqueadoRepository.SalvarAsync(new HeroiDesbloqueado
                 {
-                    Id = discordUser.Id,
-                    Nome = discordUser.Username,
-                    DataCriacao = DateTime.UtcNow,
-                    UltimoLogin = DateTime.UtcNow
-                };
-
-                await _usuarioRepository.AdicionarAsync(usuario);
+                    UsuarioId     = usuarioGuid,
+                    HeroiId       = heroiId,
+                    Heroi         = config,
+                    DesbloqueadoEm = DateTime.UtcNow
+                });
             }
-            else
+
+            // Create Heroi instance if missing
+            if (!heroisExistentes.Any(h => h.Nome == config.Nome))
             {
-                usuario.UltimoLogin = DateTime.UtcNow;
-                await _usuarioRepository.AtualizarAsync(usuario);
+                var novo = await heroiService.CriarHeroiAsync(
+                    discordId,
+                    config.Nome,
+                    config.RaridadeBase,
+                    RacaDeTag(config.Tag),
+                    "",
+                    [],
+                    FuncaoDeArquetipo(config.Arquetipo),
+                    config.Titulo);
+                heroisExistentes.Add(novo);
             }
-
-            return usuario;
         }
+    }
+
+    internal static Raca RacaDeTag(string? tag) => tag switch
+    {
+        "Anjos Caídos"     => Raca.AnjoCaido,
+        "Serafins"         => Raca.Serafim,
+        "Bestiais"         => Raca.Bestial,
+        "Dracossanguíneo"  => Raca.Draconato,
+        "Elfo/Fada"        => Raca.Elfo,
+        _                  => Raca.Humano,
+    };
+
+    internal static FuncaoTatica? FuncaoDeArquetipo(Profissao arquetipo) => arquetipo switch
+    {
+        Profissao.Guerreiro  => FuncaoTatica.Frente,
+        Profissao.Paladino   => FuncaoTatica.Frente,
+        Profissao.Arqueiro   => FuncaoTatica.LongoAlcance,
+        Profissao.Mago       => FuncaoTatica.LongoAlcance,
+        Profissao.Ladino     => FuncaoTatica.LongoAlcance,
+        Profissao.Bardo      => FuncaoTatica.Suporte,
+        Profissao.Clerigo    => FuncaoTatica.Curandeiro,
+        Profissao.Invocador  => FuncaoTatica.Controle,
+        _                    => null,
+    };
+
+    private static Guid DiscordToGuid(ulong discordId)
+    {
+        var bytes = new byte[16];
+        BinaryPrimitives.WriteUInt64LittleEndian(bytes, discordId);
+        return new Guid(bytes);
     }
 }

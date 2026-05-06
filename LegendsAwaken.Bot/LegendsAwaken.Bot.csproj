@@ -32,6 +32,9 @@
 		<None Update="appsettings.json">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
+		<None Update="Data\heroes.json">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\LegendsAwaken.Application\LegendsAwaken.Application.csproj" />

@@ -13,7 +13,7 @@ namespace LegendsAwaken.Domain.Entities
         public bool TemBoss { get; set; } = false;
         public NivelBoss? DificuldadeBoss { get; set; }
 
-        public List<Inimigo> Inimigos { get; set; } = new();
+        public List<InimigoAndar> Inimigos { get; set; } = new();
 
         public string? RecompensaTipo { get; set; }
         public int RecompensaQuantidade { get; set; }
@@ -49,12 +49,12 @@ namespace LegendsAwaken.Domain.Entities
         Dificil
     }
 
-    public class Inimigo
+    public class InimigoAndar
     {
         public Guid Id { get; set; }
         public required string Nome { get; set; }
         public int Nivel { get; set; }
-        public required string Tipo { get; set; } // Ex: "Morto-vivo", "Fera"
+        public required string Tipo { get; set; }
         public required AtributosBase Atributos { get; set; }
         public List<string> Habilidades { get; set; } = new();
     }
