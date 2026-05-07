@@ -262,6 +262,8 @@ public class TorreExploracaoService
             ?? throw new InvalidOperationException("Nenhum andar ativo encontrado.");
 
         // Apply arc flag boss HP modifiers if this is a boss floor
+        // Guard above (line 214-216) ensures IniciarAsync can only succeed once per active exploration,
+        // so HP reduction cannot be applied twice to the same floor instance.
         if (TorreArcoConfig.EBossFloor(andar.Numero) && andar.Inimigos.Count > 0)
         {
             var (hpReduction, _) = await _flagService.ObterModificadoresBossAsync(usuarioId, andar.Numero);
