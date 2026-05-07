@@ -249,7 +249,8 @@ public static class TorreExploracaoPanel
         double winChance,
         IList<(TipoBooster Tipo, int Quantidade)> boosters,
         string partyId,
-        string partyNome)
+        string partyNome,
+        IReadOnlyList<string>? bossModDescricoes = null)
     {
         var pct = (int)(winChance * 100);
         var descricao = HeroPowerScoreService.DescricaoWinChance(winChance);
@@ -260,12 +261,17 @@ public static class TorreExploracaoPanel
         sb.AppendLine();
         sb.AppendLine("Escolha um booster para usar nesta exploração, ou prossiga sem booster.");
 
-        var embed = new EmbedBuilder()
+        var builder = new EmbedBuilder()
             .WithTitle("⚔️ Iniciar Exploração")
             .WithColor(Color.Gold)
             .WithDescription(sb.ToString())
-            .WithFooter("Boosters são consumidos ao iniciar")
-            .Build();
+            .WithFooter("Boosters são consumidos ao iniciar");
+
+        if (bossModDescricoes is { Count: > 0 })
+            builder.AddField("⚔️ Bônus de Preparação",
+                string.Join("\n", bossModDescricoes.Select(d => $"• {d}")));
+
+        var embed = builder.Build();
 
         var menu = new SelectMenuBuilder()
             .WithCustomId($"torre_exp_booster_sel|{partyId}")
@@ -293,7 +299,8 @@ public static class TorreExploracaoPanel
 
     public static (Embed embed, MessageComponent comps) CriarConfirmacao(
         int andar, double winChance, string partyNome, List<string> heroisNomes, string partyId,
-        AndarArcoDefinicao? andarArco = null)
+        AndarArcoDefinicao? andarArco = null,
+        IReadOnlyList<string>? bossModDescricoes = null)
     {
         var pct       = (int)(winChance * 100);
         var descricao = HeroPowerScoreService.DescricaoWinChance(winChance);
@@ -316,6 +323,10 @@ public static class TorreExploracaoPanel
         if (andarArco?.ObjetivoSecundario is { } sec)
             builder.AddField("🎯 Objetivo Secundário",
                 $"{sec.Descricao}\n*Seu grupo tentará automaticamente.*\n*Efeito se bem-sucedido: {sec.EfeitoDescricao}*");
+
+        if (bossModDescricoes is { Count: > 0 })
+            builder.AddField("⚔️ Bônus de Preparação",
+                string.Join("\n", bossModDescricoes.Select(d => $"• {d}")));
 
         var embed = builder.Build();
 

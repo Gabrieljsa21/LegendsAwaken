@@ -261,6 +261,19 @@ public class TorreExploracaoService
         var andar = await _torreRepo.ObterAndarPorUsuarioAsync(usuarioId)
             ?? throw new InvalidOperationException("Nenhum andar ativo encontrado.");
 
+        // Apply arc flag boss HP modifiers if this is a boss floor
+        if (TorreArcoConfig.EBossFloor(andar.Numero) && andar.Inimigos.Count > 0)
+        {
+            var (hpReduction, _) = await _flagService.ObterModificadoresBossAsync(usuarioId, andar.Numero);
+            if (hpReduction > 0)
+            {
+                var fator = 1.0 - hpReduction;
+                foreach (var inimigo in andar.Inimigos)
+                    inimigo.Atributos.Vitalidade = (int)(inimigo.Atributos.Vitalidade * fator);
+                await _torreRepo.AtualizarAsync(andar);
+            }
+        }
+
         var exploracao = new TorreExploracao
         {
             Id                  = Guid.NewGuid(),

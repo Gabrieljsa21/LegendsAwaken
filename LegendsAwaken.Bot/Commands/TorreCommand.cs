@@ -586,11 +586,19 @@ public class TorreCommand(
 
         var andarDef = TorreArcoConfig.ObterAndar(andar.Numero);
 
+        IReadOnlyList<string> bossModDescricoes = [];
+        if (TorreArcoConfig.EBossFloor(andar.Numero))
+        {
+            var (_, descricoes) = await flagService.ObterModificadoresBossAsync(usuarioId, andar.Numero);
+            bossModDescricoes = descricoes;
+        }
+
         if (boosters.Any(b => b.Quantidade > 0))
         {
             (panelEmbed, panelComps) = TorreExploracaoPanel.CriarSeletorBooster(
                 andar.Numero, winChance, boosters,
-                party.Id.ToString(), party.Nome);
+                party.Id.ToString(), party.Nome,
+                bossModDescricoes);
         }
         else
         {
@@ -599,7 +607,8 @@ public class TorreCommand(
                 party.Nome,
                 heroisList.Select(h => h.Nome).ToList(),
                 party.Id.ToString(),
-                andarDef);
+                andarDef,
+                bossModDescricoes);
         }
 
         if (isUpdate)
