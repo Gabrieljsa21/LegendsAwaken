@@ -1,14 +1,18 @@
 using Discord;
+using LegendsAwaken.Application.Services;
 using LegendsAwaken.Domain.Entities;
 using LegendsAwaken.Domain.Entities.Fragmento;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using StatusExploracao = LegendsAwaken.Domain.Enum.StatusExploracao;
 
 namespace LegendsAwaken.Bot.Panels;
 
 public static class TorrePanel
 {
-    public static Embed CriarEmbed(TorreAndar andar, Bioma? bioma = null, TorreExploracao? exploracao = null)
+    public static Embed CriarEmbed(TorreAndar andar, Bioma? bioma = null, TorreExploracao? exploracao = null,
+        IReadOnlyList<string>? flagsAtivas = null)
     {
         var (tipoStr, cor) = andar.Tipo switch
         {
@@ -49,6 +53,24 @@ public static class TorrePanel
             }
             if (!string.IsNullOrEmpty(expStr))
                 builder.AddField("Exploração", expStr, inline: false);
+        }
+
+        var arcoDef = TorreArcoConfig.ObterArcoPorAndar(andar.Numero);
+        if (arcoDef is not null)
+        {
+            var andarDef = TorreArcoConfig.ObterAndar(andar.Numero);
+            builder.AddField($"📖 {arcoDef.Nome} — Andar {andar.Numero}",
+                andarDef?.NarrativaDisplay ?? "...");
+
+            if (andarDef?.ObjetivoSecundario is { } sec)
+                builder.AddField("🎯 Objetivo Secundário",
+                    $"{sec.Descricao}\n*Efeito: {sec.EfeitoDescricao}*");
+        }
+
+        if (flagsAtivas is { Count: > 0 })
+        {
+            var listaFlags = string.Join(", ", flagsAtivas.Select(f => $"`{f}`"));
+            builder.AddField("🏴 Flags do Arco", listaFlags);
         }
 
         builder.WithFooter("Use 🔍 Investigar para ver a chance de vitória antes de explorar");

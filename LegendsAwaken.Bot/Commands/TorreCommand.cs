@@ -24,6 +24,7 @@ public class TorreCommand(
     PartyService partyService,
     RecursoService recursoService,
     JogadorItemService itemService,
+    TorreFlagService flagService,
     ILogger? logger = null)
 {
     private void Log(string msg)                  => logger?.LogInformation("[Torre] {Msg}", msg);
@@ -652,8 +653,9 @@ public class TorreCommand(
         var ativa      = await exploracaoService.ObterAtivaAsync(guid);
         var pendente   = await exploracaoService.ObterPendenteAsync(guid);
         var exploracao = ativa ?? pendente;
+        var flags      = await flagService.ObterFlagsAtivasAsync(guid);
 
-        return (TorrePanel.CriarEmbed(andar, bioma, exploracao),
+        return (TorrePanel.CriarEmbed(andar, bioma, exploracao, flags),
                 TorrePanel.CriarComponentes(exploracao != null));
     }
 }

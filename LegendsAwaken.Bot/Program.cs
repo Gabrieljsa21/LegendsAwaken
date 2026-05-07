@@ -177,7 +177,8 @@ class Program
             services.GetRequiredService<RecursoService>(),
             services.GetRequiredService<JogadorItemService>(),
             services.GetRequiredService<R2ImageService>(),
-            services.GetRequiredService<InteractionRouter>()
+            services.GetRequiredService<InteractionRouter>(),
+            services.GetRequiredService<TorreFlagService>()
         );
 
         handler.Initialize();
