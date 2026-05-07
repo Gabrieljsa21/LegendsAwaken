@@ -24,10 +24,7 @@ public sealed class TorreFlagService(IAndarFlagProgressoRepository repo)
     public async Task<IReadOnlyList<string>> ObterFlagsCompostasAtivasAsync(Guid userId)
     {
         var ativas = (await repo.ObterFlagsGeradasAsync(userId)).ToHashSet();
-        return TorreArcoConfig.FlagsCompostas
-            .Where(fc => fc.ComponentesNecessarios.All(c => ativas.Contains(c)))
-            .Select(fc => fc.NomeComposta)
-            .ToList();
+        return AvaliarCompostas(ativas);
     }
 
     public async Task<(double TotalHpReduction, IReadOnlyList<string> Descricoes)>
@@ -38,8 +35,7 @@ public sealed class TorreFlagService(IAndarFlagProgressoRepository repo)
             return (0, []);
 
         var ativas = (await repo.ObterFlagsGeradasAsync(userId)).ToHashSet();
-        var compostas = await ObterFlagsCompostasAtivasAsync(userId);
-        foreach (var c in compostas) ativas.Add(c);
+        foreach (var c in AvaliarCompostas(ativas)) ativas.Add(c);
 
         var aplicados = andarDef.ModificadoresBoss
             .Where(m => ativas.Contains(m.FlagNome))
@@ -49,4 +45,10 @@ public sealed class TorreFlagService(IAndarFlagProgressoRepository repo)
         var descricoes = aplicados.Select(m => m.EfeitoDescricao).ToList();
         return (totalReduction, descricoes);
     }
+
+    private static IReadOnlyList<string> AvaliarCompostas(HashSet<string> ativas) =>
+        TorreArcoConfig.FlagsCompostas
+            .Where(fc => fc.ComponentesNecessarios.All(c => ativas.Contains(c)))
+            .Select(fc => fc.NomeComposta)
+            .ToList();
 }
