@@ -90,6 +90,8 @@ class Program
             .AddScoped<IContratoRepository, ContratoRepository>()
             .AddScoped<IHeroiDesbloqueadoRepository, HeroiDesbloqueadoRepository>()
             .AddScoped<IHeroiConfigRepository, HeroiConfigRepository>()
+            .AddScoped<IAndarFlagProgressoRepository>(sp =>
+                new AndarFlagProgressoRepository(configuration.GetConnectionString("DefaultConnection")!))
 
             // Serviços de aplicação
             .AddScoped<HeroiLevelUpService>()
@@ -115,6 +117,7 @@ class Program
             .AddScoped<RecruitmentService>()
             .AddScoped<RewardDistributionService>()
             .AddScoped<TorreExploracaoService>()
+            .AddScoped<TorreFlagService>()
             .AddScoped<RecursoService>()
             .AddScoped<JogadorItemService>()
             .AddScoped<HeroiDataLoader>()

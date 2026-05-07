@@ -22,6 +22,7 @@ namespace LegendsAwaken.Application.Services
         private readonly ICidadeBoosterRepository _cidadeBoosterRepo;
         private readonly IRecursoEstoqueRepository _recursoEstoqueRepo;
         private readonly IJogadorItemRepository _jogadorItemRepo;
+        private readonly IAndarFlagProgressoRepository _andarFlagProgressoRepo;
         private readonly ILogger<GeracaoDeDadosService> _logger;
 
         /// <summary>
@@ -39,6 +40,7 @@ namespace LegendsAwaken.Application.Services
             ICidadeBoosterRepository cidadeBoosterRepo,
             IRecursoEstoqueRepository recursoEstoqueRepo,
             IJogadorItemRepository jogadorItemRepo,
+            IAndarFlagProgressoRepository andarFlagProgressoRepo,
             ILogger<GeracaoDeDadosService> logger)
         {
             _db = db;
@@ -48,6 +50,7 @@ namespace LegendsAwaken.Application.Services
             _cidadeBoosterRepo   = cidadeBoosterRepo;
             _recursoEstoqueRepo  = recursoEstoqueRepo;
             _jogadorItemRepo     = jogadorItemRepo;
+            _andarFlagProgressoRepo = andarFlagProgressoRepo;
             _logger              = logger;
             var connection = _db.Database.GetDbConnection();
             var path = new SqliteConnectionStringBuilder(connection.ConnectionString).DataSource;
@@ -72,6 +75,7 @@ namespace LegendsAwaken.Application.Services
             await _cidadeBoosterRepo.EnsureTablesAsync();
             await _recursoEstoqueRepo.EnsureTableAsync();
             await _jogadorItemRepo.EnsureTableAsync();
+            await _andarFlagProgressoRepo.EnsureTableAsync();
             await ListarTabelasAsync();
         }
 
