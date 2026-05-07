@@ -6,6 +6,26 @@ O formato segue o padrão [Keep a Changelog](https://keepachangelog.com/pt-BR/1.
 
 ---
 
+## [3.8.0] - 2026-05-07 · Fase 3B-TorreArcos — Torre: Arcos Narrativos
+
+### Adicionado
+
+- `TorreArcoConfig` — config estático com 3 arcos (Andares 1–15): records `ArcoDefinicao`, `AndarArcoDefinicao`, `ObjetivoDefinicao`, `ColecionavelDefinicao`, `BossModificador`, `FlagCompostaDefinicao`; 4 flags compostas; helpers `ObterArcoPorAndar`, `ObterAndar`, `EBossFloor`
+- `AndarFlagProgresso` entity + `AndarFlagProgressoRepository` — raw SQLite com PK `(UsuarioId, Andar, FlagNome)`; UPSERT idempotente via `ON CONFLICT DO UPDATE SET Gerada=1 WHERE Gerada=0`; tabela criada no startup por `GeracaoDeDadosService`
+- `TorreFlagService` — geração de flags por andar (primárias sempre; secundária com 65% de probabilidade), avaliação e persistência de compostas, `ObterModificadoresBossAsync` com cap de 50% HP reduction
+- `TorrePanel` — bloco narrativo de arco (nome + texto) e flags ativas do arco como parâmetros opcionais em `CriarEmbed`
+- `TorreExploracaoPanel.CriarConfirmacao` — objetivo secundário (`AndarArcoDefinicao?`) exibido na confirmação de exploração com nota "será tentado automaticamente"
+- Boss modifiers — `TorreExploracaoService.IniciarAsync` aplica HP reduction percentual com base em flags acumuladas no arco antes de iniciar combate (cap 50%); idempotência garantida pelo guard de duplo início existente
+- Testes: `TorreArcoConfigTests` (4 testes — cobertura andares 1–15, boss floors, arco lookup, `EBossFloor`) + `TorreFlagServiceTests` (6 testes — geração de flags, compostas, expiração de secundária, modificadores de boss); **76 testes passando, 0 falhas**
+
+### Alterado
+
+- `TorreExploracaoService.ColetarAsync` — tipo de retorno alterado para `(TorreExploracao?, FlagsColetaResult)` com `FlagsGeradas`, `FlagsExpiradas`, `FlagsCompostas` do andar concluído
+- `TorreCommand` — exibe seções de flags no embed de resultado de coleta; passa `AndarArcoDefinicao` e flags ativas para `TorrePanel`/`TorreExploracaoPanel`
+- `CommandHandler` + `Program.cs` — `TorreFlagService` e `IAndarFlagProgressoRepository` registrados como Scoped; `CommandHandler` recebe `_torreFlagService`
+
+---
+
 ## [3.7.0] - 2026-05-06 · Fase Q — Fundações de Qualidade
 
 ### Adicionado

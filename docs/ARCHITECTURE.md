@@ -48,6 +48,8 @@ O fluxo de dependência respeita o Princípio de Inversão de Dependência: inte
 - **`Random.Shared` em toda a codebase:** thread-safe para chamadas Discord concorrentes sem instâncias por-request.
 - **Token do bot via variável de ambiente `LEGENDSAWAKEN_TOKEN`:** segredo nunca em appsettings.
 - **`TorreOperacaoConfig` como config estática imutável:** duração, produção por tier e capacidade de slots centralizados; nenhum número mágico no sistema de operação.
+- **`TorreArcoConfig` estende o padrão de config estática:** 3 arcos (Andares 1–15) com flags simples/compostas, objetivos e modificadores de boss em records imutáveis; `AndarFlagProgresso` rastreado em raw SQLite com PK composta `(UsuarioId, Andar, FlagNome)` — deliberadamente fora do EF Core DbContext, seguindo o padrão de `TorreExploracaoRepository`.
+- **Objetivo secundário da Torre sempre tentado automaticamente (65% base):** elimina botão de escolha no bot Discord; simplifica fluxo async sem perda de agência narrativa.
 - **`ResourceNodeConfig.Icone(string)` como método único:** elimina switches duplicados de ícone de recurso em múltiplos painéis.
 - **Sistema de descoberta de heróis no Bioma:** heróis secundários ficam ocultos até o primeiro fragmento coletado — progressão por estado, não por query condicional.
 - **Grant de ascensão catch-up:** ao ascender, o herói recebe exatamente os pontos que faltam para equiparar a um nativo da nova raridade no mesmo nível — consistência matemática garantida.

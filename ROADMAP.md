@@ -85,6 +85,23 @@ Visão macro de fases. Tarefas granulares pendentes estão no `BACKLOG.md`.
 
 ---
 
+## Fase 3B-TorreArcos — Torre: Arcos Narrativos ✅ concluída
+**Objetivo:** Implementar o sistema de arcos no loop de exploração da Torre — config estática dos 3 arcos desenhados, rastreamento de flags por jogador, modificadores de boss baseados em flags acumuladas, e UX narrativa no Discord.
+
+Design completo em `DESIGN_TORRE_ARCOS.md`. Plano de implementação em `docs/superpowers/plans/2026-05-06-torre-arcos-implementacao.md`.
+
+- [x] `TorreArcoConfig` estático — 3 arcos × andares com objetivos, flags possíveis, colecionáveis, modificadores de boss
+- [x] `AndarFlagProgressoRepository` — raw SQLite; estado de flags (gerada/expirada) por jogador/andar
+- [x] `TorreFlagService` — gerar flags, avaliar compostas, calcular modificadores de boss
+- [x] `TorrePanel` — nome do arco atual + texto narrativo (Display Layer) + flags ativas do arco
+- [x] `TorreExploracaoPanel.CriarConfirmacao` — objetivo secundário visível na confirmação de exploração
+- [x] `TorreExploracaoService.ColetarAsync` — flags geradas/expiradas adicionadas ao resultado de cada andar
+- [x] Boss modifiers — HP reduction aplicado com base nas flags acumuladas ao chegar no andar boss
+
+**Sinal de saída:** Jogador vê narrativa do arco ao explorar; flags aparecem no resultado de coleta; boss floors têm HP reduzido pelas flags acumuladas no arco; flags compostas avaliadas corretamente entre andares.
+
+---
+
 ## Fase Q — Fundações de Qualidade ✅ concluída
 **Objetivo:** fechar a dívida técnica da 3A antes de construir a 3B sobre ela.
 
