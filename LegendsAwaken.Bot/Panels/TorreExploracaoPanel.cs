@@ -292,13 +292,14 @@ public static class TorreExploracaoPanel
     // ── Confirm exploration (no boosters) ────────────────────────────────────
 
     public static (Embed embed, MessageComponent comps) CriarConfirmacao(
-        int andar, double winChance, string partyNome, List<string> heroisNomes, string partyId)
+        int andar, double winChance, string partyNome, List<string> heroisNomes, string partyId,
+        AndarArcoDefinicao? andarArco = null)
     {
         var pct       = (int)(winChance * 100);
         var descricao = HeroPowerScoreService.DescricaoWinChance(winChance);
         var heroList  = string.Join(", ", heroisNomes);
 
-        var embed = new EmbedBuilder()
+        var builder = new EmbedBuilder()
             .WithTitle($"⚔️ Confirmar Exploração — Andar {andar}")
             .WithColor(Color.Gold)
             .WithDescription(
@@ -307,8 +308,16 @@ public static class TorreExploracaoPanel
                 $"Chance de vitória: **{pct}%** ({descricao})\n\n" +
                 $"Loot garantido apenas em checkpoints (a cada **25%** de progresso).\n" +
                 $"Em caso de derrota, heróis ficam feridos até você coletar.")
-            .WithFooter("A exploração avança enquanto você usa outros comandos")
-            .Build();
+            .WithFooter("A exploração avança enquanto você usa outros comandos");
+
+        if (andarArco?.NarrativaDisplay is { } narrativa)
+            builder.AddField("📖 Situação", narrativa);
+
+        if (andarArco?.ObjetivoSecundario is { } sec)
+            builder.AddField("🎯 Objetivo Secundário",
+                $"{sec.Descricao}\n*Seu grupo tentará automaticamente.*\n*Efeito se bem-sucedido: {sec.EfeitoDescricao}*");
+
+        var embed = builder.Build();
 
         var comps = new ComponentBuilder()
             .WithButton("✅ Explorar", $"torre_explorar_confirmar|nenhum|{partyId}", ButtonStyle.Success)

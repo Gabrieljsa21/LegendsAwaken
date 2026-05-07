@@ -572,6 +572,8 @@ public class TorreCommand(
         Embed panelEmbed;
         MessageComponent panelComps;
 
+        var andarDef = TorreArcoConfig.ObterAndar(andar.Numero);
+
         if (boosters.Any(b => b.Quantidade > 0))
         {
             (panelEmbed, panelComps) = TorreExploracaoPanel.CriarSeletorBooster(
@@ -584,7 +586,8 @@ public class TorreCommand(
                 andar.Numero, winChance,
                 party.Nome,
                 heroisList.Select(h => h.Nome).ToList(),
-                party.Id.ToString());
+                party.Id.ToString(),
+                andarDef);
         }
 
         if (isUpdate)
