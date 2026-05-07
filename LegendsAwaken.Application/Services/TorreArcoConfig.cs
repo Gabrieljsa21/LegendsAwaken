@@ -217,6 +217,9 @@ public static class TorreArcoConfig
     public static AndarArcoDefinicao? ObterAndar(int andar) =>
         ObterArcoPorAndar(andar)?.Andares.FirstOrDefault(a => a.Numero == andar);
 
-    public static bool EBossFloor(int andar) =>
-        ObterAndar(andar)?.ModificadoresBoss.Count > 0;
+    public static bool EBossFloor(int andar)
+    {
+        var def = ObterAndar(andar);
+        return def is not null && def.ModificadoresBoss.Count > 0;
+    }
 }
