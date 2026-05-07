@@ -495,7 +495,7 @@ public class TorreCommand(
         Log($"ExpColetar — user={comp.User.Username}");
 
         var usuarioId = DiscordIdHelper.ToGuid(comp.User.Id);
-        var exp = await exploracaoService.ColetarAsync(usuarioId, comp.User.Id);
+        var (exp, flagsResult) = await exploracaoService.ColetarAsync(usuarioId, comp.User.Id);
 
         if (exp == null)
         {
@@ -511,6 +511,18 @@ public class TorreCommand(
             sb.AppendLine($"💎 Fragmentos: +**{exp.LootFragmentosQtd}**");
         if (exp.LootOuro == 0 && exp.LootFragmentosQtd == 0)
             sb.AppendLine("*Nenhum loot nesta tentativa.*");
+
+        if (flagsResult.FlagsGeradas.Count > 0)
+            sb.AppendLine("\n🏴 **Flags Geradas**\n" +
+                string.Join("\n", flagsResult.FlagsGeradas.Select(f => $"✅ `{f}`")));
+
+        if (flagsResult.FlagsCompostas.Count > 0)
+            sb.AppendLine("\n🌟 **Flag Composta!**\n" +
+                string.Join("\n", flagsResult.FlagsCompostas.Select(f => $"⭐ `{f}`")));
+
+        if (flagsResult.FlagsExpiradas.Count > 0)
+            sb.AppendLine("\n⏰ **Objetivo Expirado**\n" +
+                string.Join("\n", flagsResult.FlagsExpiradas.Select(f => $"❌ `{f}`")));
 
         await comp.UpdateAsync(m => { m.Content = sb.ToString().TrimEnd(); m.Embed = null; m.Components = new ComponentBuilder().Build(); });
     }

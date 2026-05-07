@@ -8,6 +8,11 @@ using System.Threading.Tasks;
 
 namespace LegendsAwaken.Application.Services;
 
+public record FlagsColetaResult(
+    IReadOnlyList<string> FlagsGeradas,
+    IReadOnlyList<string> FlagsExpiradas,
+    IReadOnlyList<string> FlagsCompostas);
+
 public class TorreExploracaoService
 {
     private readonly ITorreExploracaoRepository _exploracaoRepo;
@@ -20,6 +25,7 @@ public class TorreExploracaoService
     private readonly BiomeService _biomeService;
     private readonly RecruitmentService _recruitmentService;
     private readonly RewardDistributionService _rewardService;
+    private readonly TorreFlagService _flagService;
 
     public TorreExploracaoService(
         ITorreExploracaoRepository exploracaoRepo,
@@ -31,7 +37,8 @@ public class TorreExploracaoService
         HeroiLevelUpService levelUpService,
         BiomeService biomeService,
         RecruitmentService recruitmentService,
-        RewardDistributionService rewardService)
+        RewardDistributionService rewardService,
+        TorreFlagService flagService)
     {
         _exploracaoRepo   = exploracaoRepo;
         _boosterRepo      = boosterRepo;
@@ -43,6 +50,7 @@ public class TorreExploracaoService
         _biomeService     = biomeService;
         _recruitmentService = recruitmentService;
         _rewardService    = rewardService;
+        _flagService      = flagService;
     }
 
     // ── Tick ─────────────────────────────────────────────────────────────────
@@ -281,11 +289,12 @@ public class TorreExploracaoService
     /// <summary>
     /// Collects loot from a concluded or failed exploration.
     /// Requires the Discord user ID to look up the cidade via the EF repository.
+    /// Returns the exploration entity and a flags result (only populated on success).
     /// </summary>
-    public async Task<TorreExploracao?> ColetarAsync(Guid usuarioId, ulong discordId)
+    public async Task<(TorreExploracao? Exploracao, FlagsColetaResult Flags)> ColetarAsync(Guid usuarioId, ulong discordId)
     {
         var exploracao = await _exploracaoRepo.ObterPendenteAsync(usuarioId);
-        if (exploracao == null) return null;
+        if (exploracao == null) return (null, new FlagsColetaResult([], [], []));
 
         // Credit ouro to cidade
         if (exploracao.LootOuro > 0)
@@ -298,9 +307,61 @@ public class TorreExploracaoService
             }
         }
 
+        // Capture the status before marking as collected, to drive flag processing.
+        bool foiSucesso = exploracao.Status == StatusExploracao.Concluida;
+
         exploracao.Status = StatusExploracao.Coletada;
         await _exploracaoRepo.AtualizarAsync(exploracao);
-        return exploracao;
+
+        // --- Processamento de flags de arco (apenas no caminho de sucesso) ---
+        FlagsColetaResult flagsResult = new([], [], []);
+        if (foiSucesso)
+            flagsResult = await ProcessarFlagsAsync(usuarioId, exploracao.AndarNumero);
+
+        return (exploracao, flagsResult);
+    }
+
+    private async Task<FlagsColetaResult> ProcessarFlagsAsync(Guid userId, int andar)
+    {
+        var andarDef = TorreArcoConfig.ObterAndar(andar);
+        var flagsGeradas = new List<string>();
+        var flagsExpiradas = new List<string>();
+
+        if (andarDef is not null)
+        {
+            // Objetivo secundário: 65% de chance de sucesso
+            if (andarDef.ObjetivoSecundario is { } sec)
+            {
+                if (Random.Shared.NextDouble() < 0.65)
+                {
+                    await _flagService.GerarFlagAsync(userId, andar, sec.FlagNome);
+                    flagsGeradas.Add(sec.FlagNome);
+                }
+                else
+                {
+                    await _flagService.MarcarSecundarioExpiradoAsync(userId, andar);
+                    flagsExpiradas.Add(sec.FlagNome);
+                }
+            }
+
+            // Flags adicionais do andar (primárias — sempre em sucesso, exceto a do secundário)
+            foreach (var flag in andarDef.FlagsGeradasPossiveis
+                .Where(f => andarDef.ObjetivoSecundario is null || f != andarDef.ObjetivoSecundario.FlagNome))
+            {
+                await _flagService.GerarFlagAsync(userId, andar, flag);
+                flagsGeradas.Add(flag);
+            }
+        }
+
+        // Avaliar compostas
+        var compostas = await _flagService.ObterFlagsCompostasAtivasAsync(userId);
+        var novasCompostas = compostas
+            .Where(c => !flagsGeradas.Contains(c))
+            .ToList();
+        foreach (var comp in novasCompostas)
+            await _flagService.GerarFlagAsync(userId, andar, comp);
+
+        return new FlagsColetaResult(flagsGeradas, flagsExpiradas, novasCompostas);
     }
 
     // ── Cancel ────────────────────────────────────────────────────────────────
