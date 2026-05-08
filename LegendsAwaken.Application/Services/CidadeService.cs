@@ -291,6 +291,20 @@ namespace LegendsAwaken.Application.Services
                 }
             }
 
+            // ── Net food: consumption reduces what was produced ───────────────
+            // Instead of a periodic background deduction, food consumed by active
+            // heroes is subtracted here at collection time.
+            var heroisAtivos = herois.Count(h => h.EstadoSustento != Domain.Enum.EstadoSustento.Inativo);
+            int consumoTotal = (int)(heroisAtivos * horasDecorridas);
+            if (consumoTotal > 0)
+            {
+                // Take from this collection's production first, then from existing storage
+                int deducao = Math.Min(consumoTotal, cidade.Recursos.Comida);
+                if (deducao > 0) cidade.Recursos.Adicionar(-deducao, "comida");
+                int reducaoProducao = Math.Min(consumoTotal, produzido.Comida);
+                if (reducaoProducao > 0) produzido.Adicionar(-reducaoProducao, "comida");
+            }
+
             cidade.UltimaColeta = agora;
             await _cidadeRepository.AtualizarAsync(cidade);
 

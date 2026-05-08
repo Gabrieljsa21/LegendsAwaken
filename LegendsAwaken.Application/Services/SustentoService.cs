@@ -18,24 +18,8 @@ public class SustentoService(IHeroiRepository heroiRepo, ICidadeRepository cidad
         var herois = await heroiRepo.ObterPorUsuarioIdAsync(usuarioId);
         var candidatos = herois.Where(h => h.EstadoSustento != EstadoSustento.Inativo).ToList();
 
-        var agora = DateTime.UtcNow;
-        var horas = Math.Min((agora - cidade.UltimoSustentoEm).TotalHours, 24.0);
-
-        if (horas >= 0.1 && candidatos.Count > 0)
-        {
-            int consumo = (int)(candidatos.Count * horas);
-            cidade.Recursos.Comida = Math.Max(0, cidade.Recursos.Comida - consumo);
-            cidade.UltimoSustentoEm = agora;
-            await cidadeRepo.AtualizarAsync(cidade);
-        }
-        else if (horas >= 0.1)
-        {
-            cidade.UltimoSustentoEm = agora;
-            await cidadeRepo.AtualizarAsync(cidade);
-        }
-
-        var consumoPorHora = candidatos.Count;
-        var novoEstado = ComputarEstado(cidade.Recursos.Comida, consumoPorHora);
+        var netRate = CalcularNetRate(cidade, candidatos);
+        var novoEstado = ComputarEstado(cidade.Recursos.Comida, candidatos.Count, netRate);
 
         foreach (var h in candidatos.Where(h => h.EstadoSustento != novoEstado))
         {
@@ -57,18 +41,45 @@ public class SustentoService(IHeroiRepository heroiRepo, ICidadeRepository cidad
     public static (int consumoPorHora, double horasRestantes, EstadoSustento estado) ObterResumo(
         Cidade cidade, IList<Heroi> herois)
     {
-        var ativos = herois.Count(h => h.EstadoSustento != EstadoSustento.Inativo);
-        if (ativos == 0)
+        var ativos = herois.Where(h => h.EstadoSustento != EstadoSustento.Inativo).ToList();
+        if (ativos.Count == 0)
             return (0, double.MaxValue, EstadoSustento.Ativo);
 
-        var horasRestantes = (double)cidade.Recursos.Comida / ativos;
-        return (ativos, horasRestantes, ComputarEstado(cidade.Recursos.Comida, ativos));
+        double netRate = CalcularNetRate(cidade, ativos);
+        double horasRestantes = netRate >= 0
+            ? double.MaxValue
+            : cidade.Recursos.Comida / Math.Abs(netRate);
+
+        return (ativos.Count, horasRestantes, ComputarEstado(cidade.Recursos.Comida, ativos.Count, netRate));
     }
 
-    private static EstadoSustento ComputarEstado(int comida, int consumoPorHora)
+    // ── Helpers ──────────────────────────────────────────────────────────────
+
+    // Returns net food rate = production/h − consumption/h (consumption = 1 per active hero).
+    private static double CalcularNetRate(Cidade cidade, IList<Heroi> ativos)
+    {
+        double producao = 0;
+        if (!ResourceNodeConfig.BaseRates.TryGetValue(TipoResourceNode.Campo, out var campoRate))
+            return -ativos.Count;
+
+        foreach (var t in cidade.Trabalhadores.Where(t => t.ResourceNode == TipoResourceNode.Campo))
+        {
+            var h = ativos.FirstOrDefault(x => x.Id == t.HeroiId);
+            if (h == null) continue;
+            double bonus = h.Profissao.HasValue &&
+                ResourceNodeConfig.ProfissaoBonus.TryGetValue((TipoResourceNode.Campo, h.Profissao.Value), out var b)
+                ? b : 0.0;
+            producao += campoRate.basePorHora * (1.0 + bonus);
+        }
+
+        return producao - ativos.Count;
+    }
+
+    private static EstadoSustento ComputarEstado(int comida, int consumoPorHora, double netRate)
     {
         if (consumoPorHora == 0) return EstadoSustento.Ativo;
-        var horas = (double)comida / consumoPorHora;
+        if (netRate >= 0) return EstadoSustento.Ativo;
+        double horas = Math.Abs(netRate) > 0 ? (double)comida / Math.Abs(netRate) : 0;
         return horas switch
         {
             >= 8.0 => EstadoSustento.Ativo,

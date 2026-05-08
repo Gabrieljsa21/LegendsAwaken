@@ -353,9 +353,18 @@ public class TorreCommand(
 
         if (!partiesValidas.Any())
         {
-            await comp.FollowupAsync(
-                "Você não tem grupos com heróis. Crie e configure um grupo com /grupo.",
-                ephemeral: true);
+            var semGruposEmbed = new EmbedBuilder()
+                .WithTitle("Nenhum grupo configurado")
+                .WithDescription(
+                    "Você precisa de um grupo para explorar a Torre.\n\n" +
+                    "Clique em **⭐ Criar Grupo Recomendado** para montar automaticamente " +
+                    "o melhor time com os heróis que você tem.")
+                .WithColor(Color.Orange)
+                .Build();
+            var semGruposBotoes = new ComponentBuilder()
+                .WithButton("⭐ Criar Grupo Recomendado", "grupos_recomendado", ButtonStyle.Primary)
+                .Build();
+            await comp.FollowupAsync(embed: semGruposEmbed, components: semGruposBotoes, ephemeral: true);
             return;
         }
 

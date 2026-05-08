@@ -80,7 +80,17 @@ namespace LegendsAwaken.Domain.Entities
                 }
             }
 
-            return AtributosBase + AtributosDistribuidos + totalBonus + bonusExterno;
+            var resultado = AtributosBase + AtributosDistribuidos + totalBonus + bonusExterno;
+
+            if (EstadoSustento == EstadoSustento.Degradado)
+            {
+                var penalizado = new AtributosBase();
+                foreach (var attr in System.Enum.GetValues<Atributo>())
+                    penalizado.Set(attr, (int)(resultado.Get(attr) * 0.75));
+                return penalizado;
+            }
+
+            return resultado;
         }
 
 

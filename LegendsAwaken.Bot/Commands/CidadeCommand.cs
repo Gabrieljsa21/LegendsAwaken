@@ -173,9 +173,8 @@ public class CidadeCommand(CidadeService cidadeService, HeroiService heroiServic
             }
 
             var icone = ResourceNodeConfig.Icone(rate.recurso);
-            var profStr      = bonus > 0 ? $" +{bonus * 100:F0}%" : "";
-            var totalComHeroi = totalAtual + taxaHeroi;
-            var label        = $"{node}: Produção Atual {totalComHeroi:F1} {icone}/h (+{taxaHeroi:F1}/h{profStr})";
+            var profStr = bonus > 0 ? $" +{bonus * 100:F0}%" : "";
+            var label   = $"{node}: Produção Atual {totalAtual:F1} {icone}/h (+{taxaHeroi:F1}/h{profStr})";
             select.AddOption(label.Length > 100 ? label[..97] + "…" : label, node.ToString());
         }
 

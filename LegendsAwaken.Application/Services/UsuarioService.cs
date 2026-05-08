@@ -80,7 +80,7 @@ public class UsuarioService(
                 var novo = await heroiService.CriarHeroiAsync(
                     discordId,
                     config.Nome,
-                    config.RaridadeBase,
+                    Raridade.Estrela1,
                     RacaDeTag(config.Tag),
                     "",
                     [],

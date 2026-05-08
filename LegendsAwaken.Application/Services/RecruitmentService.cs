@@ -89,7 +89,7 @@ public class RecruitmentService(
             await heroiService.CriarHeroiAsync(
                 discordId,
                 heroi.Nome,
-                heroi.RaridadeBase,
+                Raridade.Estrela1,
                 UsuarioService.RacaDeTag(heroi.Tag),
                 "",
                 [],
