@@ -50,10 +50,11 @@ namespace LegendsAwaken.Infrastructure
         public DbSet<Contrato> Contratos => Set<Contrato>();
         public DbSet<HeroiDesbloqueado> HeroisDesbloqueados => Set<HeroiDesbloqueado>();
 
-        // Torre checkpoint event system
-        public DbSet<TorreEvento> TorreEventos { get; set; }
-        public DbSet<TorreEventoLog> TorreEventoLogs { get; set; }
-        public DbSet<UsuarioNotificacao> UsuariosNotificacao { get; set; }
+        // Torre exploration + checkpoint event system
+        public DbSet<TorreExploracao> TorreExploracoes => Set<TorreExploracao>();
+        public DbSet<TorreEvento> TorreEventos => Set<TorreEvento>();
+        public DbSet<TorreEventoLog> TorreEventoLogs => Set<TorreEventoLog>();
+        public DbSet<UsuarioNotificacao> UsuariosNotificacao => Set<UsuarioNotificacao>();
 
 
 
