@@ -25,6 +25,8 @@ public record TestePericiaEvento(
 
 public static class SkillCheckService
 {
+    private static readonly AtributosBase _emptyBonus = new();
+
     public static (bool Success, int Total) Rolar(
         Heroi heroi,
         Pericia pericia,
@@ -54,6 +56,7 @@ public static class SkillCheckService
             .OrderByDescending(x => x)
             .ToList();
 
+        // Aggregate uses top-3 contributors; additional heroes are intentionally excluded.
         double scoreAgregado = boni.Count switch
         {
             1 => boni[0],
@@ -101,7 +104,7 @@ public static class SkillCheckService
     private static int ObterBonusSkill(Heroi heroi, Pericia pericia, IEnumerable<HeroiPericia> pericias)
     {
         var atributo = AtributoDePericia(pericia);
-        var totais   = heroi.ObterAtributosTotais(new AtributosBase());
+        var totais   = heroi.ObterAtributosTotais(_emptyBonus);
         int mod      = (int)Math.Floor((totais.Get(atributo) - 10.0) / 2.0);
 
         var hp       = pericias.FirstOrDefault(p => p.HeroiId == heroi.Id && p.Pericia == pericia);

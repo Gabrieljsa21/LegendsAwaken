@@ -9,6 +9,7 @@ public class SkillCheckServiceTests
     // ── BonusProficiencia ─────────────────────────────────────────────────────
 
     [Theory]
+    [InlineData(0,  2)]   // level 0 treated as tier 1
     [InlineData(1,  2)]
     [InlineData(4,  2)]
     [InlineData(5,  3)]
