@@ -14,43 +14,17 @@ namespace LegendsAwaken.Application.Services
         public AtributosBase ObterBonus(List<HeroiHabilidade> habilidadesHeroi)
         {
             var totalBonus = new AtributosBase();
-
-            if (habilidadesHeroi == null)
-                return totalBonus;
+            if (habilidadesHeroi == null) return totalBonus;
 
             foreach (var heroHabilidade in habilidadesHeroi)
             {
-                if (heroHabilidade.Habilidade?.HabilidadeBonusAtributos == null)
-                    continue;
-
+                if (heroHabilidade.Habilidade?.HabilidadeBonusAtributos == null) continue;
                 foreach (var b in heroHabilidade.Habilidade.HabilidadeBonusAtributos)
                 {
-                    if (b.BonusTipo != BonusTipo.Atributo)
-                        continue;
-
-                    int valorComNivel = b.BonusValor * heroHabilidade.Nivel;
-
-                    switch (b.Atributo)
-                    {
-                        case Atributo.Forca:
-                            totalBonus.Forca += valorComNivel;
-                            break;
-                        case Atributo.Destreza:
-                            totalBonus.Destreza += valorComNivel;
-                            break;
-                        case Atributo.Constituicao:
-                            totalBonus.Constituicao += valorComNivel;
-                            break;
-                        case Atributo.Inteligencia:
-                            totalBonus.Inteligencia += valorComNivel;
-                            break;
-                        case Atributo.Sabedoria:
-                            totalBonus.Sabedoria += valorComNivel;
-                            break;
-                    }
+                    if (b.BonusTipo != BonusTipo.Atributo) continue;
+                    totalBonus.AdicionarPorTipo(b.Atributo, b.BonusValor * heroHabilidade.Nivel);
                 }
             }
-
             return totalBonus;
         }
 

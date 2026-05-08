@@ -1,26 +1,24 @@
-﻿using LegendsAwaken.Domain.Entities;
+using LegendsAwaken.Domain.Entities;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace LegendsAwaken.Domain.Extensions
 {
     public static class StatusCombateExtensions
     {
-        /// <summary>
-        /// Constrói um StatusCombate usando as fórmulas:
-        /// VidaMaxima = Vitalidade * 10
-        /// ManaMaxima = Inteligencia * 5
-        /// </summary>
-        public static StatusCombate FromAtributos(this AtributosBase atr)
-            => new StatusCombate
+        // HP = 8 (default base) + nivel + MOD_CON (floor((CON-10)/2))
+        // For heroes, CriarHeroiAsync overrides VidaMaxima using ProfissaoConfig.BaseHpPorProfissao.
+        public static StatusCombate FromAtributos(this AtributosBase atr, int nivel = 1)
+        {
+            int modCon = (int)Math.Floor((atr.Constituicao - 10.0) / 2.0);
+            int hp = 8 + nivel + modCon;
+            if (hp < 1) hp = 1;
+            return new StatusCombate
             {
-                VidaMaxima = atr.Constituicao * 10,
-                VidaAtual = atr.Constituicao * 10,
+                VidaMaxima = hp,
+                VidaAtual  = hp,
                 ManaMaxima = atr.Inteligencia * 5,
-                ManaAtual = atr.Inteligencia * 5
+                ManaAtual  = atr.Inteligencia * 5
             };
+        }
     }
 }

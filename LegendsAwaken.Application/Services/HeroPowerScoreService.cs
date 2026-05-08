@@ -52,10 +52,11 @@ public static class HeroPowerScoreService
 
         double baseStats =
             (totais.Forca        * 1.2) +
-            (totais.Destreza    * 1.0) +
+            (totais.Destreza     * 1.0) +
             (totais.Inteligencia * 1.1) +
-            (totais.Constituicao   * 0.9) +
-            (totais.Sabedoria    * 1.0);
+            (totais.Constituicao * 0.9) +
+            (totais.Sabedoria    * 1.0) +
+            (totais.Carisma      * 0.8);
 
         double levelFactor = 1.0 + Math.Pow(heroi.Nivel, 1.25) / 100.0;
 

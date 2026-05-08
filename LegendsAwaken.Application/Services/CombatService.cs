@@ -1,5 +1,6 @@
 using LegendsAwaken.Domain.Entities;
 using LegendsAwaken.Domain.Entities.Combate;
+using LegendsAwaken.Domain.Enum;
 using LegendsAwaken.Domain.Extensions;
 using System;
 using System.Collections.Generic;
@@ -14,7 +15,7 @@ namespace LegendsAwaken.Application.Services
         // ── Constantes da fórmula (GDD §5.0 / DESIGN_SISTEMAS §3) ─────────────
         private const double BurstCapFactor = 0.65;   // hit único ≤ 65% do HP máximo
         private const double CritMultiplier = 1.50;
-        private const double BaseCritChance = 0.05;   // 5% base; +0.1% por ponto de Percepcao
+        private const double BaseCritChance = 0.05;   // 5% base; +1% per WIS modifier (MOD_WIS)
 
         // ── Iniciar combate ────────────────────────────────────────────────────
 
@@ -22,15 +23,30 @@ namespace LegendsAwaken.Application.Services
         {
             var encounter = new CombatEncounter();
 
-            encounter.Aliados = herois.Select(h => new Combatente
+            // Leadership: hero with highest CHA adds MOD_CHA×1% to all party effective attrs
+            double liderancaMult = 1.0;
+            if (herois.Count > 0)
             {
-                Id         = h.Id,
-                Nome       = h.Nome,
-                Nivel      = h.Nivel,
-                Atributos  = h.ObterAtributosTotais(new AtributosBase()),
-                Status     = h.Status,
-                Habilidades = h.Habilidades,
-                IsHeroi    = true
+                int maxCha = herois.Max(h => h.ObterAtributosTotais(new AtributosBase()).Carisma);
+                int modCha = (int)Math.Floor((maxCha - 10.0) / 2.0);
+                if (modCha > 0) liderancaMult = 1.0 + modCha * 0.01;
+            }
+
+            encounter.Aliados = herois.Select(h => {
+                var totais = h.ObterAtributosTotais(new AtributosBase());
+                var withLeadership = new AtributosBase();
+                foreach (var attr in System.Enum.GetValues<Atributo>())
+                    withLeadership.Set(attr, (int)(totais.Get(attr) * liderancaMult));
+                return new Combatente
+                {
+                    Id          = h.Id,
+                    Nome        = h.Nome,
+                    Nivel       = h.Nivel,
+                    Atributos   = withLeadership,
+                    Status      = h.Status,
+                    Habilidades = h.Habilidades,
+                    IsHeroi     = true
+                };
             }).ToList();
 
             encounter.Inimigos = inimigos.Select(i => new Combatente
@@ -95,8 +111,9 @@ namespace LegendsAwaken.Application.Services
             double mitigacao = defesa / (defesa + k);
             double danoBase  = ataque * skillMult * (1.0 - mitigacao) * typeMult;
 
-            // Crit
-            double critChance = BaseCritChance + atk.Atributos.Sabedoria * 0.001;
+            // Crit — use WIS modifier (+1% per modifier point, clamped to 0 minimum)
+            int modWis = (int)Math.Floor((atk.Atributos.Sabedoria - 10.0) / 2.0);
+            double critChance = Math.Max(0, BaseCritChance + modWis * 0.01);
             if (_random.NextDouble() < critChance)
                 danoBase *= CritMultiplier;
 
