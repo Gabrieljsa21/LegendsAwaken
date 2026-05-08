@@ -58,6 +58,9 @@ public class TorreEventoService(
         return evento;
     }
 
+    public Task<TorreEvento?> ObterEventoAtivoAsync(Guid exploracaoId) =>
+        eventoRepo.ObterAtivoAsync(exploracaoId);
+
     public async Task ResolverAsync(Guid eventoId, string opcaoKey, TorreExploracao exp)
     {
         // Step 1: fetch the active event first — never mutate exp before confirming it exists.

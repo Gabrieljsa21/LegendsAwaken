@@ -7,6 +7,7 @@ using System.IO;
 using LegendsAwaken.Bot;
 using LegendsAwaken.Bot.Commands;
 using LegendsAwaken.Bot.Interactions;
+using LegendsAwaken.Bot.Services;
 using LegendsAwaken.Domain.Interfaces;
 using LegendsAwaken.Infrastructure;
 using LegendsAwaken.Infrastructure.Repositories;
@@ -93,6 +94,8 @@ class Program
             .AddScoped<IHeroiPericiaRepository, HeroiPericiaRepository>()
             .AddScoped<IAndarFlagProgressoRepository>(sp =>
                 new AndarFlagProgressoRepository(configuration.GetConnectionString("DefaultConnection")!))
+            .AddScoped<ITorreEventoRepository, TorreEventoRepository>()
+            .AddScoped<IUsuarioNotificacaoRepository, UsuarioNotificacaoRepository>()
 
             // Serviços de aplicação
             .AddScoped<HeroiLevelUpService>()
@@ -119,6 +122,8 @@ class Program
             .AddScoped<RewardDistributionService>()
             .AddScoped<TorreExploracaoService>()
             .AddScoped<TorreFlagService>()
+            .AddScoped<TorreEventoService>()
+            .AddScoped<INotificacaoService, NotificacaoService>()
             .AddScoped<HeroiAtributosResetService>()
             .AddScoped<RecursoService>()
             .AddScoped<JogadorItemService>()
@@ -180,7 +185,8 @@ class Program
             services.GetRequiredService<JogadorItemService>(),
             services.GetRequiredService<R2ImageService>(),
             services.GetRequiredService<InteractionRouter>(),
-            services.GetRequiredService<TorreFlagService>()
+            services.GetRequiredService<TorreFlagService>(),
+            services.GetRequiredService<TorreEventoService>()
         );
 
         handler.Initialize();
@@ -205,6 +211,9 @@ class Program
         {
             var resetSvc = migScope.ServiceProvider.GetRequiredService<HeroiAtributosResetService>();
             await resetSvc.MigrarAsync();
+
+            var eventoService = migScope.ServiceProvider.GetRequiredService<TorreEventoService>();
+            await eventoService.RecuperarExpiradosAsync();
         }
 
         // Pre-warm the shared DbContext so the first slash command doesn't hit 3s timeout

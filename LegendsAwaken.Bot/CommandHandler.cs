@@ -54,6 +54,7 @@ namespace LegendsAwaken.Bot
         private readonly R2ImageService _r2ImageService;
         private readonly InteractionRouter _interactionRouter;
         private readonly TorreFlagService _torreFlagService;
+        private readonly TorreEventoService _torreEventoService;
 
         public CommandHandler(
             DiscordSocketClient client,
@@ -86,7 +87,8 @@ namespace LegendsAwaken.Bot
             JogadorItemService jogadorItemService,
             R2ImageService r2ImageService,
             InteractionRouter interactionRouter,
-            TorreFlagService torreFlagService)
+            TorreFlagService torreFlagService,
+            TorreEventoService torreEventoService)
         {
             _client = client;
             _logger = logger;
@@ -119,6 +121,7 @@ namespace LegendsAwaken.Bot
             _r2ImageService = r2ImageService;
             _interactionRouter = interactionRouter;
             _torreFlagService = torreFlagService;
+            _torreEventoService = torreEventoService;
         }
 
         public void Initialize()
@@ -182,7 +185,7 @@ namespace LegendsAwaken.Bot
 
                     case "torre":
                     case "subir_andar":
-                        await new TorreCommand(_torreService, _heroiService, _biomeService, _torreOperacaoService, _cidadeService, _torreExploracaoService, _partyService, _recursoService, _jogadorItemService, _torreFlagService, _logger).ExecutarAsync(command);
+                        await new TorreCommand(_torreService, _heroiService, _biomeService, _torreOperacaoService, _cidadeService, _torreExploracaoService, _partyService, _recursoService, _jogadorItemService, _torreFlagService, _torreEventoService, _logger).ExecutarAsync(command);
                         break;
 
                     case "herois":
@@ -412,6 +415,23 @@ namespace LegendsAwaken.Bot
                 return;
             }
 
+            // ————— Torre Evento Escolha (checkpoint decision buttons) —————
+            if (comp.Data.CustomId.StartsWith(LegendsAwaken.Bot.Helpers.CustomIdFactory.EventoEscolhaPrefix + ":"))
+            {
+                var eventoCmd = new TorreCommand(_torreService, _heroiService, _biomeService, _torreOperacaoService, _cidadeService, _torreExploracaoService, _partyService, _recursoService, _jogadorItemService, _torreFlagService, _torreEventoService, _logger);
+                try
+                {
+                    await eventoCmd.HandleEventoEscolhaAsync(comp);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "[TorreEvento] Exceção não tratada. CustomId={CustomId} User={User}",
+                        comp.Data.CustomId, comp.User.Username);
+                    try { await comp.FollowupAsync("❌ Erro interno. Tente novamente.", ephemeral: true); } catch { }
+                }
+                return;
+            }
+
             var parts = comp.Data.CustomId.Split('|');
 
             // ————— Inventário buttons/select menus —————
@@ -618,7 +638,7 @@ namespace LegendsAwaken.Bot
             // ————— Torre Modo Operação buttons/select menus —————
             if (parts[0] == "torre_modo_operacao" || parts[0].StartsWith("torre_op_"))
             {
-                var torreCmd = new TorreCommand(_torreService, _heroiService, _biomeService, _torreOperacaoService, _cidadeService, _torreExploracaoService, _partyService, _recursoService, _jogadorItemService, _torreFlagService, _logger);
+                var torreCmd = new TorreCommand(_torreService, _heroiService, _biomeService, _torreOperacaoService, _cidadeService, _torreExploracaoService, _partyService, _recursoService, _jogadorItemService, _torreFlagService, _torreEventoService, _logger);
                 try
                 {
                     if (parts[0] == "torre_modo_operacao")
@@ -654,7 +674,7 @@ namespace LegendsAwaken.Bot
             // ————— Torre buttons —————
             if (parts[0] == "torre_atualizar")
             {
-                await new TorreCommand(_torreService, _heroiService, _biomeService, _torreOperacaoService, _cidadeService, _torreExploracaoService, _partyService, _recursoService, _jogadorItemService, _torreFlagService, _logger).HandleAtualizarAsync(comp);
+                await new TorreCommand(_torreService, _heroiService, _biomeService, _torreOperacaoService, _cidadeService, _torreExploracaoService, _partyService, _recursoService, _jogadorItemService, _torreFlagService, _torreEventoService, _logger).HandleAtualizarAsync(comp);
                 return;
             }
 
@@ -662,7 +682,7 @@ namespace LegendsAwaken.Bot
             {
                 try
                 {
-                    await new TorreCommand(_torreService, _heroiService, _biomeService, _torreOperacaoService, _cidadeService, _torreExploracaoService, _partyService, _recursoService, _jogadorItemService, _torreFlagService, _logger).HandleAvancarAsync(comp);
+                    await new TorreCommand(_torreService, _heroiService, _biomeService, _torreOperacaoService, _cidadeService, _torreExploracaoService, _partyService, _recursoService, _jogadorItemService, _torreFlagService, _torreEventoService, _logger).HandleAvancarAsync(comp);
                 }
                 catch (Exception ex)
                 {
@@ -676,7 +696,7 @@ namespace LegendsAwaken.Bot
             if (parts[0] == "torre_investigar" || parts[0] == "torre_explorar" ||
                 parts[0] == "torre_explorar_confirmar" || parts[0].StartsWith("torre_exp_"))
             {
-                var expCmd = new TorreCommand(_torreService, _heroiService, _biomeService, _torreOperacaoService, _cidadeService, _torreExploracaoService, _partyService, _recursoService, _jogadorItemService, _torreFlagService, _logger);
+                var expCmd = new TorreCommand(_torreService, _heroiService, _biomeService, _torreOperacaoService, _cidadeService, _torreExploracaoService, _partyService, _recursoService, _jogadorItemService, _torreFlagService, _torreEventoService, _logger);
                 try
                 {
                     if (parts[0] == "torre_investigar")

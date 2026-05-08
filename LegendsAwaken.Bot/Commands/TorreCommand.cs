@@ -1,5 +1,6 @@
 using Discord;
 using Discord.WebSocket;
+using LegendsAwaken.Application.Config;
 using LegendsAwaken.Application.Services;
 using LegendsAwaken.Bot.Helpers;
 using LegendsAwaken.Bot.Panels;
@@ -25,6 +26,7 @@ public class TorreCommand(
     RecursoService recursoService,
     JogadorItemService itemService,
     TorreFlagService flagService,
+    TorreEventoService eventoService,
     ILogger? logger = null)
 {
     private void Log(string msg)                  => logger?.LogInformation("[Torre] {Msg}", msg);
@@ -39,6 +41,23 @@ public class TorreCommand(
 
         var usuarioId = DiscordIdHelper.ToGuid(command.User.Id);
         await exploracaoService.ProcessarAsync(usuarioId);
+
+        var exploracaoAtiva = await exploracaoService.ObterAtivaAsync(usuarioId);
+        if (exploracaoAtiva?.Status == StatusExploracao.AguardandoEscolha)
+        {
+            var eventoAtivo = await eventoService.ObterEventoAtivoAsync(exploracaoAtiva.Id);
+            if (eventoAtivo != null)
+            {
+                var eventoConfig = CheckpointEventoCatalog.Todos.FirstOrDefault(c => c.Key == eventoAtivo.EventoKey);
+                if (eventoConfig != null)
+                {
+                    var eventoEmbed = TorreEventoPanel.CriarEmbedEscolha(eventoAtivo, eventoConfig);
+                    var eventoComponents = TorreEventoPanel.CriarComponentesEscolha(eventoAtivo, eventoConfig);
+                    await command.ModifyOriginalResponseAsync(m => { m.Embed = eventoEmbed; m.Components = eventoComponents; });
+                    return;
+                }
+            }
+        }
 
         var (embed, comps) = await BuildPanelAsync(command.User.Id);
         await command.ModifyOriginalResponseAsync(m => { m.Embed = embed; m.Components = comps; });
@@ -551,6 +570,85 @@ public class TorreCommand(
     public async Task HandleExpCancelarSelAsync(SocketMessageComponent comp)
     {
         await comp.UpdateAsync(m => { m.Content = "Fechado."; m.Embed = null; m.Components = new ComponentBuilder().Build(); });
+    }
+
+    // ── Button: torre_evento_escolha ─────────────────────────────────────────
+
+    public async Task HandleEventoEscolhaAsync(SocketMessageComponent comp)
+    {
+        await comp.DeferAsync();
+
+        var parts = comp.Data.CustomId.Split(':', 3);
+        if (parts.Length < 3 || !Guid.TryParse(parts[1], out var eventoId))
+        {
+            await comp.FollowupAsync("Interação inválida.", ephemeral: true);
+            return;
+        }
+
+        var opcaoKey = parts[2];
+        var usuarioId = DiscordIdHelper.ToGuid(comp.User.Id);
+
+        var exploracaoAtiva = await exploracaoService.ObterAtivaAsync(usuarioId);
+        if (exploracaoAtiva == null)
+        {
+            await comp.FollowupAsync("Nenhuma exploração ativa.", ephemeral: true);
+            return;
+        }
+
+        if (exploracaoAtiva.DiscordUserId != comp.User.Id)
+        {
+            await comp.FollowupAsync("Você não pode responder este evento.", ephemeral: true);
+            return;
+        }
+
+        var eventoAtivo = await eventoService.ObterEventoAtivoAsync(exploracaoAtiva.Id);
+        if (eventoAtivo == null || eventoAtivo.Id != eventoId)
+        {
+            await comp.FollowupAsync("Evento não encontrado ou já resolvido.", ephemeral: true);
+            return;
+        }
+
+        var config = CheckpointEventoCatalog.Todos.FirstOrDefault(c => c.Key == eventoAtivo.EventoKey);
+        if (config == null)
+        {
+            await comp.FollowupAsync("Configuração do evento não encontrada.", ephemeral: true);
+            return;
+        }
+
+        try
+        {
+            await eventoService.ResolverAsync(eventoId, opcaoKey, exploracaoAtiva);
+        }
+        catch (ArgumentException ex)
+        {
+            await comp.FollowupAsync($"Opção inválida: {ex.Message}", ephemeral: true);
+            return;
+        }
+
+        // Deserialize progressoBonus from ResultadoJson if available
+        int progressoBonus = 0;
+        if (!string.IsNullOrEmpty(eventoAtivo.ResultadoJson))
+        {
+            try
+            {
+                using var doc = System.Text.Json.JsonDocument.Parse(eventoAtivo.ResultadoJson);
+                if (doc.RootElement.TryGetProperty("progressoBonus", out var pb))
+                    progressoBonus = pb.GetInt32();
+            }
+            catch { /* ignore parse errors */ }
+        }
+
+        var resultadoEmbed = TorreEventoPanel.CriarEmbedResultado(
+            eventoAtivo, config,
+            descricaoResultado: "Evento resolvido. A exploração continua.",
+            progressoBonus: progressoBonus);
+        var componentesDesabilitados = TorreEventoPanel.CriarComponentesDesabilitados(eventoAtivo, config);
+
+        await comp.ModifyOriginalResponseAsync(m =>
+        {
+            m.Embed = resultadoEmbed;
+            m.Components = componentesDesabilitados;
+        });
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
