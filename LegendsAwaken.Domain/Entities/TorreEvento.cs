@@ -5,7 +5,7 @@ namespace LegendsAwaken.Domain.Entities;
 
 public class TorreEvento
 {
-    public Guid Id { get; set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
     public Guid ExploracaoId { get; set; }
     public EventoStatus Status { get; set; }
     public TipoEvento Tipo { get; set; }
@@ -19,7 +19,7 @@ public class TorreEvento
     public string? OpcaoKey { get; set; }
     public string? ResultadoJson { get; set; }
     public string? SnapshotCombatStateJson { get; set; }
-    public DateTime CriadoEm { get; set; }
+    public DateTime CriadoEm { get; set; } = DateTime.UtcNow;
     public DateTime? ExpiraEm { get; set; }
     public DateTime? ResolvidoEm { get; set; }
     public DateTime? ProcessadoEm { get; set; }
