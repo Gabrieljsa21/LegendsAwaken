@@ -136,7 +136,59 @@ public class TorreEventoServiceTests
 
         await svc.ResolverAsync(evento.Id, "explorar", exp);
 
-        // Bônus de explorar trilha_oculta não pode levar Progresso >= 50
-        Assert.True(exp.Progresso < 50, $"Progresso foi para {exp.Progresso}, deveria ficar abaixo de 50");
+        // 25 + min(15, 50-25-1) = 25 + 15 = 40
+        Assert.Equal(40, exp.Progresso);
+    }
+
+    [Fact]
+    public async Task ResolverAsync_LancaInvalidOperation_SeNenhumEventoAtivo()
+    {
+        var svc = CreateService();
+        var exp = CriarExploracao();
+        _eventoRepo.Setup(r => r.ObterAtivoAsync(exp.Id)).ReturnsAsync((TorreEvento?)null);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            svc.ResolverAsync(Guid.NewGuid(), "pagar", exp));
+    }
+
+    [Fact]
+    public async Task ResolverMenorInlineAsync_GravaLog_EAtualizaExploracao()
+    {
+        var svc = CreateService();
+        var exp = CriarExploracao();
+        var config = CheckpointEventoCatalog.Todos
+            .First(c => c.Key == "chuva_de_fragmentos");
+
+        await svc.ResolverMenorInlineAsync(config, exp);
+
+        _eventoRepo.Verify(r => r.AdicionarLogAsync(It.IsAny<TorreEventoLog>()), Times.Once);
+        _exploracaoRepo.Verify(r => r.AtualizarAsync(exp), Times.Once);
+    }
+
+    [Fact]
+    public async Task RecuperarExpiradosAsync_MarcaEventoExpirado_ERestaurasExploracao()
+    {
+        var svc = CreateService();
+        var exp = CriarExploracao();
+        exp.Status = StatusExploracao.AguardandoEscolha;
+        var evento = new TorreEvento
+        {
+            Id = Guid.NewGuid(),
+            ExploracaoId = exp.Id,
+            Status = EventoStatus.Ativo,
+            EventoKey = "encruzilhada_mercador",
+            Tier = TierEvento.Maior,
+            ExpiraEm = DateTime.UtcNow.AddDays(-1),
+            Exploracao = exp
+        };
+        _eventoRepo.Setup(r => r.ObterExpiradosAsync(It.IsAny<DateTime>()))
+                   .ReturnsAsync(new System.Collections.Generic.List<TorreEvento> { evento });
+
+        await svc.RecuperarExpiradosAsync();
+
+        Assert.Equal(EventoStatus.Expirado, evento.Status);
+        Assert.Equal(StatusExploracao.Ativa, exp.Status);
+        _eventoRepo.Verify(r => r.AtualizarAsync(evento), Times.Once);
+        _exploracaoRepo.Verify(r => r.AtualizarAsync(exp), Times.Once);
     }
 }

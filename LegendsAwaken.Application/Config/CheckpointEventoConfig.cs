@@ -42,7 +42,7 @@ public static class CheckpointEventoCatalog
             Opcoes: new[]
             {
                 new OpcaoConfig("pagar",    "Pagar o preço",         RiscoTom.Seguro),
-                new OpcaoConfig("forccar",  "Forçar passagem",       RiscoTom.Arriscado),
+                new OpcaoConfig("forcar",   "Forçar passagem",       RiscoTom.Arriscado),
                 new OpcaoConfig("recuar",   "Recuar",                RiscoTom.Neutro)
             },
             Pericia:         null,

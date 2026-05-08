@@ -212,7 +212,7 @@ public class TorreEventoService(
             "encruzilhada_mercador" => opcaoKey switch
             {
                 "pagar"   => (GrauSucesso.SucessoTotal,  10, "Você pagou o preço. O mercador cede passagem. +10% progresso."),
-                "forccar" => (GrauSucesso.SucessoParcial, 5,  "Forçou passagem com dificuldade. +5% progresso."),
+                "forcar"  => (GrauSucesso.SucessoParcial, 5,  "Forçou passagem com dificuldade. +5% progresso."),
                 "recuar"  => (GrauSucesso.Falha,          0,  "A party recua prudentemente. Sem bônus."),
                 _         => (GrauSucesso.Falha, 0, "")
             },
