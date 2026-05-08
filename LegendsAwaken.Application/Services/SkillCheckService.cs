@@ -25,7 +25,7 @@ public record TestePericiaEvento(
 
 public static class SkillCheckService
 {
-    private static readonly AtributosBase _emptyBonus = new();
+    public static readonly AtributosBase EmptyBonus = new();
 
     public static (bool Success, int Total) Rolar(
         Heroi heroi,
@@ -104,7 +104,7 @@ public static class SkillCheckService
     private static int ObterBonusSkill(Heroi heroi, Pericia pericia, IEnumerable<HeroiPericia> pericias)
     {
         var atributo = AtributoDePericia(pericia);
-        var totais   = heroi.ObterAtributosTotais(_emptyBonus);
+        var totais   = heroi.ObterAtributosTotais(EmptyBonus);
         int mod      = (int)Math.Floor((totais.Get(atributo) - 10.0) / 2.0);
 
         var hp       = pericias.FirstOrDefault(p => p.HeroiId == heroi.Id && p.Pericia == pericia);

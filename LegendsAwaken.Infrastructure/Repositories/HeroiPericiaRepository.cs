@@ -13,6 +13,14 @@ public class HeroiPericiaRepository(LegendsAwakenDbContext db) : IHeroiPericiaRe
     public async Task<List<HeroiPericia>> ObterPorHeroiAsync(Guid heroiId)
         => await db.HeroisPericias.Where(p => p.HeroiId == heroiId).ToListAsync();
 
+    public async Task<List<HeroiPericia>> ObterPorHeroisAsync(IEnumerable<Guid> heroiIds)
+    {
+        var ids = heroiIds.ToList();
+        return await db.HeroisPericias
+            .Where(p => ids.Contains(p.HeroiId))
+            .ToListAsync();
+    }
+
     public async Task<List<HeroiPericia>> ObterPorUsuarioAsync(ulong usuarioId)
         => await db.HeroisPericias
             .Include(p => p.Heroi)

@@ -8,6 +8,7 @@ namespace LegendsAwaken.Domain.Interfaces;
 public interface IHeroiPericiaRepository
 {
     Task<List<HeroiPericia>> ObterPorHeroiAsync(Guid heroiId);
+    Task<List<HeroiPericia>> ObterPorHeroisAsync(IEnumerable<Guid> heroiIds);
     Task<List<HeroiPericia>> ObterPorUsuarioAsync(ulong usuarioId);
     Task AdicionarMuitosAsync(IEnumerable<HeroiPericia> pericias);
     Task AtualizarAsync(HeroiPericia pericia);

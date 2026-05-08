@@ -12,15 +12,15 @@ public static class PericiaEventoConfig
         {
             new("Passagem estreita — equilíbrio ou quedas.",
                 Pericia.Acrobacia, DC: 10, EhGrupo: false,
-                "Progresso +5%", "Progresso -5%"),
+                "Progresso +5%", "Progresso -10%"),
 
             new("Rastros de inimigos — seguir ou perder.",
                 Pericia.Sobrevivencia, DC: 12, EhGrupo: false,
-                "Rota ótima: +3% progresso", "Rota errada: -8% progresso"),
+                "Rota ótima: +5% progresso", "Rota errada: -10% progresso"),
 
             new("Armadilha arcana bloqueia a passagem.",
                 Pericia.Arcanismo, DC: 15, EhGrupo: true,
-                "Desarmada: +10% progresso", "Ativada: -15% progresso"),
+                "Desarmada: +5% progresso", "Ativada: -10% progresso"),
 
             new("Patrulha inimiga pode ser evitada.",
                 Pericia.Furtividade, DC: 12, EhGrupo: true,
@@ -28,7 +28,7 @@ public static class PericiaEventoConfig
 
             new("Negociação com mercador hostil.",
                 Pericia.Persuasao, DC: 12, EhGrupo: false,
-                "Aliado temporário: +8% progresso", "Recusado: sem efeito"),
+                "Aliado temporário: +5% progresso", "Recusado: -10% progresso"),
 
             new("Escuridão total — percepção salva.",
                 Pericia.Percepcao, DC: 10, EhGrupo: false,

@@ -131,9 +131,7 @@ public class TorreExploracaoService
             var evento    = PericiaEventoConfig.Eventos[eventoIdx];
 
             // Load pericias for all heroes in this party
-            var pericias = new List<HeroiPericia>();
-            foreach (var h in herois)
-                pericias.AddRange(await _periciaRepo.ObterPorHeroiAsync(h.Id));
+            var pericias = await _periciaRepo.ObterPorHeroisAsync(herois.Select(h => h.Id));
 
             bool sucesso;
             if (evento.EhGrupo)
@@ -145,9 +143,10 @@ public class TorreExploracaoService
             else
             {
                 // Pick the hero with the highest bonus for this skill
+                var periciaAtributo = SkillCheckService.AtributoDePericia(evento.PericiaExigida);
                 var heroi = herois
-                    .OrderByDescending(h => h.ObterAtributosTotais(new AtributosBase())
-                        .Get(SkillCheckService.AtributoDePericia(evento.PericiaExigida)))
+                    .OrderByDescending(h => h.ObterAtributosTotais(SkillCheckService.EmptyBonus)
+                        .Get(periciaAtributo))
                     .First();
                 (sucesso, _) = SkillCheckService.Rolar(
                     heroi, evento.PericiaExigida, evento.DC,
