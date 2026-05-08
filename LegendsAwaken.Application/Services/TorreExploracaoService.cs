@@ -1,3 +1,4 @@
+using LegendsAwaken.Application.Config;
 using LegendsAwaken.Domain.Entities;
 using LegendsAwaken.Domain.Enum;
 using LegendsAwaken.Domain.Interfaces;
@@ -27,6 +28,8 @@ public class TorreExploracaoService
     private readonly RewardDistributionService _rewardService;
     private readonly TorreFlagService _flagService;
     private readonly IHeroiPericiaRepository _periciaRepo;
+    private readonly TorreEventoService _eventoService;
+    private readonly INotificacaoService _notificacaoService;
 
     public TorreExploracaoService(
         ITorreExploracaoRepository exploracaoRepo,
@@ -40,7 +43,9 @@ public class TorreExploracaoService
         RecruitmentService recruitmentService,
         RewardDistributionService rewardService,
         TorreFlagService flagService,
-        IHeroiPericiaRepository periciaRepo)
+        IHeroiPericiaRepository periciaRepo,
+        TorreEventoService torreEventoService,
+        INotificacaoService notificacaoService)
     {
         _exploracaoRepo   = exploracaoRepo;
         _boosterRepo      = boosterRepo;
@@ -54,6 +59,8 @@ public class TorreExploracaoService
         _rewardService    = rewardService;
         _flagService      = flagService;
         _periciaRepo      = periciaRepo;
+        _eventoService    = torreEventoService;
+        _notificacaoService = notificacaoService;
     }
 
     // ── Tick ─────────────────────────────────────────────────────────────────
@@ -66,6 +73,7 @@ public class TorreExploracaoService
     {
         var exploracao = await _exploracaoRepo.ObterAtivaAsync(usuarioId);
         if (exploracao == null) return;
+        if (exploracao.Status == StatusExploracao.AguardandoEscolha) return;
 
         var agora   = DateTime.UtcNow;
         var elapsed = (agora - exploracao.UltimoTickEm).TotalMinutes;
@@ -120,6 +128,18 @@ public class TorreExploracaoService
             return;
         }
 
+        // Checkpoint layer: find next unprocessed threshold
+        int? proximoThreshold = null;
+        foreach (var t in new[] { 25, 50, 75, 100 })
+        {
+            var flag = TorreEventoService.ThresholdParaFlag(t);
+            if ((exploracao.CheckpointsProcessados & flag) == 0 && t > exploracao.Progresso)
+            {
+                proximoThreshold = t;
+                break;
+            }
+        }
+
         // Progress advance
         double progressoGanho = Math.Min(progressoPorMinuto * elapsed, 100.0 - exploracao.Progresso);
         double newProgress     = exploracao.Progresso + progressoGanho;
@@ -161,6 +181,14 @@ public class TorreExploracaoService
             newProgress = exploracao.Progresso + progressoGanho;
         }
 
+        // Freeze progress at next unprocessed threshold
+        if (proximoThreshold.HasValue)
+        {
+            double teto = proximoThreshold.Value - exploracao.Progresso;
+            progressoGanho = Math.Min(progressoGanho, teto);
+            newProgress = exploracao.Progresso + progressoGanho;
+        }
+
         // Checkpoints
         int interval        = exploracao.CheckpointInterval;
         int nextCheckpoint  = exploracao.UltimoCheckpoint + interval;
@@ -181,6 +209,36 @@ public class TorreExploracaoService
 
             exploracao.UltimoCheckpoint = nextCheckpoint;
             nextCheckpoint += interval;
+        }
+
+        // Checkpoint event generation
+        if (proximoThreshold.HasValue && newProgress >= proximoThreshold.Value)
+        {
+            var flagProcessada = TorreEventoService.ThresholdParaFlag(proximoThreshold.Value);
+            exploracao.CheckpointsProcessados |= flagProcessada;
+            exploracao.Version++;
+            exploracao.Progresso = Math.Min(newProgress, 100.0);
+            exploracao.UltimoTickEm = agora;
+
+            var eventoGerado = await _eventoService.GerarEventoAsync(exploracao, proximoThreshold.Value);
+
+            if (eventoGerado.Tier == Domain.Enum.TierEvento.Maior)
+            {
+                exploracao.Status = StatusExploracao.AguardandoEscolha;
+                await _exploracaoRepo.AtualizarAsync(exploracao);
+                _ = _notificacaoService.NotificarEventoCheckpointAsync(exploracao.DiscordUserId, eventoGerado)
+                    .ContinueWith(_ => { }, System.Threading.Tasks.TaskContinuationOptions.OnlyOnFaulted);
+                return;
+            }
+            else
+            {
+                var configMenor = CheckpointEventoCatalog.Todos
+                    .First(c => c.Key == eventoGerado.EventoKey);
+                await _eventoService.ResolverMenorInlineAsync(configMenor, exploracao);
+                exploracao.Version++;
+                await _exploracaoRepo.AtualizarAsync(exploracao);
+                return;
+            }
         }
 
         // Floor clear
@@ -248,6 +306,7 @@ public class TorreExploracaoService
     /// </summary>
     public async Task<TorreExploracao> IniciarAsync(
         Guid usuarioId,
+        ulong discordId,
         List<Guid> heroisIds,
         TipoBooster? booster)
     {
@@ -332,6 +391,8 @@ public class TorreExploracaoService
             LootFragmentosQtd   = 0,
             LootFragmentosHeroiId = "",
             HeroisFeridosIds    = "",
+            Seed                = new Random().Next(),
+            DiscordUserId       = discordId,
         };
 
         await _exploracaoRepo.SalvarAsync(exploracao);

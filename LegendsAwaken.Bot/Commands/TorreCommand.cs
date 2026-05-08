@@ -670,7 +670,7 @@ public class TorreCommand(
         if (!heroisValidos.Any())
             throw new InvalidOperationException("Nenhum herói ativo no grupo.");
 
-        var exp    = await exploracaoService.IniciarAsync(usuarioId, heroisValidos.Select(h => h.Id).ToList(), booster);
+        var exp    = await exploracaoService.IniciarAsync(usuarioId, discordId, heroisValidos.Select(h => h.Id).ToList(), booster);
         double teamPS = HeroPowerScoreService.CalcularParty(heroisValidos);
         double cdi    = HeroPowerScoreService.CalcularCDI(exp.AndarNumero);
         return (exp, teamPS, cdi);
