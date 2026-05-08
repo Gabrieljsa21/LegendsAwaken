@@ -26,6 +26,7 @@ public class TorreExploracaoService
     private readonly RecruitmentService _recruitmentService;
     private readonly RewardDistributionService _rewardService;
     private readonly TorreFlagService _flagService;
+    private readonly IHeroiPericiaRepository _periciaRepo;
 
     public TorreExploracaoService(
         ITorreExploracaoRepository exploracaoRepo,
@@ -38,7 +39,8 @@ public class TorreExploracaoService
         BiomeService biomeService,
         RecruitmentService recruitmentService,
         RewardDistributionService rewardService,
-        TorreFlagService flagService)
+        TorreFlagService flagService,
+        IHeroiPericiaRepository periciaRepo)
     {
         _exploracaoRepo   = exploracaoRepo;
         _boosterRepo      = boosterRepo;
@@ -51,6 +53,7 @@ public class TorreExploracaoService
         _recruitmentService = recruitmentService;
         _rewardService    = rewardService;
         _flagService      = flagService;
+        _periciaRepo      = periciaRepo;
     }
 
     // ── Tick ─────────────────────────────────────────────────────────────────
@@ -120,6 +123,44 @@ public class TorreExploracaoService
         // Progress advance
         double progressoGanho = Math.Min(progressoPorMinuto * elapsed, 100.0 - exploracao.Progresso);
         double newProgress     = exploracao.Progresso + progressoGanho;
+
+        // ── Skill event (20% chance per tick) ────────────────────────────────────
+        if (Random.Shared.NextDouble() < PericiaEventoConfig.ChanceEventoPorAndar)
+        {
+            var eventoIdx = Random.Shared.Next(PericiaEventoConfig.Eventos.Count);
+            var evento    = PericiaEventoConfig.Eventos[eventoIdx];
+
+            // Load pericias for all heroes in this party
+            var pericias = new List<HeroiPericia>();
+            foreach (var h in herois)
+                pericias.AddRange(await _periciaRepo.ObterPorHeroiAsync(h.Id));
+
+            bool sucesso;
+            if (evento.EhGrupo)
+            {
+                (sucesso, _) = SkillCheckService.RolarGrupo(
+                    herois, evento.PericiaExigida, evento.DC,
+                    pericias, evento.RollContext ?? new SkillRollContext());
+            }
+            else
+            {
+                // Pick the hero with the highest bonus for this skill
+                var heroi = herois
+                    .OrderByDescending(h => h.ObterAtributosTotais(new AtributosBase())
+                        .Get(SkillCheckService.AtributoDePericia(evento.PericiaExigida)))
+                    .First();
+                (sucesso, _) = SkillCheckService.Rolar(
+                    heroi, evento.PericiaExigida, evento.DC,
+                    pericias, evento.RollContext ?? new SkillRollContext());
+            }
+
+            double eventBonus = sucesso ? 0.05 : -0.10;
+            progressoGanho = Math.Clamp(
+                progressoGanho + eventBonus * 100.0,
+                0.0,
+                100.0 - exploracao.Progresso);
+            newProgress = exploracao.Progresso + progressoGanho;
+        }
 
         // Checkpoints
         int interval        = exploracao.CheckpointInterval;
