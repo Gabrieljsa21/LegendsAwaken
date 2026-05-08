@@ -78,6 +78,7 @@ public static class TorreEventoPanel
     private static string FormatarExpiracao(DateTime expiraEm)
     {
         var restante = expiraEm - DateTime.UtcNow;
+        if (restante <= TimeSpan.Zero) return "Expirado";
         if (restante.TotalDays >= 1)
             return $"{(int)restante.TotalDays}d {restante.Hours}h";
         return $"{restante.Hours}h {restante.Minutes}m";

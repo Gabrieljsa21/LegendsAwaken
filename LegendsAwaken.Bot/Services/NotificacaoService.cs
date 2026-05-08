@@ -47,7 +47,7 @@ public class NotificacaoService(
                 await dm.SendMessageAsync(embed: embed);
             }
         }
-        catch (Exception ex)
+        catch (Discord.Net.HttpException ex)
         {
             logger.LogWarning(ex, "Falha ao notificar usuário {DiscordId} — DM bloqueada ou canal inválido.", discordUserId);
         }

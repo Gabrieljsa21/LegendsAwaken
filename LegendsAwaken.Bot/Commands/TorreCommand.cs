@@ -615,6 +615,9 @@ public class TorreCommand(
             return;
         }
 
+        // Compute bonus before resolving (AplicarEfeito is pure; ResultadoJson is on a separate instance after resolve)
+        var (_, progressoBonus, descricaoEfeito) = TorreEventoService.AplicarEfeito(config, opcaoKey, exploracaoAtiva);
+
         try
         {
             await eventoService.ResolverAsync(eventoId, opcaoKey, exploracaoAtiva);
@@ -625,22 +628,9 @@ public class TorreCommand(
             return;
         }
 
-        // Deserialize progressoBonus from ResultadoJson if available
-        int progressoBonus = 0;
-        if (!string.IsNullOrEmpty(eventoAtivo.ResultadoJson))
-        {
-            try
-            {
-                using var doc = System.Text.Json.JsonDocument.Parse(eventoAtivo.ResultadoJson);
-                if (doc.RootElement.TryGetProperty("progressoBonus", out var pb))
-                    progressoBonus = pb.GetInt32();
-            }
-            catch { /* ignore parse errors */ }
-        }
-
         var resultadoEmbed = TorreEventoPanel.CriarEmbedResultado(
             eventoAtivo, config,
-            descricaoResultado: "Evento resolvido. A exploração continua.",
+            descricaoResultado: descricaoEfeito,
             progressoBonus: progressoBonus);
         var componentesDesabilitados = TorreEventoPanel.CriarComponentesDesabilitados(eventoAtivo, config);
 

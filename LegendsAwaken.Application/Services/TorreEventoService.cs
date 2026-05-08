@@ -207,7 +207,7 @@ public class TorreEventoService(
         return JsonSerializer.Serialize(new { heroisIds = exp.HeroisIds });
     }
 
-    private static (GrauSucesso Grau, int ProgressoBonus, string Descricao) AplicarEfeito(
+    public static (GrauSucesso Grau, int ProgressoBonus, string Descricao) AplicarEfeito(
         CheckpointEventoConfig config, string? opcaoKey, TorreExploracao exp)
     {
         return config.Key switch
