@@ -41,11 +41,11 @@ namespace LegendsAwaken.Application.Services
         public static readonly IReadOnlyDictionary<int, RaridadeConfig> Configs =
             new Dictionary<int, RaridadeConfig>
             {
-                { 1, new(Cap:  20, BaseStatsTotal:  50, GanhoPorNivel: 2,                  BaseXp:  80) },
-                { 2, new(Cap:  40, BaseStatsTotal:  70, GanhoPorNivel: 3,                  BaseXp: 100) },
-                { 3, new(Cap:  60, BaseStatsTotal:  95, GanhoPorNivel: 4,                  BaseXp: 120) },
-                { 4, new(Cap:  80, BaseStatsTotal: 130, GanhoPorNivel: 6,                  BaseXp: 150) },
-                { 5, new(Cap: 100, BaseStatsTotal: 175, GanhoPorNivel: 8, GanhoSuperacao: 12, BaseXp: 200) },
+                { 1, new(Cap:  20, BaseStatsTotal:  60, GanhoPorNivel: 0,                   BaseXp:  80) },
+                { 2, new(Cap:  40, BaseStatsTotal:  60, GanhoPorNivel: 0,                   BaseXp: 100) },
+                { 3, new(Cap:  60, BaseStatsTotal:  60, GanhoPorNivel: 0,                   BaseXp: 120) },
+                { 4, new(Cap:  80, BaseStatsTotal:  60, GanhoPorNivel: 0,                   BaseXp: 150) },
+                { 5, new(Cap: 100, BaseStatsTotal:  60, GanhoPorNivel: 0, GanhoSuperacao: 1, BaseXp: 200) },
             };
 
         // ── Bônus raciais ──────────────────────────────────────────────────────────
@@ -56,24 +56,28 @@ namespace LegendsAwaken.Application.Services
         public static readonly IReadOnlyDictionary<Raca, AtributosBase> BonusRacial =
             new Dictionary<Raca, AtributosBase>
             {
-                { Raca.Humano,    new AtributosBase() },
-                { Raca.Bestial,   AtributosBase.With(Atributo.Forca,        50) },
-                { Raca.Anao,      AtributosBase.With(Atributo.Constituicao,   50) },
-                { Raca.Elfo,      AtributosBase.With(Atributo.Sabedoria,    50) },
-                { Raca.Draconato, AtributosBase.With(Atributo.Inteligencia, 50) },
-                { Raca.Fada,      AtributosBase.With(Atributo.Destreza,    50) },
+                { Raca.Humano,     new AtributosBase { Forca=1, Destreza=1, Constituicao=1, Inteligencia=1, Sabedoria=1, Carisma=1 } },
+                { Raca.Bestial,    AtributosBase.With(Atributo.Forca,        2) },
+                { Raca.Anao,       AtributosBase.With(Atributo.Constituicao, 2) },
+                { Raca.Elfo,       AtributosBase.With(Atributo.Sabedoria,    2) },
+                { Raca.Draconato,  AtributosBase.With(Atributo.Inteligencia, 2) },
+                { Raca.Fada,       AtributosBase.With(Atributo.Destreza,     2) },
+                { Raca.AnjoCaido,  AtributosBase.With(Atributo.Carisma,      2) },
+                { Raca.Serafim,    AtributosBase.With(Atributo.Sabedoria,    2) },
             };
 
         // Multiplicador de XP por raça (1.0 = sem bônus)
         public static readonly IReadOnlyDictionary<Raca, double> MultiplicadorXpRacial =
             new Dictionary<Raca, double>
             {
-                { Raca.Humano,    1.10 },
-                { Raca.Bestial,   1.00 },
-                { Raca.Anao,      1.00 },
-                { Raca.Elfo,      1.00 },
-                { Raca.Draconato, 1.00 },
-                { Raca.Fada,      1.00 },
+                { Raca.Humano,     1.10 },
+                { Raca.Bestial,    1.00 },
+                { Raca.Anao,       1.00 },
+                { Raca.Elfo,       1.00 },
+                { Raca.Draconato,  1.00 },
+                { Raca.Fada,       1.00 },
+                { Raca.AnjoCaido,  1.00 },
+                { Raca.Serafim,    1.00 },
             };
 
         // ── Métodos principais ─────────────────────────────────────────────────────
@@ -87,12 +91,14 @@ namespace LegendsAwaken.Application.Services
         {
             if (!Configs.TryGetValue(raridade, out var config)) return 0;
 
+            // 5★ superação phase: 1 ASI point every level above 4★ cap
             if (config.GanhoSuperacao > 0
                 && Configs.TryGetValue(raridade - 1, out var anterior)
                 && nivelAtual > anterior.Cap)
                 return config.GanhoSuperacao;
 
-            return config.GanhoPorNivel;
+            // Normal phase: 1 ASI point every 4 levels
+            return nivelAtual % 4 == 0 ? 1 : 0;
         }
 
         /// <summary>
@@ -129,12 +135,9 @@ namespace LegendsAwaken.Application.Services
             Configs.TryGetValue(raridade, out var c) ? c.Cap : 0;
 
         /// <summary>
-        /// AtributosBase iniciais para uma raridade, com pontos distribuídos igualmente.
-        /// Derivado de <see cref="Configs"/> — não há valor fixo aqui.
-        /// </summary>
-        /// <summary>
-        /// Returns base stats for a raridade distributed evenly across all attributes.
-        /// Automatically scales when new attributes are added to <see cref="Atributo"/>.
+        /// Returns base stats distributed evenly across all 6 attrs.
+        /// Used for CalcularGrantAscensao math only.
+        /// Hero creation uses ProfissaoConfig.ObterDistribuicao(profissao) instead.
         /// </summary>
         public AtributosBase ObterAtributosBaseParaRaridade(int raridade)
         {

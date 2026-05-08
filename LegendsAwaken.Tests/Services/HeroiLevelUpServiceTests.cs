@@ -42,18 +42,44 @@ public class HeroiLevelUpServiceTests
     public void PontosAtributos_5star_acima_cap4star_usa_GanhoSuperacao()
     {
         //Arrange
-        // 4★ Cap=80; nivel 81 > 80 → fase de superação → GanhoSuperacao=12
+        // nivel 81 > 80 (4★ cap) → superação → GanhoSuperacao=1
         //Act & Assert
-        Assert.Equal(12, _sut.CalcularPontosAtributosPorLevelUp(nivelAtual: 81, raridade: 5));
+        Assert.Equal(1, _sut.CalcularPontosAtributosPorLevelUp(nivelAtual: 81, raridade: 5));
     }
 
     [Fact]
-    public void PontosAtributos_5star_abaixo_cap4star_usa_GanhoPorNivel()
+    public void PontosAtributos_5star_abaixo_cap4star_usa_nivel_mod4()
     {
         //Arrange
-        // nivel 50 <= 80 (cap 4★) → fase normal → GanhoPorNivel=8
+        // nivel 50 <= 80 (cap 4★) → normal phase → 50 % 4 = 2 ≠ 0 → 0 points
         //Act & Assert
-        Assert.Equal(8, _sut.CalcularPontosAtributosPorLevelUp(nivelAtual: 50, raridade: 5));
+        Assert.Equal(0, _sut.CalcularPontosAtributosPorLevelUp(nivelAtual: 50, raridade: 5));
+    }
+
+    [Fact]
+    public void PontosAtributos_nivel4_retorna_1()
+    {
+        Assert.Equal(1, _sut.CalcularPontosAtributosPorLevelUp(nivelAtual: 4, raridade: 1));
+    }
+
+    [Fact]
+    public void PontosAtributos_nivel3_retorna_0()
+    {
+        Assert.Equal(0, _sut.CalcularPontosAtributosPorLevelUp(nivelAtual: 3, raridade: 1));
+    }
+
+    [Fact]
+    public void PontosAtributos_5star_nivel81_retorna_1_superacao()
+    {
+        Assert.Equal(1, _sut.CalcularPontosAtributosPorLevelUp(nivelAtual: 81, raridade: 5));
+    }
+
+    [Fact]
+    public void TotalPontosNativo_1star_nivel20_igual_64()
+    {
+        // base=60; loop counts level-ups n=1..19 → ASI triggers at n=4,8,12,16 = 4 points → 64
+        // (level 20 ASI fires on the 20→21 transition, outside the range)
+        Assert.Equal(64, _sut.CalcularTotalPontosNativo(raridade: 1, nivel: 20));
     }
 
     // ── AplicarXp ─────────────────────────────────────────────────────────────
@@ -105,17 +131,16 @@ public class HeroiLevelUpServiceTests
     // ── CalcularGrantAscensao ─────────────────────────────────────────────────
 
     [Fact]
-    public void CalcularGrantAscensao_4to5_nivel1_retorna_diferenca_bases()
+    public void CalcularGrantAscensao_4to5_nivel1_retorna_zero()
     {
         //Arrange
-        // Nativo 5★ lv1 = BaseStatsTotal(5★) = 175
-        // Nativo 4★ lv1 = BaseStatsTotal(4★) = 130
-        // Grant = 175 - 130 = 45
+        // All raridades share BaseStatsTotal=60; at nivel 1 both natives have 60 points.
+        // Grant = CalcularTotalPontosNativo(5, 1) - CalcularTotalPontosNativo(4, 1) = 60 - 60 = 0
 
         //Act
         int grant = _sut.CalcularGrantAscensao(nivelAtual: 1, raridadeAtual: 4);
 
         //Assert
-        Assert.Equal(45, grant);
+        Assert.Equal(0, grant);
     }
 }
