@@ -21,4 +21,13 @@ public class TorreExploracao
     public string LootFragmentosHeroiId { get; set; } = ""; // Guid string of hero whose fragment dropped
     public DateTime? ConcluidoEm { get; set; }
     public string HeroisFeridosIds { get; set; } = "";  // comma-separated; set on Falha
+
+    // Checkpoint event system
+    public int Seed { get; set; }                                       // set on IniciarAsync, drives EventoRng
+    public ulong DiscordUserId { get; set; }                            // Discord ulong for DM notifications
+    public CheckpointFlags CheckpointsProcessados { get; set; }         // bitmask tracking processed checkpoints
+    public string? ConsequenceTags { get; set; }                        // JSON string[] — tags from chained events
+
+    [System.ComponentModel.DataAnnotations.ConcurrencyCheck]
+    public int Version { get; set; }                                    // optimistic concurrency
 }
