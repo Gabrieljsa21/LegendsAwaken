@@ -119,6 +119,7 @@ class Program
             .AddScoped<RewardDistributionService>()
             .AddScoped<TorreExploracaoService>()
             .AddScoped<TorreFlagService>()
+            .AddScoped<HeroiAtributosResetService>()
             .AddScoped<RecursoService>()
             .AddScoped<JogadorItemService>()
             .AddScoped<HeroiDataLoader>()
@@ -198,6 +199,13 @@ class Program
 
         // Criação e população do banco de dados
         await CriarBancoEDadosBaseAsync();
+
+        // One-time migration: reset heroes with old LA-scale stats to D&D-scale
+        using (var migScope = services.CreateScope())
+        {
+            var resetSvc = migScope.ServiceProvider.GetRequiredService<HeroiAtributosResetService>();
+            await resetSvc.MigrarAsync();
+        }
 
         // Pre-warm the shared DbContext so the first slash command doesn't hit 3s timeout
         try
