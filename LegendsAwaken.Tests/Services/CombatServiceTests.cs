@@ -27,10 +27,10 @@ public class CombatServiceTests
             Nivel     = nivel,
             Atributos = new AtributosBase
             {
-                Forca      = forca,
-                Vitalidade = vitalidade,
-                Percepcao  = percepcao,
-                Agilidade  = agilidade
+                Forca        = forca,
+                Constituicao = vitalidade,
+                Sabedoria    = percepcao,
+                Destreza     = agilidade
             },
             Status = new StatusCombate
             {

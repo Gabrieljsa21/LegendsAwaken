@@ -58,7 +58,7 @@ namespace LegendsAwaken.Application.Services
 
             var todos = enc.Aliados.Concat(enc.Inimigos)
                 .Where(c => c.Status.VidaAtual > 0)
-                .Select(c => (c, init: c.Atributos.Agilidade + _random.NextDouble() * c.Atributos.Agilidade * 0.1))
+                .Select(c => (c, init: c.Atributos.Destreza + _random.NextDouble() * c.Atributos.Destreza * 0.1))
                 .OrderByDescending(x => x.init)
                 .Select(x => x.c)
                 .ToList();
@@ -89,14 +89,14 @@ namespace LegendsAwaken.Application.Services
         public int CalcularDano(Combatente atk, Combatente def, double skillMult, double typeMult = 1.0)
         {
             double ataque = atk.Atributos.Forca;
-            double defesa = def.Atributos.Vitalidade;
+            double defesa = def.Atributos.Constituicao;
             double k      = 1000.0 + def.Nivel * 50.0;
 
             double mitigacao = defesa / (defesa + k);
             double danoBase  = ataque * skillMult * (1.0 - mitigacao) * typeMult;
 
             // Crit
-            double critChance = BaseCritChance + atk.Atributos.Percepcao * 0.001;
+            double critChance = BaseCritChance + atk.Atributos.Sabedoria * 0.001;
             if (_random.NextDouble() < critChance)
                 danoBase *= CritMultiplier;
 

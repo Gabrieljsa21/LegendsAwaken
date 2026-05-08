@@ -58,10 +58,10 @@ namespace LegendsAwaken.Application.Services
             {
                 { Raca.Humano,    new AtributosBase() },
                 { Raca.Bestial,   AtributosBase.With(Atributo.Forca,        50) },
-                { Raca.Anao,      AtributosBase.With(Atributo.Vitalidade,   50) },
-                { Raca.Elfo,      AtributosBase.With(Atributo.Percepcao,    50) },
+                { Raca.Anao,      AtributosBase.With(Atributo.Constituicao,   50) },
+                { Raca.Elfo,      AtributosBase.With(Atributo.Sabedoria,    50) },
                 { Raca.Draconato, AtributosBase.With(Atributo.Inteligencia, 50) },
-                { Raca.Fada,      AtributosBase.With(Atributo.Agilidade,    50) },
+                { Raca.Fada,      AtributosBase.With(Atributo.Destreza,    50) },
             };
 
         // Multiplicador de XP por raça (1.0 = sem bônus)

@@ -35,17 +35,17 @@ namespace LegendsAwaken.Application.Services
                         case Atributo.Forca:
                             totalBonus.Forca += valorComNivel;
                             break;
-                        case Atributo.Agilidade:
-                            totalBonus.Agilidade += valorComNivel;
+                        case Atributo.Destreza:
+                            totalBonus.Destreza += valorComNivel;
                             break;
-                        case Atributo.Vitalidade:
-                            totalBonus.Vitalidade += valorComNivel;
+                        case Atributo.Constituicao:
+                            totalBonus.Constituicao += valorComNivel;
                             break;
                         case Atributo.Inteligencia:
                             totalBonus.Inteligencia += valorComNivel;
                             break;
-                        case Atributo.Percepcao:
-                            totalBonus.Percepcao += valorComNivel;
+                        case Atributo.Sabedoria:
+                            totalBonus.Sabedoria += valorComNivel;
                             break;
                     }
                 }

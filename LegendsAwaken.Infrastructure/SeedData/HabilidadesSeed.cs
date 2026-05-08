@@ -42,7 +42,7 @@ namespace LegendsAwaken.Infrastructure.SeedData
                     HabilidadeBonusAtributos = new List<HabilidadeBonusAtributos>
                     {
                         new HabilidadeBonusAtributos {
-                            Atributo = Atributo.Agilidade,
+                            Atributo = Atributo.Destreza,
                             BonusTipo = BonusTipo.Atributo,
                             BonusValor = 2
                         }
@@ -76,12 +76,12 @@ namespace LegendsAwaken.Infrastructure.SeedData
                     HabilidadeBonusAtributos = new List<HabilidadeBonusAtributos>
                     {
                         new HabilidadeBonusAtributos {
-                            Atributo = Atributo.Agilidade,
+                            Atributo = Atributo.Destreza,
                             BonusTipo = BonusTipo.Atributo,
                             BonusValor = 1
                         },
                         new HabilidadeBonusAtributos {
-                            Atributo = Atributo.Percepcao,
+                            Atributo = Atributo.Sabedoria,
                             BonusTipo = BonusTipo.Atributo,
                             BonusValor = 1
                         }
@@ -98,7 +98,7 @@ namespace LegendsAwaken.Infrastructure.SeedData
                     HabilidadeBonusAtributos = new List<HabilidadeBonusAtributos>
                     {
                         new HabilidadeBonusAtributos {
-                            Atributo = Atributo.Vitalidade,
+                            Atributo = Atributo.Constituicao,
                             BonusTipo = BonusTipo.Atributo,
                             BonusValor = 2
                         }
@@ -132,7 +132,7 @@ namespace LegendsAwaken.Infrastructure.SeedData
                     HabilidadeBonusAtributos = new List<HabilidadeBonusAtributos>
                     {
                         new HabilidadeBonusAtributos {
-                            Atributo = Atributo.Percepcao,
+                            Atributo = Atributo.Sabedoria,
                             BonusTipo = BonusTipo.Atributo,
                             BonusValor = 2
                         }
@@ -149,7 +149,7 @@ namespace LegendsAwaken.Infrastructure.SeedData
                     HabilidadeBonusAtributos = new List<HabilidadeBonusAtributos>
                     {
                         new HabilidadeBonusAtributos {
-                            Atributo = Atributo.Percepcao,
+                            Atributo = Atributo.Sabedoria,
                             BonusTipo = BonusTipo.Atributo,
                             BonusValor = 2
                         }
@@ -166,12 +166,12 @@ namespace LegendsAwaken.Infrastructure.SeedData
                     HabilidadeBonusAtributos = new List<HabilidadeBonusAtributos>
                     {
                         new HabilidadeBonusAtributos {
-                            Atributo = Atributo.Percepcao,
+                            Atributo = Atributo.Sabedoria,
                             BonusTipo = BonusTipo.Atributo,
                             BonusValor = 1
                         },
                         new HabilidadeBonusAtributos {
-                            Atributo = Atributo.Agilidade,
+                            Atributo = Atributo.Destreza,
                             BonusTipo = BonusTipo.Atributo,
                             BonusValor = 1
                         }
@@ -210,7 +210,7 @@ namespace LegendsAwaken.Infrastructure.SeedData
                             BonusValor = 1
                         },
                         new HabilidadeBonusAtributos {
-                            Atributo = Atributo.Vitalidade,
+                            Atributo = Atributo.Constituicao,
                             BonusTipo = BonusTipo.Atributo,
                             BonusValor = 1
                         }
@@ -232,7 +232,7 @@ namespace LegendsAwaken.Infrastructure.SeedData
                             BonusValor = 1
                         },
                         new HabilidadeBonusAtributos {
-                            Atributo = Atributo.Percepcao,
+                            Atributo = Atributo.Sabedoria,
                             BonusTipo = BonusTipo.Atributo,
                             BonusValor = 1
                         }
@@ -266,7 +266,7 @@ namespace LegendsAwaken.Infrastructure.SeedData
                     HabilidadeBonusAtributos = new List<HabilidadeBonusAtributos>
                     {
                         new HabilidadeBonusAtributos {
-                            Atributo = Atributo.Percepcao,
+                            Atributo = Atributo.Sabedoria,
                             BonusTipo = BonusTipo.Atributo,
                             BonusValor = 2
                         }
@@ -283,7 +283,7 @@ namespace LegendsAwaken.Infrastructure.SeedData
                     HabilidadeBonusAtributos = new List<HabilidadeBonusAtributos>
                     {
                         new HabilidadeBonusAtributos {
-                            Atributo = Atributo.Percepcao,
+                            Atributo = Atributo.Sabedoria,
                             BonusTipo = BonusTipo.Atributo,
                             BonusValor = 2
                         }
@@ -317,7 +317,7 @@ namespace LegendsAwaken.Infrastructure.SeedData
                     HabilidadeBonusAtributos = new List<HabilidadeBonusAtributos>
                     {
                         new HabilidadeBonusAtributos {
-                            Atributo = Atributo.Vitalidade,
+                            Atributo = Atributo.Constituicao,
                             BonusTipo = BonusTipo.Atributo,
                             BonusValor = 1
                         },

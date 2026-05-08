@@ -163,10 +163,11 @@ public static class HeroisPanel
     private static string NomeAtributo(Atributo attr) => attr switch
     {
         Atributo.Forca        => "Força",
-        Atributo.Agilidade    => "Agilidade",
-        Atributo.Vitalidade   => "Vitalidade",
+        Atributo.Destreza     => "Destreza",
+        Atributo.Constituicao => "Constituição",
         Atributo.Inteligencia => "Inteligência",
-        Atributo.Percepcao    => "Percepção",
+        Atributo.Sabedoria    => "Sabedoria",
+        Atributo.Carisma      => "Carisma",
         _                     => attr.ToString()
     };
 }

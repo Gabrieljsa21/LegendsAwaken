@@ -33,11 +33,11 @@ namespace LegendsAwaken.Application.Services
 
             new("arco-simples",   "Arco Simples",         SlotEquipamento.Arma,
                 new Dictionary<string, int> { ["madeira"] = 4, ["ouro"] = 3 },
-                new Dictionary<Atributo, int> { [Atributo.Percepcao] = 10 }),
+                new Dictionary<Atributo, int> { [Atributo.Sabedoria] = 10 }),
 
             new("armadura-couro", "Armadura de Couro",    SlotEquipamento.Armadura,
                 new Dictionary<string, int> { ["madeira"] = 3, ["comida"] = 2 },
-                new Dictionary<Atributo, int> { [Atributo.Vitalidade] = 12 }),
+                new Dictionary<Atributo, int> { [Atributo.Constituicao] = 12 }),
 
             new("anel-arcano",    "Anel Arcano",          SlotEquipamento.Acessorio,
                 new Dictionary<string, int> { ["erva"] = 4, ["ouro"] = 3 },
@@ -45,7 +45,7 @@ namespace LegendsAwaken.Application.Services
 
             new("amuleto-agilidade", "Amuleto de Agilidade", SlotEquipamento.Acessorio,
                 new Dictionary<string, int> { ["erva"] = 2, ["madeira"] = 2 },
-                new Dictionary<Atributo, int> { [Atributo.Agilidade] = 8 }),
+                new Dictionary<Atributo, int> { [Atributo.Destreza] = 8 }),
         }.AsReadOnly();
 
         public CraftingService(

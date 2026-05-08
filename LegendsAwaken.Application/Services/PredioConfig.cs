@@ -25,9 +25,9 @@ namespace LegendsAwaken.Application.Services
         public static readonly IReadOnlyDictionary<(TipoPredio, int), SlotDefinicao> Slots =
             new Dictionary<(TipoPredio, int), SlotDefinicao>
             {
-                { (TipoPredio.Fazenda,  1), new(1, 0,  Atributo.Vitalidade, 10, 2, 8)  },
-                { (TipoPredio.Fazenda,  2), new(1, 0,  Atributo.Vitalidade, 20, 3, 14) },
-                { (TipoPredio.Fazenda,  3), new(2, 20, Atributo.Vitalidade, 35, 4, 20) },
+                { (TipoPredio.Fazenda,  1), new(1, 0,  Atributo.Constituicao, 10, 2, 8)  },
+                { (TipoPredio.Fazenda,  2), new(1, 0,  Atributo.Constituicao, 20, 3, 14) },
+                { (TipoPredio.Fazenda,  3), new(2, 20, Atributo.Constituicao, 35, 4, 20) },
                 { (TipoPredio.Serraria, 1), new(1, 0,  Atributo.Forca,      10, 2, 6)  },
                 { (TipoPredio.Serraria, 2), new(1, 0,  Atributo.Forca,      20, 3, 10) },
                 { (TipoPredio.Serraria, 3), new(2, 20, Atributo.Forca,      35, 4, 15) },
@@ -39,8 +39,8 @@ namespace LegendsAwaken.Application.Services
                 { (TipoPredio.Forja,    3), new(2, 60, Atributo.Forca,      40, 3, 0)  },
                 { (TipoPredio.Arena,    1), new(1, 0,  Atributo.Forca,      10, 2, 0)  },
                 { (TipoPredio.Arena,    2), new(1, 0,  Atributo.Forca,      20, 3, 0)  },
-                { (TipoPredio.Guilda,   1), new(1, 0,  Atributo.Agilidade,  10, 2, 0)  },
-                { (TipoPredio.Guilda,   2), new(1, 0,  Atributo.Agilidade,  20, 3, 0)  },
+                { (TipoPredio.Guilda,   1), new(1, 0,  Atributo.Destreza,  10, 2, 0)  },
+                { (TipoPredio.Guilda,   2), new(1, 0,  Atributo.Destreza,  20, 3, 0)  },
             };
 
         // Construction costs for Nivel 1 of each building

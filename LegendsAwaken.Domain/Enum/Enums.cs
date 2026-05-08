@@ -97,11 +97,36 @@ namespace LegendsAwaken.Domain.Enum
     public enum Atributo
     {
         Forca,
-        Agilidade,
-        Vitalidade,
+        Destreza,
+        Constituicao,
         Inteligencia,
-        Percepcao
+        Sabedoria,
+        Carisma
     }
+
+    public enum Pericia
+    {
+        Atletismo,
+        Acrobacia,
+        Prestidigitacao,
+        Furtividade,
+        Arcanismo,
+        Historia,
+        Investigacao,
+        Natureza,
+        Religiao,
+        AdestrarAnimais,
+        Intuicao,
+        Medicina,
+        Percepcao,
+        Sobrevivencia,
+        Enganacao,
+        Intimidacao,
+        Atuacao,
+        Persuasao
+    }
+
+    public enum AdvantageType { Disadvantage = -1, Normal = 0, Advantage = 1 }
 
     public enum TipoHabilidade
     {

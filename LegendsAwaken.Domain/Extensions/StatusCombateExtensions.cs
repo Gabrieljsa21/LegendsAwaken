@@ -17,8 +17,8 @@ namespace LegendsAwaken.Domain.Extensions
         public static StatusCombate FromAtributos(this AtributosBase atr)
             => new StatusCombate
             {
-                VidaMaxima = atr.Vitalidade * 10,
-                VidaAtual = atr.Vitalidade * 10,
+                VidaMaxima = atr.Constituicao * 10,
+                VidaAtual = atr.Constituicao * 10,
                 ManaMaxima = atr.Inteligencia * 5,
                 ManaAtual = atr.Inteligencia * 5
             };

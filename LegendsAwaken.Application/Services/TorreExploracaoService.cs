@@ -270,7 +270,7 @@ public class TorreExploracaoService
             {
                 var fator = 1.0 - hpReduction;
                 foreach (var inimigo in andar.Inimigos)
-                    inimigo.Atributos.Vitalidade = (int)(inimigo.Atributos.Vitalidade * fator);
+                    inimigo.Atributos.Constituicao = (int)(inimigo.Atributos.Constituicao * fator);
                 await _torreRepo.AtualizarAsync(andar);
             }
         }
