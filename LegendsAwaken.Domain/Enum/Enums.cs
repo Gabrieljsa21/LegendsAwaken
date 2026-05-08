@@ -192,7 +192,7 @@ namespace LegendsAwaken.Domain.Enum
 
     public enum EstadoSustento { Ativo, Instavel, Degradado, Inativo }
 
-    public enum StatusExploracao { Ativa, Concluida, Falha, Coletada }
+    public enum StatusExploracao { Ativa, Concluida, Falha, Coletada, AguardandoEscolha }
 
     public enum TipoInimigo
     {
@@ -217,5 +217,68 @@ namespace LegendsAwaken.Domain.Enum
     public enum TipoBoosterCidade { Producao, Rendimento, Eficiencia, Qualidade, Especializacao, Conversao }
 
     public enum TipoItemJogador { Equipamento = 0, Consumivel = 1, ComponenteCrafting = 2, ItemProgressao = 3, Reliquia = 4 }
+
+    [Flags]
+    public enum CheckpointFlags
+    {
+        None = 0,
+        P25  = 1,
+        P50  = 2,
+        P75  = 4,
+        P100 = 8
+    }
+
+    public enum EventoStatus
+    {
+        Ativo,
+        Resolvido,
+        Expirado,
+        Cancelado
+    }
+
+    public enum TipoEvento
+    {
+        BlockingChoice,
+        PassiveEvent,
+        GroupCheck,
+        Encounter,
+        Reward
+    }
+
+    public enum TierEvento
+    {
+        Menor,
+        Maior
+    }
+
+    public enum EventoRaridade
+    {
+        Comum,
+        Raro,
+        Epico,
+        Unico
+    }
+
+    public enum NotificacaoPreferencia
+    {
+        Tudo,
+        ApenasEventosMaiores,
+        ApenasConclusao,
+        Desativado
+    }
+
+    public enum GrauSucesso
+    {
+        SucessoTotal,
+        SucessoParcial,
+        Falha
+    }
+
+    public enum RiscoTom
+    {
+        Seguro,
+        Arriscado,
+        Neutro
+    }
 
 }
