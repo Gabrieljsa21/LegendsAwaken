@@ -73,7 +73,11 @@ public class TorreExploracaoService
     {
         var exploracao = await _exploracaoRepo.ObterAtivaAsync(usuarioId);
         if (exploracao == null) return;
-        if (exploracao.Status == StatusExploracao.AguardandoEscolha) return;
+        if (exploracao.Status == StatusExploracao.AguardandoEscolha)
+        {
+            await _eventoService.RecuperarExpiradosAsync();
+            return;
+        }
 
         var agora   = DateTime.UtcNow;
         var elapsed = (agora - exploracao.UltimoTickEm).TotalMinutes;

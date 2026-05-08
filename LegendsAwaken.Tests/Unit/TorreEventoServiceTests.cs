@@ -152,7 +152,7 @@ public class TorreEventoServiceTests
     }
 
     [Fact]
-    public async Task ResolverMenorInlineAsync_GravaLog_EAtualizaExploracao()
+    public async Task ResolverMenorInlineAsync_GravaLog_NaoSalvaExploracao()
     {
         var svc = CreateService();
         var exp = CriarExploracao();
@@ -162,7 +162,7 @@ public class TorreEventoServiceTests
         await svc.ResolverMenorInlineAsync(config, exp);
 
         _eventoRepo.Verify(r => r.AdicionarLogAsync(It.IsAny<TorreEventoLog>()), Times.Once);
-        _exploracaoRepo.Verify(r => r.AtualizarAsync(exp), Times.Once);
+        _exploracaoRepo.Verify(r => r.AtualizarAsync(exp), Times.Never);
     }
 
     [Fact]

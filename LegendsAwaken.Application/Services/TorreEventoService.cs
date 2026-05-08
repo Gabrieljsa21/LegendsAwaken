@@ -144,8 +144,7 @@ public class TorreEventoService(
             ExploracaoId = exp.Id,
             Texto = $"[{config.Titulo}] {descricao}",
         });
-
-        await exploracaoRepo.AtualizarAsync(exp);
+        // Caller (ProcessarAsync) is responsible for persisting exp
     }
 
     public async Task RecuperarExpiradosAsync()
