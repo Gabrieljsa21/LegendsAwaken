@@ -6,6 +6,30 @@ O formato segue o padrão [Keep a Changelog](https://keepachangelog.com/pt-BR/1.
 
 ---
 
+## [3.10.0] - 2026-05-08 · Torre: Checkpoint Events
+
+### Adicionado
+
+- **Sistema de Checkpoint Events** — eventos narrativos nos checkpoints 25/50/75/100% da exploração da Torre: 4 `Tier.Maior` (`BlockingChoice` — pausam a exploração em `AguardandoEscolha`, aguardam escolha do jogador via Discord) e 2 `Tier.Menor` (`AutoResolve` — resolvem automaticamente e gravam log)
+- **`TorreEvento` / `TorreEventoLog` / `UsuarioNotificacao`** — novas entidades; `TorreExploracao` estendida com `CheckpointsProcessados` (bitmask `CheckpointFlags`), `DiscordUserId`, `Seed`
+- **`TorreEventoService`** — `GerarEventoAsync` (seed determinístico via `HashCode.Combine(seed, threshold, andar)`), `ResolverAsync` (fetch-first, validação de opção por evento), `ResolverMenorInlineAsync`, `RecuperarExpiradosAsync`, `AplicarEfeito` (public static — evita stale-read no handler)
+- **`CheckpointEventoCatalog`** — 6 eventos estáticos: `encruzilhada_mercador`, `trilha_oculta`, `chuva_de_fragmentos`, `armadilha_detectada`, `teste_forca_porta`, `sombra_perseguindo`; `EventoRng` (determinístico via `new Random(seed)`)
+- **`TorreEventoPanel`** — embed de escolha + embed de resultado; botões com `RiscoTom` (Seguro=Success/verde, Arriscado=Danger/vermelho, Neutro=Secondary/cinza); `CriarComponentesDesabilitados` após resolução
+- **`CustomIdFactory.EventoEscolha`** — `torre_evento_escolha:{eventoId}:{opcaoKey}`
+- **`NotificacaoService`** — DM ao jogador + canal preferido com fallback silencioso (captura apenas `Discord.Net.HttpException`)
+- **Interfaces:** `INotificacaoService`, `ITorreEventoRepository`, `IUsuarioNotificacaoRepository`
+- **Migration `TorreCheckpointEventos`** — tabelas `TorreEventos`, `TorreEventoLogs`, `UsuariosNotificacao`
+- **Testes:** `TorreEventoServiceTests` (9) + `TorreExploracaoCheckpointTests` (2); **126 testes passando, 0 falhas**
+
+### Alterado
+
+- `TorreExploracaoService.ProcessarAsync` — checkpoint layer: freeze-at-threshold (progresso não cruza threshold em tick único), pausa em `AguardandoEscolha` (1-checkpoint-per-tick), self-heal de expirados chamado em todo tick quando `AguardandoEscolha`
+- `TorreExploracaoService.IniciarAsync` — aceita `ulong discordId`; inicializa `Seed = new Random().Next()` e `DiscordUserId`
+- `StatusExploracao` — valor `AguardandoEscolha=4` adicionado
+- `TorreCommand` — handler `HandleEventoEscolhaAsync` (custom ID `torre_evento_escolha:…`), `RecuperarExpiradosAsync` no startup
+
+---
+
 ## [3.9.0] - 2026-05-08 · Atributos D&D + Perícias
 
 ### Adicionado
