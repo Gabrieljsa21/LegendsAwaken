@@ -39,6 +39,7 @@ namespace LegendsAwaken.Infrastructure
         public DbSet<Item> Itens => Set<Item>();
         public DbSet<ItemBonus> ItemBonus => Set<ItemBonus>();
         public DbSet<SlotOcupacao> SlotOcupacoes => Set<SlotOcupacao>();
+        public DbSet<HeroiPericia> HeroisPericias => Set<HeroiPericia>();
 
         // Fragmento system
         public DbSet<HeroiConfig> HeroiConfigs => Set<HeroiConfig>();
@@ -250,6 +251,20 @@ namespace LegendsAwaken.Infrastructure
                 .HasIndex(c => new { c.UsuarioId, c.Tipo, c.Ativo })
                 .IsUnique()
                 .HasFilter("\"Ativo\" = 1");
+
+            // HeroiPericia
+            modelBuilder.Entity<HeroiPericia>()
+                .HasKey(p => p.Id);
+
+            modelBuilder.Entity<HeroiPericia>()
+                .HasOne(p => p.Heroi)
+                .WithMany()
+                .HasForeignKey(p => p.HeroiId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<HeroiPericia>()
+                .HasIndex(p => new { p.HeroiId, p.Pericia })
+                .IsUnique();
 
             // Seed data
             modelBuilder.Entity<HeroiConfig>().HasData(FragmentoSeed.HeroiConfigs());

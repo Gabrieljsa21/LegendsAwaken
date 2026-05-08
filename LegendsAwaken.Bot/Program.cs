@@ -90,6 +90,7 @@ class Program
             .AddScoped<IContratoRepository, ContratoRepository>()
             .AddScoped<IHeroiDesbloqueadoRepository, HeroiDesbloqueadoRepository>()
             .AddScoped<IHeroiConfigRepository, HeroiConfigRepository>()
+            .AddScoped<IHeroiPericiaRepository, HeroiPericiaRepository>()
             .AddScoped<IAndarFlagProgressoRepository>(sp =>
                 new AndarFlagProgressoRepository(configuration.GetConnectionString("DefaultConnection")!))
 
