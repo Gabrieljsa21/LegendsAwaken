@@ -93,7 +93,10 @@ public static class HeroisPanel
         var totalAtributos = heroi.ObterAtributosTotais(new AtributosBase());
         var attrSb = new StringBuilder();
         foreach (var (attr, valor) in totalAtributos.ToEnumerable())
-            attrSb.AppendLine($"{NomeAtributo(attr)}: **{valor}**");
+        {
+            int mod = Modificador(valor);
+            attrSb.AppendLine($"{NomeAtributo(attr)}: **{valor}** ({ModStr(mod)})");
+        }
         if (heroi.PontosAtributosDisponiveis > 0)
             attrSb.AppendLine($"⚠️ Pontos disponíveis: **{heroi.PontosAtributosDisponiveis}**");
 
@@ -159,6 +162,9 @@ public static class HeroisPanel
         EstadoSustento.Inativo   => "Inativo (pausado)",
         _                        => estado.ToString()
     };
+
+    private static int Modificador(int valor) => (int)Math.Floor((valor - 10.0) / 2.0);
+    private static string ModStr(int mod) => mod >= 0 ? $"+{mod}" : $"{mod}";
 
     private static string NomeAtributo(Atributo attr) => attr switch
     {
