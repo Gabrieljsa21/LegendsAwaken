@@ -19,14 +19,16 @@ namespace LegendsAwaken.Application.Services
         private readonly IAtributoBonusService _atributoBonusProvider;
         private readonly HeroiLevelUpService _levelUpService;
         private readonly IItemRepository _itemRepository;
+        private readonly IHeroiPericiaRepository _periciaRepository;
 
-        public HeroiService(IHeroiRepository heroiRepository, HabilidadeService habilidadeService, IAtributoBonusService atributoBonusProvider, HeroiLevelUpService levelUpService, IItemRepository itemRepository)
+        public HeroiService(IHeroiRepository heroiRepository, HabilidadeService habilidadeService, IAtributoBonusService atributoBonusProvider, HeroiLevelUpService levelUpService, IItemRepository itemRepository, IHeroiPericiaRepository periciaRepository)
         {
             _heroiRepository = heroiRepository;
             _habilidadeService = habilidadeService;
             _atributoBonusProvider = atributoBonusProvider;
             _levelUpService = levelUpService;
             _itemRepository = itemRepository;
+            _periciaRepository = periciaRepository;
         }
 
         /// <summary>
@@ -40,14 +42,14 @@ namespace LegendsAwaken.Application.Services
             string antecedente,
             List<HeroiAfinidadeElemental> afinidade,
             FuncaoTatica? funcao = null,
-            string? titulo = null)
+            string? titulo = null,
+            Profissao? profissao = null)
         {
 
             var habilidades = await GerarHabilidadesIniciaisAsync(raridade, _habilidadeService);
 
-            // Stats base iguais para todos da raridade + bonus racial fixo por raca
-            int r = (int)raridade;
-            var atributosBase = _levelUpService.ObterAtributosBaseParaRaridade(r)
+            // Stats based on profession distribution + racial bonus
+            var atributosBase = ProfissaoConfig.ObterDistribuicao(profissao)
                 + HeroiLevelUpService.BonusRacial.GetValueOrDefault(raca, new AtributosBase());
 
             var heroi = HeroiFactory.CriarHeroi(
@@ -62,10 +64,30 @@ namespace LegendsAwaken.Application.Services
                 funcao,
                 titulo);
 
+            heroi.Profissao = profissao;
+
+            int hp = ProfissaoConfig.CalcularHpMaximo(profissao, nivel: 1, heroi.AtributosBase.Constituicao);
+            heroi.Status.VidaMaxima = hp;
+            heroi.Status.VidaAtual  = hp;
+
             heroi.DataCriacao = DateTime.UtcNow;
             heroi.DataAlteracao = DateTime.UtcNow;
 
             await _heroiRepository.AdicionarAsync(heroi);
+
+            if (profissao.HasValue
+                && ProfissaoConfig.ProficienciasIniciais.TryGetValue(profissao.Value, out var profs))
+            {
+                var pericias = profs.Select(p => new HeroiPericia
+                {
+                    Id              = Guid.NewGuid(),
+                    HeroiId         = heroi.Id,
+                    Pericia         = p,
+                    TemProficiencia = true,
+                    Rank            = 0
+                });
+                await _periciaRepository.AdicionarMuitosAsync(pericias);
+            }
 
             return heroi;
         }

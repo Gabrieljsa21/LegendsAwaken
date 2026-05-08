@@ -52,6 +52,7 @@ public class FragmentosRecrutarIntegrationTests : IDisposable
         var habilidadeRepoMock = new Mock<IHabilidadeRepository>();
         var atributoBonusMock  = new Mock<IAtributoBonusService>();
         var itemRepoMock       = new Mock<IItemRepository>();
+        var periciaRepoMock    = new Mock<IHeroiPericiaRepository>();
 
         heroiRepoMock
             .Setup(r => r.ObterPorUsuarioIdAsync(It.IsAny<ulong>()))
@@ -69,6 +70,10 @@ public class FragmentosRecrutarIntegrationTests : IDisposable
             .Setup(s => s.ObterBonus(It.IsAny<List<HeroiHabilidade>>()))
             .Returns(new AtributosBase());
 
+        periciaRepoMock
+            .Setup(r => r.AdicionarMuitosAsync(It.IsAny<IEnumerable<HeroiPericia>>()))
+            .Returns(Task.CompletedTask);
+
         var habilidadeService = new HabilidadeService(habilidadeRepoMock.Object);
         var levelUpService    = new HeroiLevelUpService();
 
@@ -77,7 +82,8 @@ public class FragmentosRecrutarIntegrationTests : IDisposable
             habilidadeService,
             atributoBonusMock.Object,
             levelUpService,
-            itemRepoMock.Object);
+            itemRepoMock.Object,
+            periciaRepoMock.Object);
     }
 
     public void Dispose()

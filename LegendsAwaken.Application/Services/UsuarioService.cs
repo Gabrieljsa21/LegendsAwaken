@@ -85,7 +85,8 @@ public class UsuarioService(
                     "",
                     [],
                     FuncaoDeArquetipo(config.Arquetipo),
-                    config.Titulo);
+                    config.Titulo,
+                    profissao: config.Arquetipo);
                 heroisExistentes.Add(novo);
             }
         }

@@ -41,12 +41,18 @@ public class TorreServiceExtensionTests
         var itemRepo = new Mock<IItemRepository>();
         itemRepo.Setup(r => r.ObterPorProprietarioAsync(It.IsAny<ulong>())).ReturnsAsync(new List<Item>());
 
+        var periciaRepo = new Mock<IHeroiPericiaRepository>();
+        periciaRepo
+            .Setup(r => r.AdicionarMuitosAsync(It.IsAny<IEnumerable<HeroiPericia>>()))
+            .Returns(Task.CompletedTask);
+
         return new HeroiService(
             heroiRepo.Object,
             new HabilidadeService(habilidadeRepo.Object),
             atributoBonusService.Object,
             new HeroiLevelUpService(),
-            itemRepo.Object);
+            itemRepo.Object,
+            periciaRepo.Object);
     }
 
     private TorreService CreateService()
