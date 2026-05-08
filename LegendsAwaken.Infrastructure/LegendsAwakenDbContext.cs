@@ -50,6 +50,11 @@ namespace LegendsAwaken.Infrastructure
         public DbSet<Contrato> Contratos => Set<Contrato>();
         public DbSet<HeroiDesbloqueado> HeroisDesbloqueados => Set<HeroiDesbloqueado>();
 
+        // Torre checkpoint event system
+        public DbSet<TorreEvento> TorreEventos { get; set; }
+        public DbSet<TorreEventoLog> TorreEventoLogs { get; set; }
+        public DbSet<UsuarioNotificacao> UsuariosNotificacao { get; set; }
+
 
 
 
@@ -265,6 +270,22 @@ namespace LegendsAwaken.Infrastructure
             modelBuilder.Entity<HeroiPericia>()
                 .HasIndex(p => new { p.HeroiId, p.Pericia })
                 .IsUnique();
+
+            // TorreEvento FK → TorreExploracao (cascade delete)
+            modelBuilder.Entity<TorreEvento>()
+                .HasOne(e => e.Exploracao)
+                .WithMany()
+                .HasForeignKey(e => e.ExploracaoId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // UsuarioNotificacao — PK is ulong UsuarioId
+            modelBuilder.Entity<UsuarioNotificacao>()
+                .HasKey(u => u.UsuarioId);
+
+            // TorreExploracao — Version as explicit concurrency token (supplements [ConcurrencyCheck])
+            modelBuilder.Entity<TorreExploracao>()
+                .Property(e => e.Version)
+                .IsConcurrencyToken();
 
             // Seed data
             modelBuilder.Entity<HeroiConfig>().HasData(FragmentoSeed.HeroiConfigs());
