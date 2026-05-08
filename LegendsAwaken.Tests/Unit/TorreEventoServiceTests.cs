@@ -94,6 +94,8 @@ public class TorreEventoServiceTests
         Assert.Equal(StatusExploracao.Ativa, exp.Status);
         Assert.Equal("pagar", evento.OpcaoKey);
         Assert.NotNull(evento.ResolvidoEm);
+        _eventoRepo.Verify(r => r.AtualizarAsync(evento), Times.Once);
+        _exploracaoRepo.Verify(r => r.AtualizarAsync(exp), Times.Once);
     }
 
     [Fact]
@@ -109,6 +111,7 @@ public class TorreEventoServiceTests
             Tipo = TipoEvento.BlockingChoice,
             Exploracao = exp
         };
+        _eventoRepo.Setup(r => r.ObterAtivoAsync(exp.Id)).ReturnsAsync(evento);
 
         await Assert.ThrowsAsync<ArgumentException>(() =>
             svc.ResolverAsync(evento.Id, "opcao_invalida", exp));
@@ -129,6 +132,7 @@ public class TorreEventoServiceTests
             Tipo = TipoEvento.BlockingChoice,
             Exploracao = exp
         };
+        _eventoRepo.Setup(r => r.ObterAtivoAsync(exp.Id)).ReturnsAsync(evento);
 
         await svc.ResolverAsync(evento.Id, "explorar", exp);
 

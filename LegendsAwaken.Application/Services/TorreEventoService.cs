@@ -60,16 +60,32 @@ public class TorreEventoService(
 
     public async Task ResolverAsync(Guid eventoId, string opcaoKey, TorreExploracao exp)
     {
-        // Early validation: reject any key that doesn't appear in any catalog entry.
-        // Must happen before the repo call so invalid keys throw ArgumentException immediately.
-        var config = CheckpointEventoCatalog.Todos
-            .FirstOrDefault(c => c.Opcoes != null && c.Opcoes.Any(o => o.Key == opcaoKey));
-        if (config is null)
-            throw new ArgumentException(
-                $"Opção '{opcaoKey}' não existe em nenhum evento do catálogo.", nameof(opcaoKey));
+        // Step 1: fetch the active event first — never mutate exp before confirming it exists.
+        var evento = await eventoRepo.ObterAtivoAsync(exp.Id);
+        if (evento is null)
+            throw new InvalidOperationException(
+                $"Nenhum evento ativo encontrado para exploração {exp.Id}.");
 
+        if (evento.Id != eventoId)
+            throw new InvalidOperationException(
+                $"Evento ativo ({evento.Id}) não corresponde ao eventoId solicitado ({eventoId}).");
+
+        // Step 2: look up config for the event's own key.
+        var config = CheckpointEventoCatalog.Todos
+            .FirstOrDefault(c => c.Key == evento.EventoKey);
+        if (config is null)
+            throw new InvalidOperationException(
+                $"Configuração não encontrada para evento '{evento.EventoKey}'.");
+
+        // Step 3: validate opcaoKey against this event's options (skip for Menor/AutoResolve events).
+        if (config.Opcoes is not null && !config.Opcoes.Any(o => o.Key == opcaoKey))
+            throw new ArgumentException(
+                $"Opção '{opcaoKey}' não é válida para o evento '{evento.EventoKey}'.", nameof(opcaoKey));
+
+        // Step 4: apply effect.
         var (grau, progressoBonus, descricaoEfeito) = AplicarEfeito(config, opcaoKey, exp);
 
+        // Step 5: clamp progress, mutate exp, serialize ResultadoJson.
         if (progressoBonus > 0)
         {
             int proximoThreshold = ProximoThresholdNaoProcessado(exp.CheckpointsProcessados, exp.Progresso);
@@ -85,28 +101,26 @@ public class TorreEventoService(
             exp.ConsequenceTags = JsonSerializer.Serialize(tags);
         }
 
+        // Step 6: mark exp active and bump version.
         exp.Status = StatusExploracao.Ativa;
         exp.Version++;
 
-        // Fetch and update the persisted evento if one is active for this exploration.
-        var evento = await eventoRepo.ObterAtivoAsync(exp.Id);
-        if (evento is not null)
+        // Step 7: persist evento.
+        evento.OpcaoKey = opcaoKey;
+        evento.ResolvidoEm = DateTime.UtcNow;
+        evento.Status = EventoStatus.Resolvido;
+        evento.ResultadoJson = JsonSerializer.Serialize(new
         {
-            evento.OpcaoKey = opcaoKey;
-            evento.ResolvidoEm = DateTime.UtcNow;
-            evento.Status = EventoStatus.Resolvido;
-            evento.ResultadoJson = JsonSerializer.Serialize(new
-            {
-                titulo = config.Titulo,
-                descricao = descricaoEfeito,
-                grauSucesso = grau.ToString(),
-                progressoBonus,
-                publico = true,
-                schemaVersion = 1
-            });
-            await eventoRepo.AtualizarAsync(evento);
-        }
+            titulo = config.Titulo,
+            descricao = descricaoEfeito,
+            grauSucesso = grau.ToString(),
+            progressoBonus,
+            publico = true,
+            schemaVersion = 1
+        });
+        await eventoRepo.AtualizarAsync(evento);
 
+        // Step 8: persist exp.
         await exploracaoRepo.AtualizarAsync(exp);
     }
 
@@ -127,6 +141,8 @@ public class TorreEventoService(
             ExploracaoId = exp.Id,
             Texto = $"[{config.Titulo}] {descricao}",
         });
+
+        await exploracaoRepo.AtualizarAsync(exp);
     }
 
     public async Task RecuperarExpiradosAsync()
