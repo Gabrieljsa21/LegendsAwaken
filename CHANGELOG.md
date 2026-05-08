@@ -6,6 +6,34 @@ O formato segue o padrão [Keep a Changelog](https://keepachangelog.com/pt-BR/1.
 
 ---
 
+## [3.9.0] - 2026-05-08 · Atributos D&D + Perícias
+
+### Adicionado
+
+- **6 atributos D&D** — `Atributo` enum renomeado (`Agilidade→Destreza`, `Vitalidade→Constituicao`, `Percepcao→Sabedoria`) + novo `Carisma`; `AtributosBase` atualizado com `Get`/`Set`/`+` genéricos via `Enum.GetValues<Atributo>()`
+- **`Pericia` enum (18 valores)** — Atletismo…Persuasao com mapeamento canônico de atributo; `AdvantageType` enum (Disadvantage/Normal/Advantage)
+- **`ProfissaoConfig`** — 20 profissões com distribuição inicial total=60 cada, `BaseHpPorProfissao` (combate 8–12), `ProficienciasIniciais` por profissão, `ObterDistribuicao`, `CalcularHpMaximo`
+- **`HeroiPericia` entity** — `(Id, HeroiId, Pericia, TemProficiencia, Rank=0)`; `IHeroiPericiaRepository` + `HeroiPericiaRepository`; migration `AtributosDnD` (6 `RenameColumn` + 2 `AddColumn` + tabela `HeroisPericias` com índice único `(HeroiId,Pericia)`)
+- **`SkillCheckService`** — `Rolar` (2d10+MOD+Prof vs DC), `RolarGrupo` (top-3 pesos 60/30/10%), `AtributoDePericia`, `BonusProficiencia` (tier ≤4→2 … 17+→6); `SkillRollContext` e `TestePericiaEvento` records; `EmptyBonus` estático
+- **`PericiaEventoConfig`** — 6 eventos de Torre (Acrobacia/Sobrevivência/Arcanismo/Furtividade/Persuasão/Percepção) com DC e descrições; `ChanceEventoPorAndar = 0.20`
+- **`HeroiAtributosResetService`** — migração one-time no startup; detecta heróis com stats > 80 (escala antiga), reseta para template de profissão + bônus racial, reconstrói ASI disponíveis (`nivel/4`), recria HP, semeia HeroiPericia
+- **Testes:** `AtributosBaseTests` (8), `ProfissaoConfigTests` (4 paramétricos total=60), `SkillCheckServiceTests` (18); **111 testes passando, 0 falhas**
+
+### Alterado
+
+- `HeroiLevelUpService` — `BonusRacial` +2 foco (era +50); `RaridadeConfig.BaseStatsTotal=60`, `GanhoPorNivel=0` (era 2); ASI: `nivel%4==0 → +1 ponto`; raças AnjoCaido (+2 CHA) e Serafim (+2 WIS) adicionadas
+- `HeroiService.CriarHeroiAsync` — aceita `Profissao? profissao=null`; usa `ProfissaoConfig.ObterDistribuicao` + HP override; cria registros `HeroiPericia` iniciais após persistir herói
+- `UsuarioService` — passa `profissao: config.Arquetipo` ao criar heróis iniciais
+- `CombatService.IniciarCombate` — bônus de liderança CHA: herói com maior CHA aplica `×(1 + MOD_CHA×0.01)` a todos os 6 atributos da party
+- `CombatService.CalcularDano` — crit: `5% + MOD_WIS×1%` (antes `5% + Percepcao×0.1%`); clamped ≥0
+- `HeroPowerScoreService` — fórmula inclui `Carisma×0.8`
+- `StatusCombateExtensions.FromAtributos` — HP = `8 + nivel + MOD_CON` (antes `Vitalidade×10`), mín 1
+- `TorreExploracaoService` — injeção de `IHeroiPericiaRepository`; hook de evento de perícia (20%/tick) com batch query e `SkillCheckService.EmptyBonus` estático
+- `HeroisPanel.CriarEmbedDetalhe` — exibe atributos com modificador: `Força: **14** (+2)`
+- `AtributoBonusService` — switch substituído por `AdicionarPorTipo(atributo, valor)` (auto-suporta Carisma)
+
+---
+
 ## [3.8.0] - 2026-05-07 · Fase 3B-TorreArcos — Torre: Arcos Narrativos
 
 ### Adicionado
