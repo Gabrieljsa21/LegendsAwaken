@@ -215,14 +215,16 @@ public class TorreExploracaoService
         if (proximoThreshold.HasValue && newProgress >= proximoThreshold.Value)
         {
             var flagProcessada = TorreEventoService.ThresholdParaFlag(proximoThreshold.Value);
-            exploracao.CheckpointsProcessados |= flagProcessada;
-            exploracao.Version++;
             exploracao.Progresso = Math.Min(newProgress, 100.0);
             exploracao.UltimoTickEm = agora;
 
             var eventoGerado = await _eventoService.GerarEventoAsync(exploracao, proximoThreshold.Value);
 
-            if (eventoGerado.Tier == Domain.Enum.TierEvento.Maior)
+            // Mark the checkpoint only after the event row is persisted
+            exploracao.CheckpointsProcessados |= flagProcessada;
+            exploracao.Version++;
+
+            if (eventoGerado.Tier == TierEvento.Maior)
             {
                 exploracao.Status = StatusExploracao.AguardandoEscolha;
                 await _exploracaoRepo.AtualizarAsync(exploracao);
@@ -233,7 +235,8 @@ public class TorreExploracaoService
             else
             {
                 var configMenor = CheckpointEventoCatalog.Todos
-                    .First(c => c.Key == eventoGerado.EventoKey);
+                    .FirstOrDefault(c => c.Key == eventoGerado.EventoKey)
+                    ?? throw new InvalidOperationException($"Catalog entry not found for event key '{eventoGerado.EventoKey}'.");
                 await _eventoService.ResolverMenorInlineAsync(configMenor, exploracao);
                 exploracao.Version++;
                 await _exploracaoRepo.AtualizarAsync(exploracao);
