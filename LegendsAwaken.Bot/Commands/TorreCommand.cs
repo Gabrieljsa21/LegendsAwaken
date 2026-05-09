@@ -348,7 +348,7 @@ public class TorreCommand(
                 .ToList();
             double ps2 = HeroPowerScoreService.CalcularParty(heroisAtivos);
             double cd2 = HeroPowerScoreService.CalcularCDI(ativa.AndarNumero);
-            var (e, c) = TorreExploracaoPanel.CriarAtivo(ativa, ps2, cd2);
+            var (e, c) = TorreExploracaoPanel.CriarAtivo(ativa, ps2, cd2, ativa.Status == StatusExploracao.AguardandoEscolha);
             await comp.FollowupAsync(embed: e, components: c, ephemeral: true);
             return;
         }
@@ -437,8 +437,8 @@ public class TorreCommand(
         Log($"ExplorarConfirmar — booster={boosterStr} partyId={partyId} user={comp.User.Username}");
         try
         {
-            var (exp, teamPS, cdi) = await PrepararInicioAsync(comp.User.Id, boosterStr, partyId);
-            var (embed, comps) = TorreExploracaoPanel.CriarAtivo(exp, teamPS, cdi);
+            var (exp, teamPS, cdi) = await PrepararInicioAsync(comp.User.Id, comp.Channel.Id, boosterStr, partyId);
+            var (embed, comps) = TorreExploracaoPanel.CriarAtivo(exp, teamPS, cdi, exp.Status == StatusExploracao.AguardandoEscolha);
             await comp.UpdateAsync(m => { m.Content = null; m.Embed = embed; m.Components = comps; });
         }
         catch (InvalidOperationException ex)
@@ -463,8 +463,8 @@ public class TorreCommand(
         Log($"BoosterSel — valor={valor} partyId={partyId} user={comp.User.Username}");
         try
         {
-            var (exp, teamPS, cdi) = await PrepararInicioAsync(comp.User.Id, valor, partyId);
-            var (embed, comps) = TorreExploracaoPanel.CriarAtivo(exp, teamPS, cdi);
+            var (exp, teamPS, cdi) = await PrepararInicioAsync(comp.User.Id, comp.Channel.Id, valor, partyId);
+            var (embed, comps) = TorreExploracaoPanel.CriarAtivo(exp, teamPS, cdi, exp.Status == StatusExploracao.AguardandoEscolha);
             await comp.UpdateAsync(m => { m.Content = null; m.Embed = embed; m.Components = comps; });
         }
         catch (InvalidOperationException ex)
@@ -498,7 +498,8 @@ public class TorreCommand(
                 .ToList();
             double teamPS = HeroPowerScoreService.CalcularParty(herois);
             double cdi    = HeroPowerScoreService.CalcularCDI(ativa.AndarNumero);
-            var (embed, comps) = TorreExploracaoPanel.CriarAtivo(ativa, teamPS, cdi);
+            bool temEvento = ativa.Status == StatusExploracao.AguardandoEscolha;
+            var (embed, comps) = TorreExploracaoPanel.CriarAtivo(ativa, teamPS, cdi, temEvento);
             await comp.UpdateAsync(m => { m.Content = null; m.Embed = embed; m.Components = comps; });
             return;
         }
@@ -641,6 +642,37 @@ public class TorreCommand(
         });
     }
 
+    // ── Button: torre_exp_evento_ver ──────────────────────────────────────────
+
+    public async Task HandleExpEventoVerAsync(SocketMessageComponent comp)
+    {
+        var usuarioId = DiscordIdHelper.ToGuid(comp.User.Id);
+        var ativa = await exploracaoService.ObterAtivaAsync(usuarioId);
+        if (ativa?.Status != StatusExploracao.AguardandoEscolha)
+        {
+            await comp.UpdateAsync(m => { m.Content = "Nenhum evento pendente."; m.Embed = null; m.Components = new ComponentBuilder().Build(); });
+            return;
+        }
+
+        var eventoAtivo = await eventoService.ObterEventoAtivoAsync(ativa.Id);
+        if (eventoAtivo == null)
+        {
+            await comp.UpdateAsync(m => { m.Content = "Nenhum evento pendente."; m.Embed = null; m.Components = new ComponentBuilder().Build(); });
+            return;
+        }
+
+        var eventoConfig = CheckpointEventoCatalog.Todos.FirstOrDefault(c => c.Key == eventoAtivo.EventoKey);
+        if (eventoConfig == null)
+        {
+            await comp.UpdateAsync(m => { m.Content = "Configuração do evento não encontrada."; m.Embed = null; m.Components = new ComponentBuilder().Build(); });
+            return;
+        }
+
+        var embed = TorreEventoPanel.CriarEmbedEscolha(eventoAtivo, eventoConfig);
+        var comps = TorreEventoPanel.CriarComponentesEscolha(eventoAtivo, eventoConfig);
+        await comp.UpdateAsync(m => { m.Content = null; m.Embed = embed; m.Components = comps; });
+    }
+
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     private async Task MostrarConfirmacaoGrupoAsync(
@@ -715,7 +747,7 @@ public class TorreCommand(
     }
 
     private async Task<(Domain.Entities.TorreExploracao exp, double teamPS, double cdi)> PrepararInicioAsync(
-        ulong discordId, string boosterStr, string partyIdStr)
+        ulong discordId, ulong channelId, string boosterStr, string partyIdStr)
     {
         var usuarioId = DiscordIdHelper.ToGuid(discordId);
 
@@ -758,7 +790,7 @@ public class TorreCommand(
         if (!heroisValidos.Any())
             throw new InvalidOperationException("Nenhum herói ativo no grupo.");
 
-        var exp    = await exploracaoService.IniciarAsync(usuarioId, discordId, heroisValidos.Select(h => h.Id).ToList(), booster);
+        var exp    = await exploracaoService.IniciarAsync(usuarioId, discordId, channelId, heroisValidos.Select(h => h.Id).ToList(), booster);
         double teamPS = HeroPowerScoreService.CalcularParty(heroisValidos);
         double cdi    = HeroPowerScoreService.CalcularCDI(exp.AndarNumero);
         return (exp, teamPS, cdi);

@@ -36,6 +36,21 @@ public class TorreEventoService(
 
         var config = rng.EscolherPonderado(candidatos, c => c.Peso);
 
+        // Clean up any orphaned active events (Menor events that were never persisted as Resolvido)
+        var orfao = await eventoRepo.ObterAtivoAsync(exp.Id);
+        if (orfao != null)
+        {
+            orfao.Status = EventoStatus.Resolvido;
+            orfao.OpcaoKey = "auto";
+            orfao.ResolvidoEm = DateTime.UtcNow;
+            orfao.ResultadoJson = JsonSerializer.Serialize(new
+            {
+                titulo = "Substituído", descricao = "Evento anterior resolvido automaticamente.",
+                schemaVersion = 1
+            });
+            await eventoRepo.AtualizarAsync(orfao);
+        }
+
         var evento = new TorreEvento
         {
             Id = Guid.NewGuid(),
@@ -51,7 +66,6 @@ public class TorreEventoService(
             SnapshotCombatStateJson = SerializarSnapshot(exp),
             CriadoEm = DateTime.UtcNow,
             ExpiraEm = config.Tier == TierEvento.Maior ? DateTime.UtcNow.Add(DefaultExpiracao) : null,
-            Exploracao = exp
         };
 
         await eventoRepo.AdicionarAsync(evento);
@@ -127,7 +141,7 @@ public class TorreEventoService(
         await exploracaoRepo.AtualizarAsync(exp);
     }
 
-    public async Task ResolverMenorInlineAsync(CheckpointEventoConfig config, TorreExploracao exp)
+    public async Task ResolverMenorInlineAsync(CheckpointEventoConfig config, TorreExploracao exp, TorreEvento evento)
     {
         var (_, progressoBonus, descricao) = AplicarEfeito(config, opcaoKey: null, exp);
 
@@ -138,6 +152,19 @@ public class TorreEventoService(
                 progressoBonus = Math.Min(progressoBonus, proximo - (int)exp.Progresso - 1);
             exp.Progresso = Math.Min(100, exp.Progresso + progressoBonus);
         }
+
+        evento.OpcaoKey = "auto";
+        evento.ResolvidoEm = DateTime.UtcNow;
+        evento.Status = EventoStatus.Resolvido;
+        evento.ResultadoJson = JsonSerializer.Serialize(new
+        {
+            titulo = config.Titulo,
+            descricao,
+            progressoBonus,
+            publico = true,
+            schemaVersion = 1
+        });
+        await eventoRepo.AtualizarAsync(evento);
 
         await eventoRepo.AdicionarLogAsync(new TorreEventoLog
         {

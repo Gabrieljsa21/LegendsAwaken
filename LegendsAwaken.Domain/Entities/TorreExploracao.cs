@@ -24,7 +24,8 @@ public class TorreExploracao
 
     // Checkpoint event system
     public int Seed { get; set; }                                       // set on IniciarAsync, drives EventoRng
-    public ulong DiscordUserId { get; set; }                            // Discord ulong for DM notifications
+    public ulong DiscordUserId { get; set; }                            // Discord user for notifications
+    public ulong ChannelId { get; set; }                                // channel where exploration started
     public CheckpointFlags CheckpointsProcessados { get; set; }         // bitmask tracking processed checkpoints
     public string? ConsequenceTags { get; set; }                        // JSON string[] — tags from chained events
 

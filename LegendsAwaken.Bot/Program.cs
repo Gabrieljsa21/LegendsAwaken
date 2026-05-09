@@ -61,7 +61,8 @@ class Program
 
         var services = new ServiceCollection()
             .AddDbContext<LegendsAwakenDbContext>(options =>
-                options.UseSqlite(configuration.GetConnectionString("DefaultConnection")))
+                options.UseSqlite(
+                    configuration.GetConnectionString("DefaultConnection") + ";Foreign Keys=False"))
 
             // Repositórios
             .AddScoped<ICidadeRepository, CidadeRepository>()
@@ -133,6 +134,7 @@ class Program
 
             .AddSingleton(_cliente)
             .AddSingleton<IConfiguration>(configuration)
+            .AddSingleton<TorreTicker>()
 
             .AddLogging(builder =>
             {
@@ -152,6 +154,13 @@ class Program
         // Login e início do bot
         await _cliente.LoginAsync(TokenType.Bot, _token);
         await _cliente.StartAsync();
+
+        // Ticker de explorações — inicia após o bot estar online
+        _cliente.Ready += () =>
+        {
+            services.GetRequiredService<TorreTicker>().Start();
+            return Task.CompletedTask;
+        };
 
         // Inicializa o manipulador de comandos
         var handler = new CommandHandler(

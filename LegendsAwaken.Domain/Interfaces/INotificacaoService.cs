@@ -5,5 +5,6 @@ namespace LegendsAwaken.Domain.Interfaces;
 
 public interface INotificacaoService
 {
-    Task NotificarEventoCheckpointAsync(ulong discordUserId, TorreEvento evento);
+    Task NotificarEventoCheckpointAsync(ulong channelId, ulong discordUserId, TorreEvento evento);
+    Task NotificarEventoMenorAsync(ulong channelId, ulong discordUserId, TorreEvento evento, string titulo, string descricaoResultado, int progressoBonus);
 }

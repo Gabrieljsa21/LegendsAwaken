@@ -128,6 +128,45 @@ Painéis principais são públicos; feedback de ação é efêmero; navegação 
 
 ---
 
+## Sessão 2026-05-08 — Atributos D&D + Perícias ✅ concluída
+
+- [x] 6 atributos D&D — `Atributo` enum com `Forca`, `Destreza`, `Constituicao`, `Inteligencia`, `Sabedoria`, `Carisma`; `AtributosBase` com `Get`/`Set`/`+` genéricos
+- [x] `Pericia` enum (18 valores) com mapeamento canônico de atributo; `AdvantageType`
+- [x] `ProfissaoConfig` — 20 profissões com distribuição inicial total=60 e HP base por profissão
+- [x] `HeroiPericia` entity + repositório + migration `AtributosDnD`
+- [x] `SkillCheckService` — `Rolar` (2d10+MOD+Prof vs DC), `RolarGrupo`, `BonusProficiencia` por tier
+- [x] `PericiaEventoConfig` — 6 eventos de Torre com DC e chance 20%/tick
+- [x] `HeroiAtributosResetService` — migração one-time no startup para heróis na escala antiga
+- [x] 111 testes passando, 0 falhas
+
+---
+
+## Sessão 2026-05-08 — Torre: Checkpoint Events ✅ concluída
+
+Plano de implementação em `docs/superpowers/plans/2026-05-08-torre-checkpoint-eventos.md`. Spec de design em `docs/superpowers/specs/2026-05-08-torre-checkpoint-eventos-design.md`.
+
+- [x] Sistema de Checkpoint Events — 4 Maior (`BlockingChoice`) + 2 Menor (`AutoResolve`) nos checkpoints 25/50/75/100%
+- [x] `TorreEvento`, `TorreEventoLog`, `UsuarioNotificacao` — novas entidades; migration `TorreCheckpointEventos`
+- [x] `TorreEventoService` — `GerarEventoAsync` (seed determinístico), `ResolverAsync`, `ResolverMenorInlineAsync`, `RecuperarExpiradosAsync`
+- [x] `CheckpointEventoCatalog` — 6 eventos estáticos; `EventoRng` determinístico
+- [x] `TorreEventoPanel` — embed de escolha + resultado; botões por `RiscoTom`; `CustomIdFactory.EventoEscolha`
+- [x] `NotificacaoService` — DM + canal com fallback silencioso
+- [x] `TorreExploracaoService.ProcessarAsync` — freeze-at-threshold, pausa em `AguardandoEscolha`, self-heal de expirados
+- [x] `TorreCommand` — handler `HandleEventoEscolhaAsync`, `RecuperarExpiradosAsync` no startup
+- [x] 126 testes passando, 0 falhas
+
+---
+
+## Sessão 2026-05-09 — Torre Checkpoint Events: Ticker Automático + Hardening ✅ concluída
+
+- [x] `TorreTicker` background service — timer de 60 s; processa todas as explorações ativas/pausadas automaticamente; erros por exploração isolados
+- [x] `ObterTodasAtivasAsync` — retorna explorações `Status IN (Ativa, AguardandoEscolha)` de todos os usuários
+- [x] `NotificarEventoMenorAsync` — notificação pós-resolução de evento Menor no canal; fallback para DM
+- [x] Botão de evento no painel de exploração — `bool temEventoPendente` em `TorreExploracaoPanel.CriarAtivo`; todos os 4 call sites atualizados
+- [x] Bugfixes críticos: NOT NULL em `ChannelId`; UNIQUE constraint em `TorreExploracoes.Id`; FOREIGN KEY na migration; orphaned Menor events; `ObterAtivaAsync` ignorava `AguardandoEscolha`; floor clear pulado a 100%; painel "próximo 125%"
+
+---
+
 ## Fase 3B — Expansão de Sistemas
 **Objetivo:** adicionar profundidade econômica e loops complementares. Implementar após UX-0 validado.
 
@@ -136,7 +175,7 @@ Painéis principais são públicos; feedback de ação é efêmero; navegação 
 | # | Sistema | Prioridade | Dependência |
 |---|---------|-----------|-------------|
 | 3B-ItemUnico | Item Único por Andar (Torre Operação) | Alta | `TorreOperacaoConfig`, Inventário básico |
-| 3B-TorreExp | Torre Exploração Avançada — Investigação, Checkpoints, Heróis Feridos | Alta | `TorreExploracaoService` |
+| 3B-TorreExp | Torre Exploração Avançada — Investigação, Heróis Feridos | Alta | `TorreExploracaoService` |
 | 3B-BoostCidade | Boosters da Cidade — consumíveis craftáveis | Média | Crafting expandido |
 | 3B-RotacaoInteresse | Rotação de Interesse — demandas de crafting e eventos semanais | Média | 3B-ItemUnico |
 | 3B-1 | Inventário Unificado | Média | Pré-requisito para Relíquias e Mercado |

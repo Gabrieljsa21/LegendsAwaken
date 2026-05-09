@@ -14,10 +14,6 @@ namespace LegendsAwaken.Application.Services;
 /// </summary>
 public static class HeroPowerScoreService
 {
-    // ── Calibration constants ────────────────────────────────────────────────
-    // CALIBRAR NO BETA
-    private const double P0Ref = 300.0;
-
     private static readonly IReadOnlyDictionary<Raridade, double> RarityMultiplier =
         new Dictionary<Raridade, double>
         {
@@ -80,19 +76,12 @@ public static class HeroPowerScoreService
 
     /// <summary>
     /// Computes the Tower Content Difficulty Index for a given floor.
-    /// TowerCDI(floor) = P0_ref * (1.10)^floor * FloorModifier
+    /// Each difficulty phase is tuned independently in TorrePhaseConfig.CDIFases.
     /// </summary>
     public static double CalcularCDI(int andar)
     {
-        double floorModifier = andar switch
-        {
-            <= 20  => 0.80,
-            <= 80  => 1.00,
-            <= 150 => 1.25,
-            _      => 1.50,
-        };
-
-        return P0Ref * Math.Pow(1.10, andar) * floorModifier;
+        var fase = TorrePhaseConfig.ObterCDIFase(andar);
+        return TorrePhaseConfig.InterpolaCDI(fase, andar);
     }
 
     /// <summary>

@@ -18,8 +18,9 @@ public class TorreEventoRepository(LegendsAwakenDbContext db) : ITorreEventoRepo
 
     public async Task<TorreEvento?> ObterAtivoAsync(Guid exploracaoId) =>
         await db.TorreEventos
-            .FirstOrDefaultAsync(e => e.ExploracaoId == exploracaoId
-                                   && e.Status == Domain.Enum.EventoStatus.Ativo);
+            .Where(e => e.ExploracaoId == exploracaoId && e.Status == Domain.Enum.EventoStatus.Ativo)
+            .OrderByDescending(e => e.CriadoEm)
+            .FirstOrDefaultAsync();
 
     public async Task AtualizarAsync(TorreEvento evento)
     {

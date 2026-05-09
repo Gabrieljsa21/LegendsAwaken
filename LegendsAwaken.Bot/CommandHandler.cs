@@ -725,6 +725,9 @@ namespace LegendsAwaken.Bot
 
                     if (parts[0] == "torre_exp_cancelar_sel")
                         { await expCmd.HandleExpCancelarSelAsync(comp); return; }
+
+                    if (parts[0] == "torre_exp_evento_ver")
+                        { await expCmd.HandleExpEventoVerAsync(comp); return; }
                 }
                 catch (Exception ex)
                 {

@@ -72,7 +72,8 @@ public static class TorreExploracaoPanel
     public static (Embed embed, MessageComponent comps) CriarAtivo(
         TorreExploracao exp,
         double teamPS,
-        double cdi)
+        double cdi,
+        bool temEventoPendente = false)
     {
         var resumo = TorreExploracaoService.ObterResumo(exp, teamPS, cdi);
         int pct    = (int)resumo.Progresso;
@@ -82,8 +83,10 @@ public static class TorreExploracaoPanel
             ? $"{IconeBooster(exp.BoosterAtivo.Value)} {NomeBooster(exp.BoosterAtivo.Value)}"
             : "Nenhum";
 
-        var boosterMult        = exp.BoosterAtivo == TipoBooster.Eficiencia ? 1.20 : 1.0;
-        var progressoPorMinuto = Math.Max(0.01, Math.Min(1.5 * resumo.Ratio * boosterMult, 3.0));
+        var boosterMult  = exp.BoosterAtivo == TipoBooster.Eficiencia ? 1.20 : 1.0;
+        var progFase     = LegendsAwaken.Application.Services.TorrePhaseConfig.ObterProgressoFase(exp.AndarNumero);
+        var ratioBonus   = progFase.RatioMult * Math.Max(0.0, resumo.Ratio - 0.5);
+        var progressoPorMinuto = Math.Max(0.01, Math.Min((progFase.TaxaBase + ratioBonus) * boosterMult, progFase.Cap));
         var minutosRestantes   = (100.0 - resumo.Progresso) / progressoPorMinuto;
         var tempoStr = minutosRestantes < 1
             ? "< 1m"
@@ -94,10 +97,16 @@ public static class TorreExploracaoPanel
         var sb = new StringBuilder();
         sb.AppendLine($"```");
         sb.AppendLine($"Progresso : {pct:D3}% {barra}");
-        sb.AppendLine($"Checkpoint: último {resumo.UltimoCheckpoint}% / próximo {resumo.ProximoCheckpoint}%");
+        if (resumo.Progresso >= 100)
+            sb.AppendLine($"Checkpoint: ✅ Concluindo andar...");
+        else
+            sb.AppendLine($"Checkpoint: último {resumo.UltimoCheckpoint}% / próximo {resumo.ProximoCheckpoint}%");
         sb.AppendLine($"Ratio     : {resumo.Ratio:F2}x  |  Chance vitória: {(int)(resumo.WinChance*100)}%");
         sb.AppendLine($"Booster   : {boosterStr}");
-        sb.AppendLine($"Tempo     : {tempoStr} até conclusão");
+        if (!temEventoPendente)
+            sb.AppendLine($"Tempo     : {tempoStr} até conclusão");
+        else
+            sb.AppendLine($"Status    : ⏸️ Aguardando escolha no evento");
         sb.AppendLine($"```");
 
         if (resumo.LootOuro > 0 || resumo.LootFragmentos > 0)
@@ -106,19 +115,26 @@ public static class TorreExploracaoPanel
                           (resumo.LootFragmentos > 0 ? $" | 💎 {resumo.LootFragmentos} Fragmentos" : ""));
         }
 
+        var cor    = temEventoPendente ? Color.Orange : Color.Blue;
+        var footer = temEventoPendente
+            ? "⏸️ Exploração pausada — responda ao evento para continuar"
+            : "Exploração em andamento — use 🔄 para atualizar";
+
         var embed = new EmbedBuilder()
             .WithTitle($"⚔️ Explorando — Andar {exp.AndarNumero}")
-            .WithColor(Color.Blue)
+            .WithColor(cor)
             .WithDescription(sb.ToString())
-            .WithFooter("Exploração em andamento — use 🔄 para atualizar")
+            .WithFooter(footer)
             .Build();
 
-        var comps = new ComponentBuilder()
+        var builder = new ComponentBuilder()
             .WithButton("🔄 Atualizar",  "torre_exp_atualizar", ButtonStyle.Secondary)
-            .WithButton("🏳️ Abandonar", "torre_exp_cancelar",  ButtonStyle.Danger)
-            .Build();
+            .WithButton("🏳️ Abandonar", "torre_exp_cancelar",  ButtonStyle.Danger);
 
-        return (embed, comps);
+        if (temEventoPendente)
+            builder.WithButton("📋 Evento", "torre_exp_evento_ver", ButtonStyle.Primary);
+
+        return (embed, builder.Build());
     }
 
     // ── Completed ────────────────────────────────────────────────────────────
@@ -322,7 +338,7 @@ public static class TorreExploracaoPanel
 
         if (andarArco?.ObjetivoSecundario is { } sec)
             builder.AddField("🎯 Objetivo Secundário",
-                $"{sec.Descricao}\n*Seu grupo tentará automaticamente.*\n*Efeito se bem-sucedido: {sec.EfeitoDescricao}*");
+                $"{sec.Descricao}\n*Seu grupo tentará automaticamente.*");
 
         if (bossModDescricoes is { Count: > 0 })
             builder.AddField("⚔️ Bônus de Preparação",

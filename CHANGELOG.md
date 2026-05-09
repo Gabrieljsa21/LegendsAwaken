@@ -6,6 +6,42 @@ O formato segue o padrão [Keep a Changelog](https://keepachangelog.com/pt-BR/1.
 
 ---
 
+## [3.11.0] - 2026-05-09 · Torre Checkpoint Events — Ticker Automático + Bugfixes Críticos
+
+### Adicionado
+
+- **`TorreTicker` background service** — `LegendsAwaken.Bot/Services/TorreTicker.cs`: singleton iniciado no evento `Ready` do Discord; dispara `Timer` a cada 60 segundos; cada tick abre escopo DI, chama `ObterTodasAtivasAsync` e executa `ProcessarAsync(exp.UsuarioId)` por exploração; erros por exploração são isolados e não cancelam o tick global
+- **`ObterTodasAtivasAsync`** — novo método em `ITorreExploracaoRepository` / `TorreExploracaoRepository`; retorna todas as explorações com `Status IN (Ativa, AguardandoEscolha)` de todos os usuários
+- **`NotificarEventoMenorAsync`** — novo método em `INotificacaoService` / `NotificacaoService`: posta embed informativo no canal da exploração após resolução de evento Menor; fallback para DM quando canal retorna `Missing Permissions`
+- **Botão de evento no painel de exploração** — `TorreExploracaoPanel.CriarAtivo` aceita `bool temEventoPendente`; quando `true`, aplica cor laranja ao embed, exibe linha de status pausado, adiciona botão `📋 Evento` e rodapé de pausa; todos os 4 call sites de `CriarAtivo` foram atualizados
+
+### Corrigido
+
+- **NOT NULL em `ChannelId`** — `TorreExploracaoRepository.SalvarAsync`, `BindParams`, `Mapear` e `EnsureTableAsync` omitiam a coluna `ChannelId`; corrigido em todos os pontos
+- **UNIQUE em `TorreExploracoes.Id`** — inicializador de objeto `TorreEvento` continha `Exploracao = exp`, levando o EF Core graph-walk a tentar re-INSERT a exploração já existente; campo removido do inicializador
+- **FOREIGN KEY constraint** — migration `PendingModelSync` reescrita como SQL idempotente (`CREATE TABLE IF NOT EXISTS`, `DROP TABLE IF EXISTS`, nomes de coluna explícitos no `INSERT`); `Foreign Keys=False` adicionado à connection string do EF Core
+- **Robustez da migration** — adicionado `DROP TABLE IF EXISTS "TorreEventos_migr"` antes do CREATE; nomes de coluna explícitos no INSERT; `DROP INDEX IF EXISTS` antes do CREATE INDEX
+- **Eventos Menor órfãos ativos** — `ObterAtivoAsync` agora ordena por `CriadoEm DESC`; `GerarEventoAsync` limpa qualquer evento ativo órfão antes de inserir novo; `ResolverMenorInlineAsync` aceita o `TorreEvento` e persiste `Status = Resolvido`
+- **`ObterAtivaAsync` ignorava `AguardandoEscolha`** — query do repositório agora retorna explorações com `Status = Ativa OR Status = AguardandoEscolha`; painel de evento e handlers funcionam quando a exploração está pausada em um evento Maior
+- **Limpeza de andar pulada em evento Menor a 100%** — `ProcessarAsync` retornava cedo após evento Menor sem chegar ao bloco de floor-clear; reestruturado para que o evento Menor caia através do mesmo tick até o bloco de conclusão de andar
+- **Painel exibindo "próximo 125%"** — `TorreExploracaoPanel.CriarAtivo` agora exibe `✅ Concluindo andar...` quando `Progresso >= 100`
+
+---
+
+## [3.10.1] - 2026-05-09 · Bugfixes: EF Migration + Torre Exploração
+
+### Corrigido
+
+- **Migration `PendingModelSync`** — renomeia tabela `TorreExploracao → TorreExploracoes` para corresponder ao nome do DbSet; resolve `PendingModelChangesWarning` do EF Core 10 que bloqueava `MigrateAsync()` no startup (banco vazio, tabela `Herois` não encontrada)
+- **`TorreExploracaoRepository`** — `SalvarAsync`, `AtualizarAsync` e `EnsureTableAsync` omitiam colunas `Seed`, `DiscordUserId`, `CheckpointsProcessados`, `ConsequenceTags` e `Version`; causava `NOT NULL constraint failed: TorreExploracoes.CheckpointsProcessados` ao tentar iniciar exploração
+- **`TorrePanel`** — efeito do objetivo secundário agora oculto até a flag ser ativada (conclusão); revelado como `✅ Efeito aplicado: …` mantendo o efeito surpresa
+- **`TorreExploracaoPanel.CriarConfirmacao`** — removido spoiler `Efeito se bem-sucedido: …` do painel de confirmação de exploração
+- **`TorreEventoService.ResolverMenorInlineAsync`** — double-save removido; expirados auto-recuperados em todo tick `AguardandoEscolha`
+- **`TorreExploracaoService`** — stale-read de `progressoBonus` corrigido; expiração negativa de eventos corrigida
+- **`NotificacaoService`** — catch de DM restrito a `HttpException` (antes suprimia todos os erros de lógica)
+
+---
+
 ## [3.10.0] - 2026-05-08 · Torre: Checkpoint Events
 
 ### Adicionado

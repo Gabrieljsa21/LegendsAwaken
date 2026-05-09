@@ -63,8 +63,13 @@ public static class TorrePanel
                 andarDef?.NarrativaDisplay ?? "...");
 
             if (andarDef?.ObjetivoSecundario is { } sec)
-                builder.AddField("🎯 Objetivo Secundário",
-                    $"{sec.Descricao}\n*Efeito: {sec.EfeitoDescricao}*");
+            {
+                var cumprido = flagsAtivas?.Contains(sec.FlagNome) == true;
+                var secTexto = cumprido
+                    ? $"{sec.Descricao}\n✅ *Efeito aplicado: {sec.EfeitoDescricao}*"
+                    : sec.Descricao;
+                builder.AddField("🎯 Objetivo Secundário", secTexto);
+            }
         }
 
         if (flagsAtivas is { Count: > 0 })

@@ -83,9 +83,8 @@ namespace LegendsAwaken.Application.Services
                     Id              = Guid.NewGuid(),
                     HeroiId         = heroi.Id,
                     Pericia         = p,
-                    TemProficiencia = true,
-                    Rank            = 0
-                });
+                    TemProficiencia = true
+                }).ToList();
                 await _periciaRepository.AdicionarMuitosAsync(pericias);
             }
 

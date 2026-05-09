@@ -24,19 +24,8 @@ Tarefas pendentes por área. Para progresso macro de fases, veja `ROADMAP.md`.
 ### 3B-TorreExp — Torre Exploração Avançada (T0)
 
 #### Investigação do Andar
-- [ ] Botão `[Investigar]` no `TorrePanel` ou no seletor de andar da Exploração
-- [ ] Nível Básico — chance de vitória: `teamPS / andarDificuldade` (clamp 5–95%), exibida antes de confirmar
 - [ ] Nível Intermediário — fraquezas elementais do andar
 - [ ] Nível Avançado — distribuição de checkpoints + modificadores ativos do andar
-- [ ] `AndarConfig` ou campo `Dificuldade` em `TorreAndar` para alimentar o cálculo
-
-#### Checkpoints de Loot
-- [ ] Campo `ProgressoAtual` (0–100) em `TorreExploracao`
-- [ ] Config de checkpoints por andar (ex: `{25, 50, 75, 100}`)
-- [ ] Ao atingir checkpoint: gerar e garantir loot daquele intervalo
-- [ ] Ao falhar: preservar loot até último checkpoint; perder intervalo atual
-- [ ] `TorreCheckpointLoot` entity + repositório + migration
-- [ ] Integração com `TorreExploracaoService.ProcessarAsync`
 
 #### Heróis Feridos ao Falhar
 - [ ] Ao falhar: heróis do time marcados como feridos (`FerimentoAt`, `HorasRecuperacao`)

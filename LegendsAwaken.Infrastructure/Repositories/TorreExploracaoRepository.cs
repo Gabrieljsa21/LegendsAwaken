@@ -3,6 +3,7 @@ using LegendsAwaken.Domain.Enum;
 using LegendsAwaken.Domain.Interfaces;
 using Microsoft.Data.Sqlite;
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Threading.Tasks;
 
@@ -39,7 +40,13 @@ public class TorreExploracaoRepository : ITorreExploracaoRepository
                 LootFragmentosQtd     INTEGER NOT NULL DEFAULT 0,
                 LootFragmentosHeroiId TEXT NOT NULL DEFAULT '',
                 ConcluidoEm           TEXT NULL,
-                HeroisFeridosIds      TEXT NOT NULL DEFAULT ''
+                HeroisFeridosIds      TEXT NOT NULL DEFAULT '',
+                Seed                  INTEGER NOT NULL DEFAULT 0,
+                DiscordUserId         INTEGER NOT NULL DEFAULT 0,
+                ChannelId             INTEGER NOT NULL DEFAULT 0,
+                CheckpointsProcessados INTEGER NOT NULL DEFAULT 0,
+                ConsequenceTags       TEXT NULL,
+                Version               INTEGER NOT NULL DEFAULT 0
             )";
         await cmd.ExecuteNonQueryAsync();
     }
@@ -54,12 +61,14 @@ public class TorreExploracaoRepository : ITorreExploracaoRepository
                 Id, UsuarioId, AndarNumero, Progresso, UltimoCheckpoint,
                 CheckpointInterval, Status, IniciadoEm, UltimoTickEm,
                 HeroisIds, BoosterAtivo, LootOuro, LootFragmentosQtd,
-                LootFragmentosHeroiId, ConcluidoEm, HeroisFeridosIds
+                LootFragmentosHeroiId, ConcluidoEm, HeroisFeridosIds,
+                Seed, DiscordUserId, ChannelId, CheckpointsProcessados, ConsequenceTags, Version
             ) VALUES (
                 $id, $uid, $andar, $progresso, $ultimoCheckpoint,
                 $checkpointInterval, $status, $iniciadoEm, $ultimoTickEm,
                 $heroisIds, $boosterAtivo, $lootOuro, $lootFragmentosQtd,
-                $lootFragmentosHeroiId, $concluidoEm, $heroisFeridosIds
+                $lootFragmentosHeroiId, $concluidoEm, $heroisFeridosIds,
+                $seed, $discordUserId, $channelId, $checkpointsProcessados, $consequenceTags, $version
             )";
         BindParams(cmd, exploracao);
         await cmd.ExecuteNonQueryAsync();
@@ -72,20 +81,25 @@ public class TorreExploracaoRepository : ITorreExploracaoRepository
         var cmd = connection.CreateCommand();
         cmd.CommandText = @"
             UPDATE TorreExploracoes SET
-                AndarNumero           = $andar,
-                Progresso             = $progresso,
-                UltimoCheckpoint      = $ultimoCheckpoint,
-                CheckpointInterval    = $checkpointInterval,
-                Status                = $status,
-                IniciadoEm            = $iniciadoEm,
-                UltimoTickEm          = $ultimoTickEm,
-                HeroisIds             = $heroisIds,
-                BoosterAtivo          = $boosterAtivo,
-                LootOuro              = $lootOuro,
-                LootFragmentosQtd     = $lootFragmentosQtd,
-                LootFragmentosHeroiId = $lootFragmentosHeroiId,
-                ConcluidoEm           = $concluidoEm,
-                HeroisFeridosIds      = $heroisFeridosIds
+                AndarNumero            = $andar,
+                Progresso              = $progresso,
+                UltimoCheckpoint       = $ultimoCheckpoint,
+                CheckpointInterval     = $checkpointInterval,
+                Status                 = $status,
+                IniciadoEm             = $iniciadoEm,
+                UltimoTickEm           = $ultimoTickEm,
+                HeroisIds              = $heroisIds,
+                BoosterAtivo           = $boosterAtivo,
+                LootOuro               = $lootOuro,
+                LootFragmentosQtd      = $lootFragmentosQtd,
+                LootFragmentosHeroiId  = $lootFragmentosHeroiId,
+                ConcluidoEm            = $concluidoEm,
+                HeroisFeridosIds       = $heroisFeridosIds,
+                Seed                   = $seed,
+                DiscordUserId          = $discordUserId,
+                CheckpointsProcessados = $checkpointsProcessados,
+                ConsequenceTags        = $consequenceTags,
+                Version                = $version
             WHERE Id = $id";
         BindParams(cmd, exploracao);
         await cmd.ExecuteNonQueryAsync();
@@ -98,10 +112,11 @@ public class TorreExploracaoRepository : ITorreExploracaoRepository
         var cmd = connection.CreateCommand();
         cmd.CommandText = @"
             SELECT * FROM TorreExploracoes
-            WHERE UsuarioId = $uid AND Status = $status
+            WHERE UsuarioId = $uid AND (Status = $ativa OR Status = $aguardando)
             ORDER BY IniciadoEm DESC LIMIT 1";
-        cmd.Parameters.AddWithValue("$uid",    usuarioId.ToString());
-        cmd.Parameters.AddWithValue("$status", (int)StatusExploracao.Ativa);
+        cmd.Parameters.AddWithValue("$uid",        usuarioId.ToString());
+        cmd.Parameters.AddWithValue("$ativa",      (int)StatusExploracao.Ativa);
+        cmd.Parameters.AddWithValue("$aguardando", (int)StatusExploracao.AguardandoEscolha);
         using var reader = await cmd.ExecuteReaderAsync();
         return await reader.ReadAsync() ? Mapear(reader) : null;
     }
@@ -119,6 +134,23 @@ public class TorreExploracaoRepository : ITorreExploracaoRepository
         cmd.Parameters.AddWithValue("$uid", usuarioId.ToString());
         using var reader = await cmd.ExecuteReaderAsync();
         return await reader.ReadAsync() ? Mapear(reader) : null;
+    }
+
+    public async Task<List<TorreExploracao>> ObterTodasAtivasAsync()
+    {
+        using var connection = new SqliteConnection(_connectionString);
+        await connection.OpenAsync();
+        var cmd = connection.CreateCommand();
+        cmd.CommandText = @"
+            SELECT * FROM TorreExploracoes
+            WHERE Status = $ativa OR Status = $aguardando";
+        cmd.Parameters.AddWithValue("$ativa",      (int)StatusExploracao.Ativa);
+        cmd.Parameters.AddWithValue("$aguardando", (int)StatusExploracao.AguardandoEscolha);
+        using var reader = await cmd.ExecuteReaderAsync();
+        var result = new List<TorreExploracao>();
+        while (await reader.ReadAsync())
+            result.Add(Mapear(reader));
+        return result;
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────
@@ -144,7 +176,15 @@ public class TorreExploracaoRepository : ITorreExploracaoRepository
         cmd.Parameters.AddWithValue("$concluidoEm",          e.ConcluidoEm.HasValue
                                                                  ? (object)e.ConcluidoEm.Value.ToString("o")
                                                                  : DBNull.Value);
-        cmd.Parameters.AddWithValue("$heroisFeridosIds",     e.HeroisFeridosIds);
+        cmd.Parameters.AddWithValue("$heroisFeridosIds",      e.HeroisFeridosIds);
+        cmd.Parameters.AddWithValue("$seed",                   e.Seed);
+        cmd.Parameters.AddWithValue("$discordUserId",          (long)e.DiscordUserId);
+        cmd.Parameters.AddWithValue("$channelId",              (long)e.ChannelId);
+        cmd.Parameters.AddWithValue("$checkpointsProcessados", (int)e.CheckpointsProcessados);
+        cmd.Parameters.AddWithValue("$consequenceTags",        e.ConsequenceTags is not null
+                                                                   ? (object)e.ConsequenceTags
+                                                                   : DBNull.Value);
+        cmd.Parameters.AddWithValue("$version",                e.Version);
     }
 
     private static TorreExploracao Mapear(SqliteDataReader r) => new()
@@ -168,6 +208,12 @@ public class TorreExploracaoRepository : ITorreExploracaoRepository
         ConcluidoEm           = r["ConcluidoEm"] == DBNull.Value
                                     ? null
                                     : DateTime.Parse(r["ConcluidoEm"].ToString()!),
-        HeroisFeridosIds      = r["HeroisFeridosIds"].ToString() ?? "",
+        HeroisFeridosIds       = r["HeroisFeridosIds"].ToString() ?? "",
+        Seed                   = Convert.ToInt32(r["Seed"]),
+        DiscordUserId          = (ulong)Convert.ToInt64(r["DiscordUserId"]),
+        ChannelId              = r["ChannelId"] == DBNull.Value ? 0ul : (ulong)Convert.ToInt64(r["ChannelId"]),
+        CheckpointsProcessados = (CheckpointFlags)Convert.ToInt32(r["CheckpointsProcessados"]),
+        ConsequenceTags        = r["ConsequenceTags"] == DBNull.Value ? null : r["ConsequenceTags"].ToString(),
+        Version                = Convert.ToInt32(r["Version"]),
     };
 }

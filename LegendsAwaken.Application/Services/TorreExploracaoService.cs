@@ -115,13 +115,15 @@ public class TorreExploracaoService
         // Booster: Eficiencia
         double boosterMult = exploracao.BoosterAtivo == TipoBooster.Eficiencia ? 1.20 : 1.0;
 
-        double progressoPorMinuto = Math.Min(1.5 * ratio * boosterMult, 3.0);
+        var progFase      = TorrePhaseConfig.ObterProgressoFase(exploracao.AndarNumero);
+        double ratioBonus = progFase.RatioMult * Math.Max(0.0, ratio - 0.5);
+        double progressoPorMinuto = Math.Min((progFase.TaxaBase + ratioBonus) * boosterMult, progFase.Cap);
 
-        // Failure check
+        // Failure check — risk is independent of progress speed
         double failChancePorMinuto = ratio >= 1.0
             ? 0.001
-            : 0.05 * (1.0 - ratio);
-        double totalFailChance = Math.Min(failChancePorMinuto * elapsed, 0.80);
+            : progFase.FalhaMultiplicador * (1.0 - ratio);
+        double totalFailChance = Math.Min(failChancePorMinuto * elapsed, progFase.FalhaCapPorTick);
 
         if (Random.Shared.NextDouble() < totalFailChance)
         {
@@ -216,6 +218,10 @@ public class TorreExploracaoService
         }
 
         // Checkpoint event generation
+        TorreEvento? menorEventoParaNotificar = null;
+        string? menorTitulo = null, menorDescricao = null;
+        int menorBonus = 0;
+
         if (proximoThreshold.HasValue && newProgress >= proximoThreshold.Value)
         {
             var flagProcessada = TorreEventoService.ThresholdParaFlag(proximoThreshold.Value);
@@ -232,19 +238,22 @@ public class TorreExploracaoService
             {
                 exploracao.Status = StatusExploracao.AguardandoEscolha;
                 await _exploracaoRepo.AtualizarAsync(exploracao);
-                _ = _notificacaoService.NotificarEventoCheckpointAsync(exploracao.DiscordUserId, eventoGerado)
+                _ = _notificacaoService.NotificarEventoCheckpointAsync(exploracao.ChannelId, exploracao.DiscordUserId, eventoGerado)
                     .ContinueWith(_ => { }, System.Threading.Tasks.TaskContinuationOptions.OnlyOnFaulted);
                 return;
             }
             else
             {
+                // Menor: resolve inline and fall through to floor-clear (handles 100% completion in the same tick)
                 var configMenor = CheckpointEventoCatalog.Todos
                     .FirstOrDefault(c => c.Key == eventoGerado.EventoKey)
                     ?? throw new InvalidOperationException($"Catalog entry not found for event key '{eventoGerado.EventoKey}'.");
-                await _eventoService.ResolverMenorInlineAsync(configMenor, exploracao);
+                (_, menorBonus, menorDescricao) = TorreEventoService.AplicarEfeito(configMenor, null, exploracao);
+                await _eventoService.ResolverMenorInlineAsync(configMenor, exploracao, eventoGerado);
                 exploracao.Version++;
-                await _exploracaoRepo.AtualizarAsync(exploracao);
-                return;
+                menorEventoParaNotificar = eventoGerado;
+                menorTitulo = configMenor.Titulo;
+                newProgress = exploracao.Progresso; // capture any bonus applied by ResolverMenorInlineAsync
             }
         }
 
@@ -303,6 +312,14 @@ public class TorreExploracaoService
         exploracao.Progresso     = Math.Min(newProgress, 100.0);
         exploracao.UltimoTickEm  = agora;
         await _exploracaoRepo.AtualizarAsync(exploracao);
+
+        if (menorEventoParaNotificar != null)
+        {
+            _ = _notificacaoService.NotificarEventoMenorAsync(
+                    exploracao.ChannelId, exploracao.DiscordUserId,
+                    menorEventoParaNotificar, menorTitulo!, menorDescricao!, menorBonus)
+                .ContinueWith(_ => { }, System.Threading.Tasks.TaskContinuationOptions.OnlyOnFaulted);
+        }
     }
 
     // ── Start ─────────────────────────────────────────────────────────────────
@@ -314,6 +331,7 @@ public class TorreExploracaoService
     public async Task<TorreExploracao> IniciarAsync(
         Guid usuarioId,
         ulong discordId,
+        ulong channelId,
         List<Guid> heroisIds,
         TipoBooster? booster)
     {
@@ -400,6 +418,7 @@ public class TorreExploracaoService
             HeroisFeridosIds    = "",
             Seed                = new Random().Next(),
             DiscordUserId       = discordId,
+            ChannelId           = channelId,
         };
 
         await _exploracaoRepo.SalvarAsync(exploracao);
